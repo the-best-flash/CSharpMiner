@@ -46,10 +46,13 @@
     <Compile Include="Configuration\IConfiguration.cs" />
     <Compile Include="MiningDevices\IMiningDevice.cs" />
     <Compile Include="MiningDevices\IMiningDeviceManager.cs" />
+    <Compile Include="Stratum\Command.cs" />
     <Compile Include="Stratum\Pool.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Stratum\PoolWork.cs" />
+    <Compile Include="Stratum\Response.cs" />
+    <Compile Include="Stratum\SerializedJsonObjectBase.cs" />
     <Compile Include="Stratum\StratumConnectionFailureException.cs" />
   </ItemGroup>
   <ItemGroup>

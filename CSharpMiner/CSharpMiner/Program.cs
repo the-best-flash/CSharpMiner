@@ -1,6 +1,8 @@
 ﻿using CSharpMiner.Configuration;
+using CSharpMiner.Stratum;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -12,6 +14,14 @@ namespace CSharpMiner
 {
     class Program
     {
+        public const string VersionString = "0.0.1";
+
+        [Conditional("DEBUG")]
+        public static void DebugConsoleLog(Object thing)
+        {
+            Console.WriteLine(thing);
+        }
+
         static void Main(string[] args)
         {
             if(args.Length != 1)
@@ -41,7 +51,33 @@ namespace CSharpMiner
                 return;
             }
 
-            TcpClient client = new TcpClient("", 0);
+            foreach(Pool p in config.Pools)
+            {
+                Console.WriteLine("Pool: {0}", p.Url);
+
+                try
+                {
+                    p.Start();
+                }
+                catch (StratumConnectionFailureException e)
+                {
+                    Console.WriteLine("Error connecting to pool {0}", p.Url);
+                    Console.WriteLine("Connection Error: {0}", e.Message);
+                }
+            }
+
+            while(Console.ReadKey().Key != ConsoleKey.D)
+            {
+                // Wait for user to press D to disconnect from pool
+            }
+
+            foreach(Pool p in config.Pools)
+            {
+                DebugConsoleLog(string.Format("Disconnecting from pool {0}", p.Url));
+
+                p.Stop();
+                p.Thread.Join();
+            }
         }
 
         static void WriteUsage()

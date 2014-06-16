@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CSharpMiner.MiningDevices
 {
-    interface IMiningDevice
+    public interface IMiningDevice
     {
     }
 }
