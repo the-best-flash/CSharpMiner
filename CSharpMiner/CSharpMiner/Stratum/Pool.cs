@@ -272,6 +272,8 @@ namespace CSharpMiner.Stratum
             {
                 case Command.NotifyCommandString:
                     Program.DebugConsoleLog(string.Format("Got Work from {0}!", this.Url));
+
+                    // TODO: Make use work
                     break;
 
                 case Command.SetDifficlutyCommandString:
