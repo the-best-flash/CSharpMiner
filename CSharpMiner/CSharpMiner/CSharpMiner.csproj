@@ -47,6 +47,7 @@
     <Compile Include="MiningDevices\IMiningDevice.cs" />
     <Compile Include="MiningDevices\IMiningDeviceManager.cs" />
     <Compile Include="Stratum\Command.cs" />
+    <Compile Include="Stratum\ComputationHelpers.cs" />
     <Compile Include="Stratum\Pool.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
