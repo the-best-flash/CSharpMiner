@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CSharpMiner.MiningDevices;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,6 +13,8 @@ using System.Threading.Tasks;
 
 namespace CSharpMiner.Stratum
 {
+    public delegate void SubmitWorkDelegate(string jobId, string extranonce2, string ntime, string nonce);
+
     [DataContract]
     public class Pool : IDisposable
     {
@@ -53,8 +56,12 @@ namespace CSharpMiner.Stratum
         [IgnoreDataMember]
         public Thread Thread { get; private set; }
 
+        [IgnoreDataMember]
+        public IMiningDeviceManager DeviceManager { get; private set; }
+
         private Queue WorkSubmitIdQueue = Queue.Synchronized(new Queue());
         private TcpClient connection = null;
+        private Object[] pendingWork = null;
 
         public Pool()
             : this("", "", "")
@@ -71,10 +78,11 @@ namespace CSharpMiner.Stratum
             Rejected = 0;
         }
 
-        public void Start()
+        public void Start(IMiningDeviceManager deviceManager)
         {
             if(this.Thread == null)
             {
+                this.DeviceManager = deviceManager;
                 this.Thread = new Thread(new ThreadStart(this.Connect));
                 this.Thread.Start();
             }
@@ -141,8 +149,17 @@ namespace CSharpMiner.Stratum
 
                 Object[] data = response.Data as Object[];
 
-                this.Extranonce1 = data[1].ToString();
+                this.Extranonce1 = data[1] as String;
                 this.Extranonce2Size = (int)data[2];
+
+                this.DeviceManager.Start(this.Extranonce1, this.SubmitWork);
+
+                // If we recieved work before we started the device manager, give the work to the device manager now
+                if(pendingWork != null)
+                {
+                    this.DeviceManager.NewWork(pendingWork);
+                    pendingWork = null;
+                }
 
                 Program.DebugConsoleLog(string.Format("Extranonce1: {0}", data[1]));
                 Program.DebugConsoleLog(string.Format("Extranonce2_size: {0}", data[2]));
@@ -162,6 +179,7 @@ namespace CSharpMiner.Stratum
             }
             catch
             {
+                this.DeviceManager.Stop();
                 connection.Close();
                 throw;
             }
@@ -172,10 +190,11 @@ namespace CSharpMiner.Stratum
                 this.processCommands(this.listenForData());
             }
 
+            this.DeviceManager.Stop();
             connection.Close();
         }
 
-        private void SubmitWork(string jobId, string extranonce2, string ntime, string nonce)
+        public void SubmitWork(string jobId, string extranonce2, string ntime, string nonce)
         {
             // TODO: handle null connection
             string[] param = {this.Username, jobId, extranonce2, ntime, nonce};
@@ -254,14 +273,21 @@ namespace CSharpMiner.Stratum
                 return;
             }
 
-            // TODO: More info?
+            if (response.Data.Equals(true))
+            {
+                Accepted++;
+            }
+            else
+            {
+                Rejected++;
+            }
 
-            Console.Write("Work {0}", response.Id);
+            Console.Write("Work {0} ", response.Id);
             ConsoleColor defaultColor = Console.ForegroundColor;
             Console.ForegroundColor = (response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
             Console.Write((response.Data.Equals(true) ? "ACCEPTED" : "REJECTED"));
             Console.ForegroundColor = defaultColor;
-            Console.WriteLine(".");
+            Console.WriteLine();
         }
 
         private void processCommand(Command command)
@@ -273,7 +299,14 @@ namespace CSharpMiner.Stratum
                 case Command.NotifyCommandString:
                     Program.DebugConsoleLog(string.Format("Got Work from {0}!", this.Url));
 
-                    // TODO: Make use work
+                    if (DeviceManager != null && DeviceManager.Started)
+                    {
+                        DeviceManager.NewWork(command.Params);
+                    }
+                    else
+                    {
+                        pendingWork = command.Params;
+                    }
                     break;
 
                 case Command.SetDifficlutyCommandString:
@@ -328,6 +361,9 @@ namespace CSharpMiner.Stratum
 
         void IDisposable.Dispose()
         {
+            if (DeviceManager != null)
+                DeviceManager.Stop();
+
             if (connection != null)
                 connection.Close();
 

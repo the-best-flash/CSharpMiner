@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace CSharpMiner.Stratum
 {
     public class PoolWork
     {
         Object _lock = new Object();
+
+        public Object[] CommandArray { get; private set; }
 
         public string JobId { get; private set; }
         public string PreviousHash { get; private set; }
@@ -18,6 +21,22 @@ namespace CSharpMiner.Stratum
         public string Version { get; private set; }
         public string NetworkDiff { get; private set; } // nbits
         public string Timestamp { get; private set; }
+        public string Extranonce1 { get; private set; }
+
+        private string _extranonce2 = null;
+        public string Extranonce2 
+        { 
+            get
+            {
+                return _extranonce2;
+            }
+
+            set
+            {
+                _merkelRoot = null; // Clear out the old value since it is invalid
+                _extranonce2 = value;
+            }
+        }
 
         private string _merkelRoot = null;
         public string MerkelRoot
@@ -39,12 +58,31 @@ namespace CSharpMiner.Stratum
             }
         }
 
-        public PoolWork(Object[] serverCommandArray, string Extranonce1, string Extranonce2)
+        private static SHA256 _sha256 = null;
+        public static SHA256 SHA256Hash
+        {
+            get
+            {
+                if(_sha256 == null)
+                {
+                    _sha256 = SHA256.Create();
+                }
+
+                return _sha256;
+            }
+        }
+
+        public PoolWork(Object[] serverCommandArray, string extranonce1, string extranonce2)
         {
             if(serverCommandArray.Length < 8)
             {
                 throw new ArgumentException("Unrecognized work format from server. Work array length < 8.");
             }
+
+            CommandArray = serverCommandArray;
+
+            Extranonce1 = extranonce1;
+            Extranonce2 = extranonce2;
 
             JobId = serverCommandArray[0] as string;
             PreviousHash = serverCommandArray[1] as string;
@@ -71,10 +109,55 @@ namespace CSharpMiner.Stratum
             }
         }
 
+        private static byte[] ConvertFromHexString(string hex)
+        {
+            if ((hex.Length & 0x1) != 0)
+            {
+                throw new ArgumentException("Input hex string must have even length.");
+            }
+
+            int finalLength = hex.Length / 2;
+            byte[] result = new byte[finalLength];
+
+            for (int i = 0; i < hex.Length; i += 2)
+            {
+                result[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            }
+
+            return result;
+        }
+
+        private static string ConvertToHexString(byte[] binary)
+        {
+            StringBuilder sb = new StringBuilder(binary.Length * 2);
+
+            foreach (byte b in binary)
+            {
+                string hex = Convert.ToString(b, 16);
+
+                if (hex.Length < 2)
+                    sb.Append("0");
+
+                sb.Append(hex);
+            }
+
+            return sb.ToString();
+        }
+
         private string ComputeMerkelRoot()
         {
-            // TODO
-            return null;
+            string coinbase = string.Format("{0}{1}{2}{3}", Coinbase1, Extranonce1, Extranonce2, Coinbase2);
+            byte[] coinbaseBinary = ConvertFromHexString(coinbase);
+
+            SHA256 sha256 = SHA256Hash;
+            byte[] merkelRoot = sha256.ComputeHash(sha256.ComputeHash(coinbaseBinary));
+
+            foreach (string str in MerkelBranch)
+            {
+                merkelRoot = sha256.ComputeHash(sha256.ComputeHash(merkelRoot.Concat(ConvertFromHexString(str)).ToArray()));
+            }
+
+            return ConvertToHexString(merkelRoot);
         }
     }
 }

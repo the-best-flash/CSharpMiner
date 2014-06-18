@@ -1,4 +1,5 @@
 ﻿using CSharpMiner.Configuration;
+using CSharpMiner.MiningDevices;
 using CSharpMiner.Stratum;
 using System;
 using System.Collections.Generic;
@@ -57,7 +58,7 @@ namespace CSharpMiner
 
                 try
                 {
-                    p.Start();
+                    p.Start(new TestDeviceManager());
                 }
                 catch (StratumConnectionFailureException e)
                 {
