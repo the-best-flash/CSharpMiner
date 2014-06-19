@@ -1,22 +1,24 @@
 ﻿using CSharpMiner.Stratum;
+using MiningDevice;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSharpMiner.MiningDevices
+namespace DeviceManager
 {
+    public delegate void NewWorkDelegate(Object[] poolWorkData);
+
     public interface IMiningDeviceManager
     {
-        string ExtraNonce1 { get; }
-        SubmitWorkDelegate SubmitWorkDelegate { get; }
-        bool Started { get; }
-        IEnumerable<IMiningDevice> MiningDevices { get; }
+        IMiningDevice[] MiningDevices { get; }
+        Pool[] Pools { get; }
 
         void NewWork(Object[] poolWorkData);
         void SubmitWork(PoolWork work, string nonce);
-        void Start(string extraNonce1, SubmitWorkDelegate submitWork);
+        void PoolDisconnected();
+        void Start();
         void Stop();
     }
 }

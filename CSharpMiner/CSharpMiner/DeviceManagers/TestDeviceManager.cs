@@ -1,19 +1,31 @@
 ﻿using CSharpMiner.Stratum;
+using MiningDevice;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSharpMiner.MiningDevices
+namespace DeviceManager
 {
+    [DataContract]
     public class TestDeviceManager : IMiningDeviceManager
     {
+        [DataMember(Name = "pools")]
+        public Pool[] Pools { get; set; }
+
+        [IgnoreDataMember]
+        public IMiningDevice[] MiningDevices { get; private set; }
+
+        [IgnoreDataMember]
         public string ExtraNonce1 { get; private set; }
+
+        [IgnoreDataMember]
         public SubmitWorkDelegate SubmitWorkDelegate { get; private set; }
-        public IEnumerable<IMiningDevice> MiningDevices { get; private set; }
 
         private bool started = false;
+        [IgnoreDataMember]
         public bool Started { get { return started; } }
 
         public void NewWork(object[] poolWorkData)
@@ -36,14 +48,33 @@ namespace CSharpMiner.MiningDevices
             // Do nothing
         }
 
-        public void Start(string extraNonce1, SubmitWorkDelegate submitWork)
+        public void Start()
         {
             started = true;
+
+            if(Pools.Length > 0)
+            {
+                Pools[0].Start(this.NewWork, this.PoolDisconnected);
+            }
         }
 
         public void Stop()
         {
+            if (started && Pools.Length > 0)
+            {
+                Pools[0].Stop();
+            }
+
             started = false;
+        }
+
+
+        public void PoolDisconnected()
+        {
+            if (started && Pools.Length > 0)
+            {
+                Console.WriteLine("Pool {0} disconnected...", Pools[0].Url);
+            }
         }
     }
 }

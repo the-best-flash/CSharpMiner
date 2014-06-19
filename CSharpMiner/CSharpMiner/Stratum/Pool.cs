@@ -1,4 +1,4 @@
-﻿using CSharpMiner.MiningDevices;
+﻿using DeviceManager;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -51,17 +51,17 @@ namespace CSharpMiner.Stratum
         public int Extranonce2Size { get; private set; }
 
         [IgnoreDataMember]
-        public bool ShouldDisconnect { get; set; }
+        public bool Running { get; set; }
 
         [IgnoreDataMember]
         public Thread Thread { get; private set; }
 
-        [IgnoreDataMember]
-        public IMiningDeviceManager DeviceManager { get; private set; }
-
         private Queue WorkSubmitIdQueue = Queue.Synchronized(new Queue());
         private TcpClient connection = null;
         private Object[] pendingWork = null;
+        private NewWorkDelegate _newWork = null;
+        private CancellationTokenSource threadStopping = null;
+        private Action _disconnected = null;
 
         public Pool()
             : this("", "", "")
@@ -78,11 +78,24 @@ namespace CSharpMiner.Stratum
             Rejected = 0;
         }
 
-        public void Start(IMiningDeviceManager deviceManager)
+        public void Start(NewWorkDelegate newWork, Action disconnected)
         {
+            if(newWork == null)
+            {
+                throw new ArgumentNullException("newWork");
+            }
+
+            if(disconnected == null)
+            {
+                throw new ArgumentNullException("disconnected");
+            }
+
             if(this.Thread == null)
             {
-                this.DeviceManager = deviceManager;
+                threadStopping = new CancellationTokenSource();
+
+                _newWork = newWork;
+                _disconnected = disconnected;
                 this.Thread = new Thread(new ThreadStart(this.Connect));
                 this.Thread.Start();
             }
@@ -90,17 +103,35 @@ namespace CSharpMiner.Stratum
 
         public void Stop()
         {
-            this.ShouldDisconnect = true;
+            if (this.Running)
+            {
+                this.Running = false;
+
+                if (this.threadStopping != null)
+                {
+                    this.threadStopping.Cancel();
+                }
+
+                if (connection != null)
+                    connection.Close();
+
+                connection = null;
+
+                if (_disconnected != null)
+                {
+                    _disconnected();
+                }
+            }
         }
 
         private void Connect()
         {
-            this.ShouldDisconnect = false;
+            this.Running = true;
             this.Alive = false;
 
             if(connection != null)
             {
-                connection.Close();
+                this.Stop();
             }
 
             string[] splitAddress = Url.Split(':');
@@ -127,11 +158,7 @@ namespace CSharpMiner.Stratum
                 throw new StratumConnectionFailureException(e);
             }
 
-            if (connection.Connected)
-            {
-                this.Alive = true;
-            }
-            else
+            if (!connection.Connected)
             {
                 throw new StratumConnectionFailureException("Unknown connection failure.");
             }
@@ -152,13 +179,16 @@ namespace CSharpMiner.Stratum
                 this.Extranonce1 = data[1] as String;
                 this.Extranonce2Size = (int)data[2];
 
-                this.DeviceManager.Start(this.Extranonce1, this.SubmitWork);
-
                 // If we recieved work before we started the device manager, give the work to the device manager now
                 if(pendingWork != null)
                 {
-                    this.DeviceManager.NewWork(pendingWork);
+                    _newWork(pendingWork);
                     pendingWork = null;
+                }
+
+                if (connection.Connected)
+                {
+                    this.Alive = true;
                 }
 
                 Program.DebugConsoleLog(string.Format("Extranonce1: {0}", data[1]));
@@ -179,19 +209,15 @@ namespace CSharpMiner.Stratum
             }
             catch
             {
-                this.DeviceManager.Stop();
-                connection.Close();
+                this.Stop();
                 throw;
             }
 
             // Enter loop to monitor pool stratum
-            while(!this.ShouldDisconnect)
+            while(this.Running)
             {
                 this.processCommands(this.listenForData());
             }
-
-            this.DeviceManager.Stop();
-            connection.Close();
         }
 
         public void SubmitWork(string jobId, string extranonce2, string ntime, string nonce)
@@ -299,9 +325,9 @@ namespace CSharpMiner.Stratum
                 case Command.NotifyCommandString:
                     Program.DebugConsoleLog(string.Format("Got Work from {0}!", this.Url));
 
-                    if (DeviceManager != null && DeviceManager.Started)
+                    if (this.Alive && this._newWork != null)
                     {
-                        DeviceManager.NewWork(command.Params);
+                        _newWork(command.Params);
                     }
                     else
                     {
@@ -319,10 +345,33 @@ namespace CSharpMiner.Stratum
 
         private string listenForData()
         {
-            // TODO: Handle null connection
-            byte[] arr = new byte[10000];
-            int bytesRead = connection.GetStream().Read(arr, 0, arr.Length);
-            return Encoding.ASCII.GetString(arr, 0, bytesRead);
+            if (this.threadStopping != null)
+            {
+                // TODO: Handle null connection
+                byte[] arr = new byte[10000];
+                Task<int> asyncTask = null;
+
+                try
+                {
+                    asyncTask = connection.GetStream().ReadAsync(arr, 0, 10000, this.threadStopping.Token);
+                    asyncTask.Wait();
+                } catch(OperationCanceledException)
+                {
+                    return string.Empty;
+                }
+                catch (AggregateException)
+                {
+                    return string.Empty;
+                }
+
+                if (asyncTask != null && !asyncTask.IsCanceled)
+                {
+                    int bytesRead = asyncTask.Result;
+                    return Encoding.ASCII.GetString(arr, 0, bytesRead);
+                }
+            }
+
+            return string.Empty;
         }
 
         private Response waitForResponse()
@@ -361,13 +410,10 @@ namespace CSharpMiner.Stratum
 
         void IDisposable.Dispose()
         {
-            if (DeviceManager != null)
-                DeviceManager.Stop();
-
-            if (connection != null)
-                connection.Close();
-
-            connection = null;
+            if(this.Running)
+            {
+                this.Stop();
+            }
         }
     }
 }

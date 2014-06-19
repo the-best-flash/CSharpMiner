@@ -2,12 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSharpMiner.MiningDevices
+namespace DeviceManager
 {
-    public class IndividualWorkManager : WorkManagerBase
+    [DataContract]
+    public class DistributedWorkManager : WorkManagerBase
     {
         protected override void StartWork(PoolWork work)
         {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
+using CSharpMiner.Helpers;
 
 namespace CSharpMiner.Stratum
 {
@@ -22,6 +23,7 @@ namespace CSharpMiner.Stratum
         public string NetworkDiff { get; private set; } // nbits
         public string Timestamp { get; private set; }
         public string Extranonce1 { get; private set; }
+        public int StartingNonce { get; private set; }
 
         private string _extranonce2 = null;
         public string Extranonce2 
@@ -72,7 +74,7 @@ namespace CSharpMiner.Stratum
             }
         }
 
-        public PoolWork(Object[] serverCommandArray, string extranonce1, string extranonce2)
+        public PoolWork(Object[] serverCommandArray, string extranonce1, string extranonce2, int startingNonce = 0)
         {
             if(serverCommandArray.Length < 8)
             {
@@ -83,6 +85,8 @@ namespace CSharpMiner.Stratum
 
             Extranonce1 = extranonce1;
             Extranonce2 = extranonce2;
+
+            StartingNonce = startingNonce;
 
             JobId = serverCommandArray[0] as string;
             PreviousHash = serverCommandArray[1] as string;
@@ -109,55 +113,20 @@ namespace CSharpMiner.Stratum
             }
         }
 
-        private static byte[] ConvertFromHexString(string hex)
-        {
-            if ((hex.Length & 0x1) != 0)
-            {
-                throw new ArgumentException("Input hex string must have even length.");
-            }
-
-            int finalLength = hex.Length / 2;
-            byte[] result = new byte[finalLength];
-
-            for (int i = 0; i < hex.Length; i += 2)
-            {
-                result[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-            }
-
-            return result;
-        }
-
-        private static string ConvertToHexString(byte[] binary)
-        {
-            StringBuilder sb = new StringBuilder(binary.Length * 2);
-
-            foreach (byte b in binary)
-            {
-                string hex = Convert.ToString(b, 16);
-
-                if (hex.Length < 2)
-                    sb.Append("0");
-
-                sb.Append(hex);
-            }
-
-            return sb.ToString();
-        }
-
         private string ComputeMerkelRoot()
         {
             string coinbase = string.Format("{0}{1}{2}{3}", Coinbase1, Extranonce1, Extranonce2, Coinbase2);
-            byte[] coinbaseBinary = ConvertFromHexString(coinbase);
+            byte[] coinbaseBinary = HexConversionHelper.ConvertFromHexString(coinbase);
 
             SHA256 sha256 = SHA256Hash;
             byte[] merkelRoot = sha256.ComputeHash(sha256.ComputeHash(coinbaseBinary));
 
             foreach (string str in MerkelBranch)
             {
-                merkelRoot = sha256.ComputeHash(sha256.ComputeHash(merkelRoot.Concat(ConvertFromHexString(str)).ToArray()));
+                merkelRoot = sha256.ComputeHash(sha256.ComputeHash(merkelRoot.Concat(HexConversionHelper.ConvertFromHexString(str)).ToArray()));
             }
 
-            return ConvertToHexString(merkelRoot);
+            return HexConversionHelper.ConvertToHexString(merkelRoot);
         }
     }
 }

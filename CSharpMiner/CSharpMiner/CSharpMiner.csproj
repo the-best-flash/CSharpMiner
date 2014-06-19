@@ -43,16 +43,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration\JsonConfigurationBase.cs" />
-    <Compile Include="Configuration\IConfiguration.cs" />
-    <Compile Include="MiningDevices\DistributedWorkManager.cs" />
+    <Compile Include="Configuration\JsonConfiguration.cs" />
+    <Compile Include="DeviceManagers\DistributedWorkManager.cs" />
+    <Compile Include="Helpers\HexConversionHelper.cs" />
     <Compile Include="MiningDevices\IMiningDevice.cs" />
-    <Compile Include="MiningDevices\IMiningDeviceManager.cs" />
-    <Compile Include="MiningDevices\IndividualWorkManager.cs" />
-    <Compile Include="MiningDevices\TestDeviceManager.cs" />
-    <Compile Include="MiningDevices\WorkManagerBase.cs" />
+    <Compile Include="DeviceManagers\IMiningDeviceManager.cs" />
+    <Compile Include="DeviceManagers\IndividualWorkManager.cs" />
+    <Compile Include="MiningDevices\TestDevice.cs" />
+    <Compile Include="DeviceManagers\TestDeviceManager.cs" />
+    <Compile Include="MiningDevices\UsbMinerBase.cs" />
+    <Compile Include="DeviceManagers\WorkManagerBase.cs" />
     <Compile Include="MiningDevices\ZeusDevice.cs" />
-    <Compile Include="ModuleManager.cs" />
     <Compile Include="Stratum\Command.cs" />
     <Compile Include="Stratum\ComputationHelpers.cs" />
     <Compile Include="Stratum\Pool.cs" />

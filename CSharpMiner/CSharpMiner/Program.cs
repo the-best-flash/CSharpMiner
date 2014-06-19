@@ -1,13 +1,15 @@
 ﻿using CSharpMiner.Configuration;
-using CSharpMiner.MiningDevices;
 using CSharpMiner.Stratum;
+using DeviceManager;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,6 +25,15 @@ namespace CSharpMiner
             Console.WriteLine(thing);
         }
 
+        private static IEnumerable<Type> GetKnownTypes()
+        {
+            Assembly thisAssembly = Assembly.GetAssembly(typeof(Program));
+
+            // TODO: Get types from module assemblies
+
+            return thisAssembly.GetTypes().Where(t => Attribute.IsDefined(t, typeof(DataContractAttribute)));
+        }
+
         static void Main(string[] args)
         {
             if(args.Length != 1)
@@ -31,13 +42,14 @@ namespace CSharpMiner
                 return;
             }
 
-            JsonConfigurationBase config = new JsonConfigurationBase();
+            DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(JsonConfiguration), GetKnownTypes());
+            JsonConfiguration config = null;
 
             try
             {
                 using (var inputFile = File.OpenRead(args[0]))
                 {
-                    config.Load(inputFile);
+                    config = jsonSerializer.ReadObject(inputFile) as JsonConfiguration;
                 }
             }
             catch (FileNotFoundException)
@@ -52,19 +64,9 @@ namespace CSharpMiner
                 return;
             }
 
-            foreach(Pool p in config.Pools)
+            foreach(IMiningDeviceManager m in config.Managers)
             {
-                Console.WriteLine("Pool: {0}", p.Url);
-
-                try
-                {
-                    p.Start(new TestDeviceManager());
-                }
-                catch (StratumConnectionFailureException e)
-                {
-                    Console.WriteLine("Error connecting to pool {0}", p.Url);
-                    Console.WriteLine("Connection Error: {0}", e.Message);
-                }
+                m.Start();
             }
 
             while(Console.ReadKey().Key != ConsoleKey.D)
@@ -72,12 +74,9 @@ namespace CSharpMiner
                 // Wait for user to press D to disconnect from pool
             }
 
-            foreach(Pool p in config.Pools)
+            foreach (IMiningDeviceManager m in config.Managers)
             {
-                DebugConsoleLog(string.Format("Disconnecting from pool {0}", p.Url));
-
-                p.Stop();
-                p.Thread.Join();
+                m.Stop();
             }
         }
 
