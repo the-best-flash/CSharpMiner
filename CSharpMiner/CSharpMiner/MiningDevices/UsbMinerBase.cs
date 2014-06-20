@@ -13,8 +13,8 @@ namespace MiningDevice
     [DataContract]
     public abstract class UsbMinerBase : IMiningDevice
     {
-        [DataMember(Name = "path")]
-        string UARTPath { get; set; }
+        [DataMember(Name = "port")]
+        public string UARTPort { get; set; }
 
         [IgnoreDataMember]
         public int Cores { get; protected set; }
@@ -61,5 +61,10 @@ namespace MiningDevice
         }
 
         public abstract void StartWork(PoolWork work);
+
+        public void Dispose()
+        {
+            this.Unload();
+        }
     }
 }

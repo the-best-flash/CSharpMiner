@@ -30,6 +30,12 @@ namespace MiningDevice
             get { return 0; }
         }
 
+        public TestDevice(string path, int cores)
+        {
+            Path = path;
+            Cores = cores;
+        }
+
         public void Load(SubmitMinerWorkDelegate submitWork)
         {
             Console.WriteLine("Loading Miner {0}", Path);
@@ -45,6 +51,11 @@ namespace MiningDevice
             Console.WriteLine("Miner {0} starting work {1} with:", Path, work.JobId);
             Console.WriteLine("\tExtranonce2: {0}", work.Extranonce2);
             Console.WriteLine("\tStartNonce:  {0}", work.StartingNonce);
+        }
+
+        public void Dispose()
+        {
+            this.Unload();
         }
     }
 }

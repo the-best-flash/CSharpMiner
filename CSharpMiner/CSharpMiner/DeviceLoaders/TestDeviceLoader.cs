@@ -1,6 +1,4 @@
-﻿using CSharpMiner.Stratum;
-using DeviceManager;
-using MiningDevice;
+﻿using MiningDevice;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,42 +9,37 @@ using System.Threading.Tasks;
 namespace DeviceLoader
 {
     [DataContract]
-    public class ZeusDeviceLoader : IDeviceLoader
+    public class TestDeviceLoader : IDeviceLoader
     {
-        [DataMember(Name = "cores")]
-        public int Cores { get; set; }
-
         [DataMember(Name = "ports")]
         public string[] Ports { get; set; }
 
-        [DataMember(Name = "clock")]
-        public int LtcClk { get; set; }
+        [DataMember(Name = "cores")]
+        public int Cores { get; set; }
 
-        [IgnoreDataMember]
-        public int HashRate
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        [IgnoreDataMember]
-        public int HardwareErrors
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        public IEnumerable<IMiningDevice> LoadDevices()
+        public IEnumerable<MiningDevice.IMiningDevice> LoadDevices()
         {
             List<IMiningDevice> devices = new List<IMiningDevice>();
 
-            foreach(string p in Ports)
+            foreach(string str in Ports)
             {
-                devices.Add(new ZeusDevice(p, LtcClk, Cores));
+                devices.Add(new TestDevice(str, Cores));
             }
 
             return devices;
         }
 
-        public void Load(SubmitMinerWorkDelegate submitWork)
+        public int HashRate
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public int HardwareErrors
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public void Load(DeviceManager.SubmitMinerWorkDelegate submitWork)
         {
             throw new NotImplementedException();
         }
@@ -56,14 +49,14 @@ namespace DeviceLoader
             throw new NotImplementedException();
         }
 
-        public void StartWork(PoolWork work)
+        public void StartWork(CSharpMiner.Stratum.PoolWork work)
         {
             throw new NotImplementedException();
         }
 
         public void Dispose()
         {
-            // Do Nothing
+            
         }
     }
 }

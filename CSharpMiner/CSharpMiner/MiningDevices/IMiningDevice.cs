@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MiningDevice
 {
-    public interface IMiningDevice
+    public interface IMiningDevice : IDisposable
     {
         int Cores { get; }
         int HashRate { get; }

@@ -11,9 +11,6 @@ namespace MiningDevice
     [DataContract]
     class ZeusDevice : UsbMinerBase
     {
-        [DataMember(Name = "port")]
-        public string Port { get; set; }
-
         [DataMember(Name = "clock")]
         public int LtcClk { get; set; }
 
@@ -22,7 +19,7 @@ namespace MiningDevice
 
         public ZeusDevice(string port, int clk, int cores)
         {
-            Port = port;
+            UARTPort = port;
             LtcClk = clk;
             Cores = cores;
         }

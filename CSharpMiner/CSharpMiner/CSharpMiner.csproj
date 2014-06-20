@@ -45,6 +45,8 @@
   <ItemGroup>
     <Compile Include="Configuration\JsonConfiguration.cs" />
     <Compile Include="DeviceLoaders\IDeviceLoader.cs" />
+    <Compile Include="DeviceLoaders\IHotplugLoader.cs" />
+    <Compile Include="DeviceLoaders\TestDeviceLoader.cs" />
     <Compile Include="DeviceLoaders\ZeusDeviceLoader.cs" />
     <Compile Include="DeviceManagers\DistributedWorkManager.cs" />
     <Compile Include="Helpers\HexConversionHelper.cs" />
