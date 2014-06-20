@@ -14,7 +14,7 @@ namespace MiningDevice
         int HashRate { get; }
         int HardwareErrors { get; }
 
-        void Load(SubmitMinerWorkDelegate submitWork);
+        void Load(Action<PoolWork, string> submitWork);
         void Unload();
         void StartWork(PoolWork work);
     }

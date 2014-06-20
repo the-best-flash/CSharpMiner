@@ -1,4 +1,5 @@
-﻿using MiningDevice;
+﻿using CSharpMiner.Stratum;
+using MiningDevice;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,7 +40,7 @@ namespace DeviceLoader
             get { throw new NotImplementedException(); }
         }
 
-        public void Load(DeviceManager.SubmitMinerWorkDelegate submitWork)
+        public void Load(Action<PoolWork, string> submitWork)
         {
             throw new NotImplementedException();
         }

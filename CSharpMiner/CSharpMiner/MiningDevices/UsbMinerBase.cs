@@ -16,8 +16,8 @@ namespace MiningDevice
         [DataMember(Name = "port")]
         public string UARTPort { get; set; }
 
-        [IgnoreDataMember]
-        public int Cores { get; protected set; }
+        [DataMember(Name = "cores")]
+        public int Cores { get; set; }
 
         [IgnoreDataMember]
         public int HashRate { get; protected set; }
@@ -25,12 +25,12 @@ namespace MiningDevice
         [IgnoreDataMember]
         public int HardwareErrors { get; protected set; }
 
-        protected SubmitMinerWorkDelegate _submitWork = null;
+        protected Action<PoolWork, string> _submitWork = null;
         protected Thread listenerThread = null;
 
         private bool continueRunning = true;
 
-        public void Load(SubmitMinerWorkDelegate submitWork)
+        public void Load(Action<PoolWork, string> submitWork)
         {
             _submitWork = submitWork;
 

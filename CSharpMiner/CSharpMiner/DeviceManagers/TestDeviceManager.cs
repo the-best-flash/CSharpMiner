@@ -22,7 +22,7 @@ namespace DeviceManager
         public string ExtraNonce1 { get; private set; }
 
         [IgnoreDataMember]
-        public SubmitWorkDelegate SubmitWorkDelegate { get; private set; }
+        public Action<string, string, string, string> SubmitWorkAction { get; private set; }
 
         private bool started = false;
         [IgnoreDataMember]

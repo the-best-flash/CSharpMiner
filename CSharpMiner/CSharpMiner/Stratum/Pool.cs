@@ -13,8 +13,6 @@ using System.Threading.Tasks;
 
 namespace CSharpMiner.Stratum
 {
-    public delegate void SubmitWorkDelegate(string jobId, string extranonce2, string ntime, string nonce);
-
     [DataContract]
     public class Pool : IDisposable
     {
@@ -59,7 +57,7 @@ namespace CSharpMiner.Stratum
         private Queue WorkSubmitIdQueue = Queue.Synchronized(new Queue());
         private TcpClient connection = null;
         private Object[] pendingWork = null;
-        private NewWorkDelegate _newWork = null;
+        private Action<Object[]> _newWork = null;
         private CancellationTokenSource threadStopping = null;
         private Action _disconnected = null;
 
@@ -78,7 +76,7 @@ namespace CSharpMiner.Stratum
             Rejected = 0;
         }
 
-        public void Start(NewWorkDelegate newWork, Action disconnected)
+        public void Start(Action<Object[]> newWork, Action disconnected)
         {
             if(newWork == null)
             {

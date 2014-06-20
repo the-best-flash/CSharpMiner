@@ -12,8 +12,6 @@ using System.Threading.Tasks;
 
 namespace DeviceManager
 {
-    public delegate void SubmitMinerWorkDelegate(PoolWork work, string nonce);
-
     [DataContract]
     public abstract class WorkManagerBase : IMiningDeviceManager
     {

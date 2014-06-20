@@ -8,8 +8,6 @@ using System.Threading.Tasks;
 
 namespace DeviceManager
 {
-    public delegate void NewWorkDelegate(Object[] poolWorkData);
-
     public interface IMiningDeviceManager
     {
         IMiningDevice[] MiningDevices { get; }

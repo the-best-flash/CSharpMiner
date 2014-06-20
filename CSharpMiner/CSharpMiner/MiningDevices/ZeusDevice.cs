@@ -14,9 +14,6 @@ namespace MiningDevice
         [DataMember(Name = "clock")]
         public int LtcClk { get; set; }
 
-        [DataMember(Name = "cores")]
-        public int Cores { get; set; }
-
         public ZeusDevice(string port, int clk, int cores)
         {
             UARTPort = port;

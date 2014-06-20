@@ -36,7 +36,7 @@ namespace MiningDevice
             Cores = cores;
         }
 
-        public void Load(SubmitMinerWorkDelegate submitWork)
+        public void Load(Action<PoolWork, string> submitWork)
         {
             Console.WriteLine("Loading Miner {0}", Path);
         }

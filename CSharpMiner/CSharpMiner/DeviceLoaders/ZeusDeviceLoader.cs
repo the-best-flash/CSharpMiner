@@ -46,7 +46,7 @@ namespace DeviceLoader
             return devices;
         }
 
-        public void Load(SubmitMinerWorkDelegate submitWork)
+        public void Load(Action<PoolWork, string> submitWork)
         {
             throw new NotImplementedException();
         }
