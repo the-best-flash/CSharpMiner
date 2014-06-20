@@ -41,7 +41,7 @@ namespace DeviceManager
 
         private void StartWorking(object[] param, string extranonce1)
         {
-            foreach (IMiningDevice device in this.MiningDevices)
+            foreach (IMiningDevice device in this.loadedDevices)
             {
                 device.StartWork(new PoolWork(param, extranonce1, string.Format("{0,8:X8}", startingNonce)));
                 if (startingNonce != int.MaxValue)

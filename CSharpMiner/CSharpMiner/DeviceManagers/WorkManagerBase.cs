@@ -1,5 +1,6 @@
 ﻿using CSharpMiner;
 using CSharpMiner.Stratum;
+using DeviceLoader;
 using MiningDevice;
 using System;
 using System.Collections;
@@ -31,6 +32,7 @@ namespace DeviceManager
         protected Stack workStack = null;
         bool working = false;
         bool started = false;
+        protected List<IMiningDevice> loadedDevices = null;
 
         protected abstract void StartWork(PoolWork work);
         protected abstract void NoWork(PoolWork oldWork);
@@ -91,9 +93,11 @@ namespace DeviceManager
 
             Task.Factory.StartNew(() =>
             {
+                loadedDevices = new List<IMiningDevice>();
+
                 foreach(IMiningDevice d in this.MiningDevices)
                 {
-                    d.Load(this.SubmitWork);
+                    LoadDevice(d);
                 }
 
                 if(Pools.Length > 0)
@@ -107,11 +111,29 @@ namespace DeviceManager
             });
         }
 
+        private void LoadDevice(IMiningDevice d)
+        {
+            IDeviceLoader loader = d as IDeviceLoader;
+
+            if (d != null)
+            {
+                foreach (IMiningDevice device in loader.LoadDevices())
+                {
+                    LoadDevice(device);
+                }
+            }
+            else
+            {
+                d.Load(this.SubmitWork);
+                loadedDevices.Add(d);
+            }
+        }
+
         public void Stop()
         {
             started = false;
 
-            foreach(IMiningDevice d in this.MiningDevices)
+            foreach(IMiningDevice d in this.loadedDevices)
             {
                 d.Unload();
             }
