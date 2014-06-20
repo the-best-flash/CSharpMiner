@@ -33,6 +33,7 @@ namespace DeviceManager
         bool working = false;
         bool started = false;
         protected List<IMiningDevice> loadedDevices = null;
+        protected List<IHotplugLoader> hotplugLoaders = null;
 
         protected abstract void StartWork(PoolWork work);
         protected abstract void NoWork(PoolWork oldWork);
@@ -94,6 +95,7 @@ namespace DeviceManager
             Task.Factory.StartNew(() =>
             {
                 loadedDevices = new List<IMiningDevice>();
+                hotplugLoaders = new List<IHotplugLoader>();
 
                 foreach(IMiningDevice d in this.MiningDevices)
                 {
@@ -124,26 +126,58 @@ namespace DeviceManager
             }
             else
             {
-                d.Load(this.SubmitWork);
-                loadedDevices.Add(d);
+                IHotplugLoader hotplugLoader = d as IHotplugLoader;
+
+                if (hotplugLoader != null)
+                {
+                    hotplugLoader.StartListening(this.AddNewDevice);
+                    hotplugLoaders.Add(hotplugLoader);
+                }
+                else
+                {
+                    d.Load(this.SubmitWork);
+                    loadedDevices.Add(d);
+                }
             }
+        }
+
+        private void AddNewDevice(IMiningDevice d)
+        {
+            Task.Factory.StartNew(() =>
+                {
+                    LoadDevice(d);
+                });
         }
 
         public void Stop()
         {
-            started = false;
-
-            foreach(IMiningDevice d in this.loadedDevices)
+            if (this.started)
             {
-                d.Unload();
-            }
+                this.started = false;
 
-            if(this.ActivePool != null)
-            {
-                this.ActivePool.Stop();
-                this.ActivePool.Thread.Join();
+                if (this.hotplugLoaders != null)
+                {
+                    foreach (IHotplugLoader hotplugLoader in hotplugLoaders)
+                    {
+                        hotplugLoader.StopListening();
+                    }
+                }
 
-                this.ActivePool = null;
+                if (this.loadedDevices != null)
+                {
+                    foreach (IMiningDevice d in this.loadedDevices)
+                    {
+                        d.Unload();
+                    }
+                }
+
+                if (this.ActivePool != null)
+                {
+                    this.ActivePool.Stop();
+                    this.ActivePool.Thread.Join();
+
+                    this.ActivePool = null;
+                }
             }
         }
 
