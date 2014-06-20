@@ -13,7 +13,7 @@ namespace DeviceManager
         IMiningDevice[] MiningDevices { get; }
         Pool[] Pools { get; }
 
-        void NewWork(Object[] poolWorkData);
+        void NewWork(Object[] poolWorkData, int diff);
         void SubmitWork(PoolWork work, string nonce);
         void PoolDisconnected();
         void Start();

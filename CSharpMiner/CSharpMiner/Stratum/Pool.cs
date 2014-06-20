@@ -54,10 +54,10 @@ namespace CSharpMiner.Stratum
         [IgnoreDataMember]
         public Thread Thread { get; private set; }
 
-        private Queue WorkSubmitIdQueue = Queue.Synchronized(new Queue());
+        private Queue WorkSubmitIdQueue = null;
         private TcpClient connection = null;
         private Object[] pendingWork = null;
-        private Action<Object[]> _newWork = null;
+        private Action<Object[], int> _newWork = null;
         private CancellationTokenSource threadStopping = null;
         private Action _disconnected = null;
 
@@ -76,7 +76,7 @@ namespace CSharpMiner.Stratum
             Rejected = 0;
         }
 
-        public void Start(Action<Object[]> newWork, Action disconnected)
+        public void Start(Action<Object[], int> newWork, Action disconnected)
         {
             if(newWork == null)
             {
@@ -124,6 +124,8 @@ namespace CSharpMiner.Stratum
 
         private void Connect()
         {
+            WorkSubmitIdQueue = Queue.Synchronized(new Queue());
+
             this.Running = true;
             this.Alive = false;
 
@@ -180,7 +182,7 @@ namespace CSharpMiner.Stratum
                 // If we recieved work before we started the device manager, give the work to the device manager now
                 if(pendingWork != null)
                 {
-                    _newWork(pendingWork);
+                    _newWork(pendingWork, this.Diff);
                     pendingWork = null;
                 }
 
@@ -220,13 +222,16 @@ namespace CSharpMiner.Stratum
 
         public void SubmitWork(string jobId, string extranonce2, string ntime, string nonce)
         {
-            // TODO: handle null connection
-            string[] param = {this.Username, jobId, extranonce2, ntime, nonce};
-            Command command = new Command(this.RequestId, Command.SubmitCommandString, param);
-            command.Serialize(this.connection.GetStream());
+            if (WorkSubmitIdQueue != null)
+            {
+                // TODO: handle null connection
+                string[] param = { this.Username, jobId, extranonce2, ntime, nonce };
+                Command command = new Command(this.RequestId, Command.SubmitCommandString, param);
+                command.Serialize(this.connection.GetStream());
 
-            WorkSubmitIdQueue.Enqueue(command);
-            this.RequestId++;
+                WorkSubmitIdQueue.Enqueue(command);
+                this.RequestId++;
+            }
         }
 
         private void processCommands(string allCommands)
@@ -256,23 +261,26 @@ namespace CSharpMiner.Stratum
                         }
                         else // This should be a work submit response. We expect these to come back in order
                         {
-                            if(WorkSubmitIdQueue.Count > 0)
+                            if (WorkSubmitIdQueue != null)
                             {
-                                if(response.Id == ((Command)WorkSubmitIdQueue.Peek()).Id)
+                                if (WorkSubmitIdQueue.Count > 0)
                                 {
-                                    processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
-                                }
-                                else if(response.Id > ((Command)WorkSubmitIdQueue.Peek()).Id) // Something odd happened, we probably missed some responses or the server decided not to send them
-                                {
-                                    while(WorkSubmitIdQueue.Count > 0 && response.Id > ((Command)WorkSubmitIdQueue.Peek()).Id)
-                                    {
-                                        // Get rid of the old stuff
-                                        processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response, true);
-                                    }
-
-                                    if (WorkSubmitIdQueue.Count > 0 && response.Id == ((Command)WorkSubmitIdQueue.Peek()).Id)
+                                    if (response.Id == ((Command)WorkSubmitIdQueue.Peek()).Id)
                                     {
                                         processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
+                                    }
+                                    else if (response.Id > ((Command)WorkSubmitIdQueue.Peek()).Id) // Something odd happened, we probably missed some responses or the server decided not to send them
+                                    {
+                                        while (WorkSubmitIdQueue.Count > 0 && response.Id > ((Command)WorkSubmitIdQueue.Peek()).Id)
+                                        {
+                                            // Get rid of the old stuff
+                                            processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response, true);
+                                        }
+
+                                        if (WorkSubmitIdQueue.Count > 0 && response.Id == ((Command)WorkSubmitIdQueue.Peek()).Id)
+                                        {
+                                            processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
+                                        }
                                     }
                                 }
                             }
@@ -297,19 +305,20 @@ namespace CSharpMiner.Stratum
                 return;
             }
 
-            if (response.Data.Equals(true))
+            if (response.Data != null && response.Data.Equals(true))
             {
                 Accepted++;
             }
             else
             {
+                Program.DebugConsoleLog(string.Format("Rejected with {0}", (response.Error != null ? response.Error[1] : "null")));
                 Rejected++;
             }
 
             Console.Write("Work {0} ", response.Id);
             ConsoleColor defaultColor = Console.ForegroundColor;
-            Console.ForegroundColor = (response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
-            Console.Write((response.Data.Equals(true) ? "ACCEPTED" : "REJECTED"));
+            Console.ForegroundColor = (response.Data != null && response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
+            Console.Write((response.Data != null && response.Data.Equals(true) ? "ACCEPTED" : "REJECTED"));
             Console.ForegroundColor = defaultColor;
             Console.WriteLine();
         }
@@ -325,7 +334,7 @@ namespace CSharpMiner.Stratum
 
                     if (this.Alive && this._newWork != null)
                     {
-                        _newWork(command.Params);
+                        _newWork(command.Params, this.Diff);
                     }
                     else
                     {

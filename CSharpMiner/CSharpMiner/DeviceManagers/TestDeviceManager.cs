@@ -28,9 +28,9 @@ namespace DeviceManager
         [IgnoreDataMember]
         public bool Started { get { return started; } }
 
-        public void NewWork(object[] poolWorkData)
+        public void NewWork(object[] poolWorkData, int diff)
         {
-            PoolWork work = new PoolWork(poolWorkData, this.ExtraNonce1, "00000000");
+            PoolWork work = new PoolWork(poolWorkData, this.ExtraNonce1, "00000000", diff);
 
             Console.WriteLine("JobID: {0}", work.JobId);
             Console.WriteLine("Prev: {0}", work.PreviousHash);

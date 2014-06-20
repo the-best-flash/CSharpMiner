@@ -21,6 +21,7 @@ namespace CSharpMiner.Stratum
         public string[] MerkelBranch { get; private set; }
         public string Version { get; private set; }
         public string NetworkDiff { get; private set; } // nbits
+        public int Diff { get; private set; }
         public string Timestamp { get; private set; }
         public string Extranonce1 { get; private set; }
         public int StartingNonce { get; private set; }
@@ -74,7 +75,7 @@ namespace CSharpMiner.Stratum
             }
         }
 
-        public PoolWork(Object[] serverCommandArray, string extranonce1, string extranonce2, int startingNonce = 0)
+        public PoolWork(Object[] serverCommandArray, string extranonce1, string extranonce2, int diff, int startingNonce = 0)
         {
             if(serverCommandArray.Length < 8)
             {
@@ -85,6 +86,7 @@ namespace CSharpMiner.Stratum
 
             Extranonce1 = extranonce1;
             Extranonce2 = extranonce2;
+            Diff = diff;
 
             StartingNonce = startingNonce;
 

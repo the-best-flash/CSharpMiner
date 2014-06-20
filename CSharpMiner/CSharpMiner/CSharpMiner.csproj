@@ -53,6 +53,7 @@
     <Compile Include="MiningDevices\IMiningDevice.cs" />
     <Compile Include="DeviceManagers\IMiningDeviceManager.cs" />
     <Compile Include="DeviceManagers\IndividualWorkManager.cs" />
+    <Compile Include="MiningDevices\SerialConnectionException.cs" />
     <Compile Include="MiningDevices\TestDevice.cs" />
     <Compile Include="DeviceManagers\TestDeviceManager.cs" />
     <Compile Include="MiningDevices\UsbMinerBase.cs" />

@@ -2,6 +2,7 @@
 using DeviceManager;
 using System;
 using System.Collections.Generic;
+using System.IO.Ports;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -27,6 +28,8 @@ namespace MiningDevice
 
         protected Action<PoolWork, string> _submitWork = null;
         protected Thread listenerThread = null;
+        protected SerialPort usbPort = null;
+        protected PoolWork pendingWork = null;
 
         private bool continueRunning = true;
 
@@ -43,24 +46,50 @@ namespace MiningDevice
 
         private void Connect()
         {
-            continueRunning = true;
+            string[] portNames = SerialPort.GetPortNames();
 
-            // TODO Set up UART
+            if(!portNames.Contains(UARTPort))
+            {
+                throw new SerialConnectionException(string.Format("{0} is not a valid USB port.", (UARTPort != null ? UARTPort : "null")));
+            }
 
-            while (continueRunning) ;
+            try
+            {
+                continueRunning = true;
+                usbPort = new SerialPort(UARTPort, GetBaud());
+                usbPort.DataReceived += DataReceived;
+                usbPort.Open();
+            }
+            catch (Exception e)
+            {
+                this.Unload();
+                throw new SerialConnectionException(string.Format("Error connecting to {0}: {1}", UARTPort, e), e);
+            }
 
-            throw new NotImplementedException();
+            if (this.pendingWork != null)
+            {
+                Task.Factory.StartNew(() =>
+                    {
+                        this.StartWork(pendingWork);
+                        pendingWork = null;
+                    });
+            }
         }
 
         public void Unload()
         {
-            continueRunning = false;
-            // TODO shutdown UART
+            if (continueRunning)
+            {
+                continueRunning = false;
 
-            throw new NotImplementedException();
+                if (usbPort != null && usbPort.IsOpen)
+                    usbPort.Close();
+            }
         }
 
         public abstract void StartWork(PoolWork work);
+        public abstract int GetBaud();
+        protected abstract void DataReceived(object sender, SerialDataReceivedEventArgs e);
 
         public void Dispose()
         {

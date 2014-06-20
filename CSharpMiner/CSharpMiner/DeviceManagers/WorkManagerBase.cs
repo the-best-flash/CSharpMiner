@@ -36,11 +36,11 @@ namespace DeviceManager
         protected abstract void StartWork(PoolWork work);
         protected abstract void NoWork(PoolWork oldWork);
 
-        public void NewWork(object[] poolWorkData)
+        public void NewWork(object[] poolWorkData, int diff)
         {
             if (started && ActivePool != null && workStack != null)
             {
-                PoolWork newWork = new PoolWork(poolWorkData, ActivePool.Extranonce1, "00000000");
+                PoolWork newWork = new PoolWork(poolWorkData, ActivePool.Extranonce1, "00000000", diff);
 
                 // Pool asked us to toss out our old work
                 if (poolWorkData[8].Equals(true))
@@ -90,6 +90,7 @@ namespace DeviceManager
         {
             workStack = Stack.Synchronized(new Stack());
 
+            // TODO: Make this throw an exception so that the system doesn't infinate loop
             Task.Factory.StartNew(() =>
             {
                 loadedDevices = new List<IMiningDevice>();
@@ -115,7 +116,7 @@ namespace DeviceManager
         {
             IDeviceLoader loader = d as IDeviceLoader;
 
-            if (d != null)
+            if (loader != null)
             {
                 foreach (IMiningDevice device in loader.LoadDevices())
                 {
