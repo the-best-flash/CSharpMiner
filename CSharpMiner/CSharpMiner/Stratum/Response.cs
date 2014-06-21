@@ -50,5 +50,63 @@ namespace CSharpMiner.Stratum
         public Response()
         {
         }
+
+        /// <summary>
+        /// Fallback method for mono JSON parsing failure
+        /// </summary>
+        /// <param name="str">JSON string</param>
+        public Response(string str)
+        {
+            int idParam = str.IndexOf("id");
+            string idParamStr = str.Substring(idParam, str.IndexOf(',', idParam) - idParam);
+            string[] split = idParamStr.Split(':');
+
+            int i;
+            if(split.Length < 2 || !int.TryParse(split[1], out i))
+            {
+                throw new InvalidDataException(string.Format("Error Parsing {0}", str));
+            }
+
+            Id = i;
+
+            string[] separator = new string[]{"\"error\":"};
+            split = str.Split(separator, StringSplitOptions.None);
+
+            if(split.Length < 2)
+            {
+                throw new InvalidDataException(string.Format("Error Parsing {0}", str));
+            }
+
+            string[] errorParts = split[1].Replace("(", "").Replace(")", "").Split(',');
+            Error = errorParts;
+
+            int firstComma = str.IndexOf(",");
+            string resultParam = str.Substring(str.IndexOf(","), str.IndexOf("\"error\":") - firstComma);
+
+            string lowerCase = resultParam.ToLowerInvariant();
+            if(lowerCase.Contains("true"))
+            {
+                this.Data = true;
+            }
+            else if (lowerCase.Contains("null") || lowerCase.Contains("false"))
+            {
+                this.Data = false;
+            }
+            else
+            {
+                resultParam = resultParam.Substring(0, resultParam.LastIndexOf(']'));
+                split = resultParam.Split(',');
+                Object[] array = new Object[4];
+                Data = array;
+
+                if(split.Length < 2 || !int.TryParse(split[split.Length - 1], out i))
+                {
+                    throw new InvalidDataException(string.Format("Error Parsing {0}", str));
+                }
+
+                array[3] = i;
+                array[2] = split[split.Length - 2].Replace("\"", "").Trim();
+            }
+        }
     }
 }

@@ -273,9 +273,7 @@ namespace CSharpMiner.Stratum
                         }
                         catch
                         {
-                            Console.WriteLine("Deserialization failed for: {0}", str);
-                            throw;
-                            //response = new Response(str);
+                            response = new Response(str);
                         }
 
                         // This is the response we're looking for
