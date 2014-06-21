@@ -310,7 +310,22 @@ namespace CSharpMiner.Stratum
                     }
                     else // This is a command from the server
                     {
-                        Command command = Command.Deserialize(memStream);
+                        Command command = null;
+
+                        try
+                        {
+                            command = Command.Deserialize(memStream);
+                        }
+                        catch
+                        {
+                            command = new Command(str);
+                        }
+
+                        if(command == null)
+                        {
+                            throw new InvalidDataException(string.Format("Error parsing command {0}", str));
+                        }
+
                         processCommand(command);
                     }
                 }
