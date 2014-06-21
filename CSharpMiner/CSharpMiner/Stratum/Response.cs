@@ -96,7 +96,7 @@ namespace CSharpMiner.Stratum
             {
                 resultParam = resultParam.Substring(0, resultParam.LastIndexOf(']'));
                 split = resultParam.Split(',');
-                Object[] array = new Object[4];
+                Object[] array = new Object[3];
                 Data = array;
 
                 if(split.Length < 2 || !int.TryParse(split[split.Length - 1], out i))
@@ -104,8 +104,8 @@ namespace CSharpMiner.Stratum
                     throw new InvalidDataException(string.Format("Error Parsing {0}", str));
                 }
 
-                array[3] = i;
-                array[2] = split[split.Length - 2].Replace("\"", "").Trim();
+                array[2] = i;
+                array[1] = split[split.Length - 2].Replace("\"", "").Trim();
             }
         }
     }
