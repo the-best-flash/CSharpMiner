@@ -389,7 +389,7 @@ namespace CSharpMiner.Stratum
             string responseStr = "";
 
             // TODO: Make this not an infinate loop
-            while (response == null)
+            while (response == null && connection != null && connection.Connected)
             {
                 if (connection.Available != 0)
                 {

@@ -42,5 +42,38 @@ namespace CSharpMiner.Helpers
 
             return sb.ToString();
         }
+
+        public static string Swap(string hex)
+        {
+            StringBuilder sb = new StringBuilder(hex.Length);
+
+            // Split into sections of 8 and then reverse the bytes in thoes sections
+            for (int i = 0; i < hex.Length; i += 8)
+            {
+                for (int j = i + 6; j >= i; j -= 2)
+                {
+                    sb.Append(hex.Substring(j, 2));
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        public static string Reverse(string hex)
+        {
+            if ((hex.Length & 0x1) != 0)
+            {
+                throw new ArgumentException("Hex must have a length that is a multiple of two.");
+            }
+
+            StringBuilder sb = new StringBuilder(hex.Length);
+
+            for (int i = hex.Length - 2; i >= 0; i -= 2)
+            {
+                sb.Append(hex.Substring(i, 2));
+            }
+
+            return sb.ToString();
+        }
     }
 }

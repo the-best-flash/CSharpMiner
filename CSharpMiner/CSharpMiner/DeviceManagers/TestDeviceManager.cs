@@ -36,7 +36,7 @@ namespace DeviceManager
             Console.WriteLine("Prev: {0}", work.PreviousHash);
             Console.WriteLine("coinb1: {0}", work.Coinbase1);
             Console.WriteLine("coinb2: {0}", work.Coinbase2);
-            Console.WriteLine("merkel: {0}", work.MerkelRoot);
+            Console.WriteLine("merkle: {0}", work.MerkleRoot);
             Console.WriteLine("version: {0}", work.Version);
             Console.WriteLine("nbits: {0}", work.NetworkDiff);
             Console.WriteLine("ntime: {0}", work.Timestamp);

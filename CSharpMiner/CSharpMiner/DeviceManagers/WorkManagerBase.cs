@@ -27,18 +27,20 @@ namespace DeviceManager
         [IgnoreDataMember]
         public int ActivePoolId { get; private set; }
 
-        protected Stack workStack = null;
         bool working = false;
         bool started = false;
         protected List<IMiningDevice> loadedDevices = null;
         protected List<IHotplugLoader> hotplugLoaders = null;
+
+        PoolWork currentWork = null;
+        PoolWork nextWork = null;
 
         protected abstract void StartWork(PoolWork work);
         protected abstract void NoWork(PoolWork oldWork);
 
         public void NewWork(object[] poolWorkData, int diff)
         {
-            if (started && ActivePool != null && workStack != null)
+            if (started && ActivePool != null)
             {
                 PoolWork newWork = new PoolWork(poolWorkData, ActivePool.Extranonce1, "00000000", diff);
 
@@ -47,7 +49,8 @@ namespace DeviceManager
                 {
                     Program.DebugConsoleLog("New block!");
 
-                    workStack.Clear();
+                    currentWork = newWork;
+                    nextWork = newWork;
 
                     working = true;
                     StartWork(newWork);
@@ -56,12 +59,15 @@ namespace DeviceManager
                 {
                     if (!working)
                     {
+                        currentWork = newWork;
+                        nextWork = newWork;
+
                         working = true;
                         StartWork(newWork);
                     }
                     else
                     {
-                        workStack.Push(newWork);
+                        nextWork = newWork;
                     }
                 }
             }
@@ -69,14 +75,16 @@ namespace DeviceManager
 
         public void SubmitWork(PoolWork work, string nonce)
         {
-            if (started && this.ActivePool != null && workStack != null)
+            if (started && this.ActivePool != null && currentWork != null)
             {
                 this.ActivePool.SubmitWork(work.JobId, work.Extranonce2, work.Timestamp, nonce);
 
-                if (workStack.Count != 0)
+                if (nextWork.JobId != currentWork.JobId)
                 {
                     // Start working on the last thing the server sent us
-                    StartWork(workStack.Pop() as PoolWork);
+                    currentWork = nextWork;
+
+                    StartWork(nextWork);
                 }
                 else
                 {
@@ -88,8 +96,6 @@ namespace DeviceManager
 
         public void Start()
         {
-            workStack = Stack.Synchronized(new Stack());
-
             // TODO: Make this throw an exception so that the system doesn't infinate loop
             Task.Factory.StartNew(() =>
             {

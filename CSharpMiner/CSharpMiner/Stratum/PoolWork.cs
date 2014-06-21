@@ -18,7 +18,7 @@ namespace CSharpMiner.Stratum
         public string PreviousHash { get; private set; }
         public string Coinbase1 { get; private set; }
         public string Coinbase2 { get; private set; }
-        public string[] MerkelBranch { get; private set; }
+        public string[] MerkleBranch { get; private set; }
         public string Version { get; private set; }
         public string NetworkDiff { get; private set; } // nbits
         public int Diff { get; private set; }
@@ -36,28 +36,43 @@ namespace CSharpMiner.Stratum
 
             set
             {
-                _merkelRoot = null; // Clear out the old value since it is invalid
+                _merkleRoot = null; // Clear out the old value since it is invalid
+                _header = null; // Clear out the old value since it is invalid
                 _extranonce2 = value;
             }
         }
 
-        private string _merkelRoot = null;
-        public string MerkelRoot
+        private string _merkleRoot = null;
+        public string MerkleRoot
         {
             get
             {
-                if(_merkelRoot == null)
+                if(_merkleRoot == null)
                 {
                     lock (_lock)
                     {
-                        if (_merkelRoot == null) // Just in case a thread was waiting on the lock. No sense in recomputing the merkelRoot
+                        if (_merkleRoot == null) // Just in case a thread was waiting on the lock. No sense in recomputing the merkleRoot
                         {
-                            _merkelRoot = ComputeMerkelRoot();
+                            _merkleRoot = ComputeMerkleRoot();
                         }
                     }
                 }
 
-                return _merkelRoot;
+                return _merkleRoot;
+            }
+        }
+
+        private string _header = null;
+        public string Header
+        {
+            get
+            {
+                if (_header == null)
+                {
+                    _header = MakeHeader();
+                }
+
+                return _header;
             }
         }
 
@@ -98,37 +113,42 @@ namespace CSharpMiner.Stratum
             NetworkDiff = serverCommandArray[6] as string;
             Timestamp = serverCommandArray[7] as string;
 
-            Object[] merkelTreeParts = serverCommandArray[4] as Object[];
+            Object[] merkleTreeParts = serverCommandArray[4] as Object[];
 
-            if(merkelTreeParts != null)
+            if(merkleTreeParts != null)
             {
-                MerkelBranch = new string[merkelTreeParts.Length];
+                MerkleBranch = new string[merkleTreeParts.Length];
 
-                for(int i = 0; i < merkelTreeParts.Length; i++)
+                for(int i = 0; i < merkleTreeParts.Length; i++)
                 {
-                    MerkelBranch[i] = merkelTreeParts[i] as string;
+                    MerkleBranch[i] = merkleTreeParts[i] as string;
                 }
             }
             else
             {
-                throw new ArgumentException("Unrecognized work format from server. Merkel_Branch is not an array.");
+                throw new ArgumentException("Unrecognized work format from server. Merkle_Branch is not an array.");
             }
         }
 
-        private string ComputeMerkelRoot()
+        private string ComputeMerkleRoot()
         {
             string coinbase = string.Format("{0}{1}{2}{3}", Coinbase1, Extranonce1, Extranonce2, Coinbase2);
             byte[] coinbaseBinary = HexConversionHelper.ConvertFromHexString(coinbase);
 
             SHA256 sha256 = SHA256Hash;
-            byte[] merkelRoot = sha256.ComputeHash(sha256.ComputeHash(coinbaseBinary));
+            byte[] merkleRoot = sha256.ComputeHash(sha256.ComputeHash(coinbaseBinary));
 
-            foreach (string str in MerkelBranch)
+            foreach (string str in MerkleBranch)
             {
-                merkelRoot = sha256.ComputeHash(sha256.ComputeHash(merkelRoot.Concat(HexConversionHelper.ConvertFromHexString(str)).ToArray()));
+                merkleRoot = sha256.ComputeHash(sha256.ComputeHash(merkleRoot.Concat(HexConversionHelper.ConvertFromHexString(str)).ToArray()));
             }
 
-            return HexConversionHelper.ConvertToHexString(merkelRoot);
+            return HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(merkleRoot));
+        }
+
+        private string MakeHeader()
+        {
+            return string.Format("{0}{1}{2}{3}{4}", Version, PreviousHash, MerkleRoot, Timestamp, NetworkDiff);
         }
     }
 }

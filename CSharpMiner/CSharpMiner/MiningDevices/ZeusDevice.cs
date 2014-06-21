@@ -90,39 +90,12 @@ namespace MiningDevice
                 int offset = 4;
 
                 // Starting nonce
-                byte[] nonceBytes = HexConversionHelper.ConvertFromHexString(Swap(string.Format("{0,8:X8}", work.StartingNonce)));
+                byte[] nonceBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Swap(string.Format("{0,8:X8}", work.StartingNonce)));
                 CopyToByteArray(nonceBytes, offset, cmd);
                 offset += nonceBytes.Length;
 
-                // nbits
-                byte[] netDiffBytes = HexConversionHelper.ConvertFromHexString(Swap(work.NetworkDiff));
-                CopyToByteArray(netDiffBytes, offset, cmd);
-                offset += netDiffBytes.Length;
-
-                // timestamp
-                byte[] timestampBytes = HexConversionHelper.ConvertFromHexString(Swap(work.Timestamp));
-                CopyToByteArray(timestampBytes, offset, cmd);
-                offset += timestampBytes.Length;
-
-                // merkel root
-                Program.DebugConsoleLog(string.Format("merkel: {0}", work.MerkelRoot));
-                Program.DebugConsoleLog(string.Format("merkel: {0}", Swap(work.MerkelRoot)));
-
-                byte[] merkelBytes = HexConversionHelper.ConvertFromHexString(Swap(work.MerkelRoot));
-                CopyToByteArray(merkelBytes, offset, cmd);
-                offset += merkelBytes.Length;
-
-                // previous hash
-                byte[] previousHashBytes = HexConversionHelper.ConvertFromHexString(Swap(work.PreviousHash));
-                CopyToByteArray(previousHashBytes, offset, cmd);
-                offset += previousHashBytes.Length;
-
-                // version
-                Program.DebugConsoleLog(string.Format("Version: {0}", work.Version));
-                Program.DebugConsoleLog(string.Format("Version: {0}", Swap(work.Version)));
-
-                byte[] versionBytes = HexConversionHelper.ConvertFromHexString(Swap(work.Version));
-                CopyToByteArray(versionBytes, offset, cmd);
+                byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
+                CopyToByteArray(headerBytes, offset, cmd);
 
                 // Send work to the miner
                 this.currentWork = work;
@@ -142,22 +115,6 @@ namespace MiningDevice
             {
                 dest[i + offset] = src[i];
             }
-        }
-
-        private string Swap(string hex)
-        {
-            StringBuilder sb = new StringBuilder(hex.Length);
-
-            // Split into sections of 8 and then reverse the bytes in thoes sections
-            for(int i = 0; i < hex.Length; i += 8)
-            {
-                for(int j = i + 6; j >= i; j -= 2)
-                {
-                    sb.Append(hex.Substring(j, 2));
-                }
-            }
-
-            return sb.ToString();
         }
 
         public override int GetBaud()
@@ -187,7 +144,7 @@ namespace MiningDevice
             if(currentWork != null)
             {
                 Program.DebugConsoleLog(string.Format("Submitting {0} for job {1}.",HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")));
-                _submitWork(currentWork, Swap(HexConversionHelper.ConvertToHexString(packet)));
+                _submitWork(currentWork, HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet)));
             }
         }
     }
