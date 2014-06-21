@@ -41,6 +41,7 @@ namespace MiningDevice
 
         public void Load(Action<PoolWork, string, int> submitWork)
         {
+            
             Console.WriteLine("Loading Miner {0}", Path);
         }
 

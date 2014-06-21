@@ -1,13 +1,8 @@
-﻿using CSharpMiner;
-using CSharpMiner.Helpers;
+﻿using CSharpMiner.Helpers;
 using CSharpMiner.Stratum;
 using System;
-using System.Collections.Generic;
 using System.IO.Ports;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MiningDevice
 {
@@ -79,7 +74,7 @@ namespace MiningDevice
         {
             if (this.usbPort != null && this.usbPort.IsOpen)
             {
-                Program.DebugConsoleLog(string.Format("Device {0} starting work {1}.", this.UARTPort, work.JobId));
+                LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.UARTPort, work.JobId));
 
                 int diffCode = 0xFFFF / work.Diff;
                 byte[] cmd = CommandPacket;
@@ -97,9 +92,7 @@ namespace MiningDevice
                 byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
                 CopyToByteArray(headerBytes, offset, cmd);
 
-                #if DEBUG
-                Program.DebugConsoleLog(string.Format("{0} getting: {1}", UARTPort, HexConversionHelper.ConvertToHexString(cmd)));
-                #endif
+                LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", UARTPort, HexConversionHelper.ConvertToHexString(cmd)));
 
                 // Send work to the miner
                 this.currentWork = work;
@@ -108,7 +101,7 @@ namespace MiningDevice
             }
             else
             {
-                Program.DebugConsoleLog(string.Format("Device {0} pending work {1}.", this.UARTPort, work.JobId));
+                LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.UARTPort, work.JobId));
 
                 this.pendingWork = work;
             }
@@ -145,10 +138,7 @@ namespace MiningDevice
         {
             if(currentWork != null)
             {
-                ConsoleColor defaultColor = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                Program.DebugConsoleLog(string.Format("Submitting {0} for job {1}.",HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")));
-                Console.ForegroundColor = defaultColor;
+                LogHelper.ConsoleLogAsync(string.Format("Submitting {0} for job {1}.",HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan);
                 _submitWork(currentWork, HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet)), this.Id);
             }
         }

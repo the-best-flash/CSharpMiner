@@ -1,10 +1,8 @@
-﻿using DeviceManager;
+﻿using CSharpMiner.Helpers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Text;
@@ -199,10 +197,10 @@ namespace CSharpMiner.Stratum
                     this.Alive = true;
                 }
 
-                #if DEBUG
-                Program.DebugConsoleLog(string.Format("Extranonce1: {0}", data[1]));
-                Program.DebugConsoleLog(string.Format("Extranonce2_size: {0}", data[2]));
-                #endif
+                LogHelper.DebugConsoleLogAsync(new Object[] {
+                    string.Format("Extranonce1: {0}", data[1]),
+                    string.Format("Extranonce2_size: {0}", data[2])
+                });
 
                 string[] param = {this.Username, this.Password};
 
@@ -214,6 +212,9 @@ namespace CSharpMiner.Stratum
                 if (!successResponse.Data.Equals(true))
                 {
                     this.Alive = false;
+
+                    LogHelper.ConsoleLogError(string.Format("Pool Username or Password rejected with: {0}", successResponse.Error));
+
                     throw new StratumConnectionFailureException(string.Format("Pool Username or Password rejected with: {0}", successResponse.Error));
                 }
             }
@@ -262,11 +263,15 @@ namespace CSharpMiner.Stratum
         {
             Response result = null;
 
-            foreach (string s in commands)
+            foreach (string str in commands)
             {
-                if (!string.IsNullOrEmpty(s.Trim()))
+                LogHelper.DebugConsoleLog(new Object[] {
+                    string.Format("Recieved data from {0}:", this.Url),
+                    str
+                });
+
+                if (!string.IsNullOrEmpty(str.Trim()))
                 {
-                    string str = s + "\n";
                     MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
 
                     if (str.Contains("\"result\""))
@@ -275,11 +280,18 @@ namespace CSharpMiner.Stratum
 
                         try
                         {
-                            response = Response.Deserialize(memStream);
+                            try
+                            {
+                                response = Response.Deserialize(memStream);
+                            }
+                            catch
+                            {
+                                response = new Response(str);
+                            }
                         }
-                        catch
+                        catch (Exception e)
                         {
-                            response = new Response(str);
+                            throw new InvalidDataException(string.Format("Error parsing response {0}", str), e);
                         }
 
                         // This is the response we're looking for
@@ -320,16 +332,18 @@ namespace CSharpMiner.Stratum
 
                         try
                         {
-                            command = Command.Deserialize(memStream);
+                            try
+                            {
+                                command = Command.Deserialize(memStream);
+                            }
+                            catch
+                            {
+                                command = new Command(str);
+                            }
                         }
-                        catch
+                        catch (Exception e)
                         {
-                            command = new Command(str);
-                        }
-
-                        if(command == null)
-                        {
-                            throw new InvalidDataException(string.Format("Error parsing command {0}", str));
+                            throw new InvalidDataException(string.Format("Error parsing command {0}", str), e);
                         }
 
                         processCommand(command);
@@ -344,7 +358,7 @@ namespace CSharpMiner.Stratum
         {
             if(error)
             {
-                Program.DebugConsoleLog(string.Format("Error. Unknown work result. Mismatch in work queue ID and recieved response ID. Dequing waiting command ID {0} since we recieved response {1}.", sentCommand.Id, response.Id));
+                LogHelper.DebugConsoleLogAsync(string.Format("Error. Unknown work result. Mismatch in work queue ID and recieved response ID. Dequing waiting command ID {0} since we recieved response {1}.", sentCommand.Id, response.Id), ConsoleColor.Red);
                 return;
             }
 
@@ -354,43 +368,36 @@ namespace CSharpMiner.Stratum
             }
             else
             {
-                Program.DebugConsoleLog(string.Format("Rejected with {0}", (response.Error != null ? response.Error[1] : "null")));
+                LogHelper.ConsoleLogAsync(string.Format("Rejected with {0}", (response.Error != null ? response.Error[1] : "null")), ConsoleColor.Magenta);
                 Rejected++;
             }
 
-            ConsoleColor defaultColor = Console.ForegroundColor;
-            Console.ForegroundColor = (response.Data != null && response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
-            Console.Write((response.Data != null && response.Data.Equals(true) ? "ACCEPTED" : "REJECTED"));
-            Console.ForegroundColor = defaultColor;
-            Console.Write(" ( ");
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write(this.Accepted);
-            Console.ForegroundColor = defaultColor;
-            Console.Write(" : ");
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write(this.Rejected);
-            Console.ForegroundColor = defaultColor;
-            Console.WriteLine(" )");
+            ConsoleColor color = (response.Data != null && response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
+            string resultStr = (response.Data != null && response.Data.Equals(true) ? "ACCEPTED" : "REJECTED");
+
+            LogHelper.ConsoleLogAsync(new Object[] {
+                new Object[] { resultStr, color, false },
+                new Object[] { " ( ", false },
+                new Object[] { this.Accepted, ConsoleColor.Green, false },
+                new Object[] { " : ", false},
+                new Object[] { this.Rejected, ConsoleColor.Red, false },
+                new Object[] { " )" }
+            });
         }
 
         private void processCommand(Command command)
         {
-            #if DEBUG
-            Program.DebugConsoleLog(string.Format("Command: {0}", command.Method));
-            #endif
+            LogHelper.DebugConsoleLogAsync(string.Format("Command: {0}", command.Method));
 
             switch(command.Method.Trim())
             {
                 case Command.NotifyCommandString:
-                    Program.DebugConsoleLog(string.Format("Got Work from {0}!", this.Url));
+                    LogHelper.ConsoleLogAsync(string.Format("Got Work from {0}!", this.Url));
 
                     if (command.Params.Length >= 9 && command.Params[8] != null && command.Params[8].Equals(true))
                     {
                         this.NewBlocks++;
-                        ConsoleColor curColor = Console.ForegroundColor;
-                        Console.ForegroundColor = ConsoleColor.DarkYellow;
-                        Program.DebugConsoleLog(string.Format("New block! ({0})", this.NewBlocks));
-                        Console.ForegroundColor = curColor;
+                        LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow);
                     }
 
                     if (this.Alive && this._newWork != null)
@@ -404,13 +411,13 @@ namespace CSharpMiner.Stratum
                     break;
 
                 case Command.SetDifficlutyCommandString:
-                    Program.DebugConsoleLog(string.Format("Got Diff: {0} from {1}", command.Params[0], this.Url));
+                    LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", command.Params[0], this.Url));
 
                     this.Diff = (int)command.Params[0];
                     break;
 
                 default:
-                    Program.DebugConsoleLog(string.Format("Unrecognized command: {0}", command.Method));
+                    LogHelper.ConsoleLogErrorAsync(string.Format("Unrecognized command: {0}", command.Method));
                     break;
             }
         }

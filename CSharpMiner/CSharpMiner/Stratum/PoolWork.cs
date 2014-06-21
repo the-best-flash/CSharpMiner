@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CSharpMiner.Helpers;
+using System;
 using System.Security.Cryptography;
-using CSharpMiner.Helpers;
+using System.Linq;
 
 namespace CSharpMiner.Stratum
 {
@@ -129,19 +126,19 @@ namespace CSharpMiner.Stratum
                 throw new ArgumentException("Unrecognized work format from server. Merkle_Branch is not an array.");
             }
 
-            #if DEBUG
-            Program.DebugConsoleLog("Work:");
-            Program.DebugConsoleLog(string.Format("nonce1: {0}", Extranonce1));
-            Program.DebugConsoleLog(string.Format("nonce2: {0}", Extranonce2));
-            Program.DebugConsoleLog(string.Format("diff: {0}", Diff));
-            Program.DebugConsoleLog(string.Format("id: {0}", JobId));
-            Program.DebugConsoleLog(string.Format("prevHash: {0}", PreviousHash));
-            Program.DebugConsoleLog(string.Format("coinb1: {0}", Coinbase1));
-            Program.DebugConsoleLog(string.Format("coinb2: {0}", Coinbase2));
-            Program.DebugConsoleLog(string.Format("version: {0}", Version));
-            Program.DebugConsoleLog(string.Format("nbits: {0}", NetworkDiff));
-            Program.DebugConsoleLog(string.Format("ntime: {0}", Timestamp));
-            #endif
+            LogHelper.DebugConsoleLogAsync(new Object[] {
+                new Object[] { "Work:"},
+                new Object[] { string.Format("nonce1: {0}", Extranonce1)},
+                new Object[] { string.Format("nonce2: {0}", Extranonce2)},
+                new Object[] { string.Format("diff: {0}", Diff)},
+                new Object[] { string.Format("id: {0}", JobId)},
+                new Object[] { string.Format("prevHash: {0}", PreviousHash)},
+                new Object[] { string.Format("coinb1: {0}", Coinbase1)},
+                new Object[] { string.Format("coinb2: {0}", Coinbase2)},
+                new Object[] { string.Format("version: {0}", Version)},
+                new Object[] { string.Format("nbits: {0}", NetworkDiff)},
+                new Object[] { string.Format("ntime: {0}", Timestamp)}
+            });
         }
 
         private string ComputeMerkleRoot()

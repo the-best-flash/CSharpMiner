@@ -50,6 +50,7 @@
     <Compile Include="DeviceLoaders\ZeusDeviceLoader.cs" />
     <Compile Include="DeviceManagers\DistributedWorkManager.cs" />
     <Compile Include="Helpers\HexConversionHelper.cs" />
+    <Compile Include="Helpers\LogHelper.cs" />
     <Compile Include="MiningDevices\IMiningDevice.cs" />
     <Compile Include="DeviceManagers\IMiningDeviceManager.cs" />
     <Compile Include="DeviceManagers\IndividualWorkManager.cs" />

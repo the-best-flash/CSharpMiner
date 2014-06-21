@@ -1,4 +1,5 @@
 ﻿using CSharpMiner.Configuration;
+using CSharpMiner.Helpers;
 using CSharpMiner.Stratum;
 using DeviceManager;
 using System;
@@ -19,11 +20,6 @@ namespace CSharpMiner
     {
         public const string VersionString = "0.0.1";
 
-        public static void DebugConsoleLog(Object thing)
-        {
-            Console.WriteLine(thing);
-        }
-
         private static IEnumerable<Type> GetKnownTypes()
         {
             Assembly thisAssembly = Assembly.GetAssembly(typeof(Program));
@@ -35,13 +31,29 @@ namespace CSharpMiner
 
         static void Main(string[] args)
         {
-            if(args.Length < 1 || args.Length > 2)
+            if(args.Length < 1 || args.Length > 3)
             {
                 WriteUsage();
                 return;
             }
 
-            bool loop = (args.Length != 2 || args[2].ToLower().Trim() != "false");
+            bool loop = true;
+
+            if (args.Length == 2)
+            {
+                loop = (args[1].ToLower().Trim() != "false");
+
+                if (args[1].ToLower().Trim() != "false" && args[1].ToLower().Trim() != "true")
+                {
+                    LogHelper.ErrorLogFilePath = args[1];
+                }
+            }
+            else
+            {
+                loop = (args[2].ToLower().Trim() != "false");
+
+                LogHelper.ErrorLogFilePath = args[1];
+            }
 
             do
             {
@@ -60,22 +72,27 @@ namespace CSharpMiner
                     }
                     catch (FileNotFoundException e)
                     {
-                        Console.WriteLine("Configuration file not found. {0}", args[0]);
+                        LogHelper.ConsoleLogError(string.Format("Configuration file not found. {0}", args[0]));
+
                         loop = false; // We cannot recover
+
                         throw new FileNotFoundException(string.Format("Configuration file not found. {0}", args[0]), e);
                     }
                     catch (SerializationException e)
                     {
-                        Console.WriteLine("There was an error loading the configuration file:");
+                        LogHelper.ConsoleLogError("There was an error loading the configuration file:");
+
                         if (e.InnerException != null)
                         {
-                            Console.WriteLine(e.InnerException.Message);
+                            LogHelper.ConsoleLog(e.InnerException.Message);
                         }
                         else
                         {
-                            Console.WriteLine(e);
+                            LogHelper.ConsoleLog(e);
                         }
+
                         loop = false; // We cannot recover
+
                         throw new SerializationException("There was an error loading the configuration file:", e);
                     }
 
@@ -84,26 +101,24 @@ namespace CSharpMiner
                         m.Start();
                     }
 
-                    while (Console.ReadKey().Key != ConsoleKey.D)
+                    while (Console.ReadKey().Key != ConsoleKey.Q)
                     {
-                        // Wait for user to press D to disconnect from pool
-                        loop = false;
+                        // Wait for user to press Q to quit
+                    }
+
+                    loop = false;
+
+                    using (StreamWriter log = new StreamWriter(File.Open("log.log", FileMode.Append)))
+                    {
+                        log.WriteLine("Exiting normally at {0}", DateTime.Now);
                     }
                 }
                 catch (Exception e)
                 {
-                    using(StreamWriter errLog = new StreamWriter(File.Open("log.err", FileMode.Append)))
-                    {
-                        errLog.WriteLine("Exception caught at {0}.", DateTime.Now);
-                        errLog.WriteLine(e);
-                        errLog.WriteLine();
-                    }
+                    LogHelper.LogError(e);
 
-                    ConsoleColor defaultColor = Console.ForegroundColor;
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("There was an error. It has been logged to 'log.err'. More details below:");
-                    Console.ForegroundColor = defaultColor;
-                    Console.WriteLine(e);
+                    LogHelper.ConsoleLogError("There was an error. It has been logged to 'log.err'. More details below:");
+                    LogHelper.ConsoleLog(e);
                 }
                 finally
                 {
@@ -120,7 +135,7 @@ namespace CSharpMiner
 
         static void WriteUsage()
         {
-            Console.WriteLine("CSharpMiner.exe <Configuration File Path> [true|false]");
+            LogHelper.ConsoleLog("CSharpMiner.exe <Configuration File Path> [LogFilePath] [true|false]");
         }
     }
 }
