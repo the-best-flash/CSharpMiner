@@ -128,6 +128,18 @@ namespace CSharpMiner.Stratum
             {
                 throw new ArgumentException("Unrecognized work format from server. Merkle_Branch is not an array.");
             }
+
+            Program.DebugConsoleLog("Work:");
+            Program.DebugConsoleLog(string.Format("nonce1: {0}", Extranonce1));
+            Program.DebugConsoleLog(string.Format("nonce2: {0}", Extranonce2));
+            Program.DebugConsoleLog(string.Format("diff: {0}", Diff));
+            Program.DebugConsoleLog(string.Format("id: {0}", JobId));
+            Program.DebugConsoleLog(string.Format("prevHash: {0}", PreviousHash));
+            Program.DebugConsoleLog(string.Format("coinb1: {0}", Coinbase1));
+            Program.DebugConsoleLog(string.Format("coinb2: {0}", Coinbase2));
+            Program.DebugConsoleLog(string.Format("version: {0}", Version));
+            Program.DebugConsoleLog(string.Format("nbits: {0}", NetworkDiff));
+            Program.DebugConsoleLog(string.Format("ntime: {0}", Timestamp));
         }
 
         private string ComputeMerkleRoot()

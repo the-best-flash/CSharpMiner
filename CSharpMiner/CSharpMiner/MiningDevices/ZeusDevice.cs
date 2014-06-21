@@ -97,6 +97,8 @@ namespace MiningDevice
                 byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
                 CopyToByteArray(headerBytes, offset, cmd);
 
+                Program.DebugConsoleLog(string.Format("{0} getting: {1}", UARTPort, HexConversionHelper.ConvertToHexString(cmd)));
+
                 // Send work to the miner
                 this.currentWork = work;
                 this.usbPort.DiscardInBuffer();
