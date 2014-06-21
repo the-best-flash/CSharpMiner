@@ -262,8 +262,8 @@ namespace CSharpMiner.Stratum
                 {
                     MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
 
-                    Console.WriteLine("Processing command: {0}", str);
                     str.Replace("\"", "\\\"");
+                    Console.WriteLine("Processing command: {0}", str);
 
                     if (str.Contains("\\\"result\\\""))
                     {
