@@ -60,7 +60,14 @@ namespace CSharpMiner
             catch(SerializationException e)
             {
                 Console.WriteLine("There was an error loading the configuration file:");
-                Console.WriteLine(e.InnerException.Message);
+                if (e.InnerException != null)
+                {
+                    Console.WriteLine(e.InnerException.Message);
+                }
+                else
+                {
+                    Console.WriteLine(e);
+                }
                 return;
             }
 

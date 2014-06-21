@@ -23,6 +23,9 @@ namespace DeviceLoader
         public int LtcClk { get; set; }
 
         [IgnoreDataMember]
+        public int Id { get; set; }
+
+        [IgnoreDataMember]
         public int HashRate
         {
             get { throw new NotImplementedException(); }
@@ -46,11 +49,6 @@ namespace DeviceLoader
             return devices;
         }
 
-        public void Load(Action<PoolWork, string> submitWork)
-        {
-            throw new NotImplementedException();
-        }
-
         public void Unload()
         {
             throw new NotImplementedException();
@@ -64,6 +62,11 @@ namespace DeviceLoader
         public void Dispose()
         {
             // Do Nothing
+        }
+
+        public void Load(Action<PoolWork, string, int> submitWork)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -43,7 +43,7 @@ namespace DeviceManager
             Console.WriteLine("clean_jobs: {0}", poolWorkData[8]);
         }
 
-        public void SubmitWork(PoolWork work, string nonce)
+        public void SubmitWork(PoolWork work, string nonce, int startWork)
         {
             // Do nothing
         }

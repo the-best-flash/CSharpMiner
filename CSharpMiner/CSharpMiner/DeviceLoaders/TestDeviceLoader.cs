@@ -18,6 +18,9 @@ namespace DeviceLoader
         [DataMember(Name = "cores")]
         public int Cores { get; set; }
 
+        [IgnoreDataMember]
+        public int Id { get; set; }
+
         public IEnumerable<MiningDevice.IMiningDevice> LoadDevices()
         {
             List<IMiningDevice> devices = new List<IMiningDevice>();
@@ -40,11 +43,6 @@ namespace DeviceLoader
             get { throw new NotImplementedException(); }
         }
 
-        public void Load(Action<PoolWork, string> submitWork)
-        {
-            throw new NotImplementedException();
-        }
-
         public void Unload()
         {
             throw new NotImplementedException();
@@ -58,6 +56,11 @@ namespace DeviceLoader
         public void Dispose()
         {
             
+        }
+
+        public void Load(Action<PoolWork, string, int> submitWork)
+        {
+            throw new NotImplementedException();
         }
     }
 }

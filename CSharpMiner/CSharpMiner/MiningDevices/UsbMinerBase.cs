@@ -14,6 +14,9 @@ namespace MiningDevice
     [DataContract]
     public abstract class UsbMinerBase : IMiningDevice
     {
+        [IgnoreDataMember]
+        public int Id { get; set; }
+
         [DataMember(Name = "port")]
         public string UARTPort { get; set; }
 
@@ -26,14 +29,14 @@ namespace MiningDevice
         [IgnoreDataMember]
         public int HardwareErrors { get; protected set; }
 
-        protected Action<PoolWork, string> _submitWork = null;
+        protected Action<PoolWork, string, int> _submitWork = null;
         protected Thread listenerThread = null;
         protected SerialPort usbPort = null;
         protected PoolWork pendingWork = null;
 
         private bool continueRunning = true;
 
-        public void Load(Action<PoolWork, string> submitWork)
+        public void Load(Action<PoolWork, string, int> submitWork)
         {
             _submitWork = submitWork;
 

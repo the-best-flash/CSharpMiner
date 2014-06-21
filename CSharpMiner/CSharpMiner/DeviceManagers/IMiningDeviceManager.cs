@@ -14,7 +14,7 @@ namespace DeviceManager
         Pool[] Pools { get; }
 
         void NewWork(Object[] poolWorkData, int diff);
-        void SubmitWork(PoolWork work, string nonce);
+        void SubmitWork(PoolWork work, string nonce, int id);
         void PoolDisconnected();
         void Start();
         void Stop();

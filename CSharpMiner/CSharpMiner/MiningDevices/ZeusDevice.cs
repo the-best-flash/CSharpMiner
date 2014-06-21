@@ -99,6 +99,7 @@ namespace MiningDevice
 
                 // Send work to the miner
                 this.currentWork = work;
+                this.usbPort.DiscardInBuffer();
                 this.usbPort.Write(cmd, 0, cmd.Length);
             }
             else
@@ -144,7 +145,7 @@ namespace MiningDevice
             if(currentWork != null)
             {
                 Program.DebugConsoleLog(string.Format("Submitting {0} for job {1}.",HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")));
-                _submitWork(currentWork, HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet)));
+                _submitWork(currentWork, HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet)), this.Id);
             }
         }
     }

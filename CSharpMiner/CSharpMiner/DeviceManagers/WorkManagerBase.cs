@@ -27,15 +27,18 @@ namespace DeviceManager
         [IgnoreDataMember]
         public int ActivePoolId { get; private set; }
 
-        bool working = false;
-        bool started = false;
+        private bool working = false;
+        private bool started = false;
         protected List<IMiningDevice> loadedDevices = null;
         protected List<IHotplugLoader> hotplugLoaders = null;
 
-        PoolWork currentWork = null;
-        PoolWork nextWork = null;
+        protected PoolWork currentWork = null;
+        protected PoolWork nextWork = null;
 
-        protected abstract void StartWork(PoolWork work);
+        protected Queue _submissionQueue = null;
+        private int deviceId = 0;
+
+        protected abstract void StartWork(PoolWork work, bool restartAll);
         protected abstract void NoWork(PoolWork oldWork);
 
         public void NewWork(object[] poolWorkData, int diff)
@@ -53,7 +56,7 @@ namespace DeviceManager
                     nextWork = newWork;
 
                     working = true;
-                    StartWork(newWork);
+                    StartWork(newWork, true);
                 }
                 else // We can keep the old work
                 {
@@ -63,7 +66,7 @@ namespace DeviceManager
                         nextWork = newWork;
 
                         working = true;
-                        StartWork(newWork);
+                        StartWork(newWork, false);
                     }
                     else
                     {
@@ -73,10 +76,12 @@ namespace DeviceManager
             }
         }
 
-        public void SubmitWork(PoolWork work, string nonce)
+        public void SubmitWork(PoolWork work, string nonce, int deviceId)
         {
-            if (started && this.ActivePool != null && currentWork != null)
+            if (started && this.ActivePool != null && currentWork != null && this._submissionQueue != null)
             {
+                _submissionQueue.Enqueue(deviceId);
+
                 this.ActivePool.SubmitWork(work.JobId, work.Extranonce2, work.Timestamp, nonce);
 
                 if (nextWork.JobId != currentWork.JobId)
@@ -84,7 +89,7 @@ namespace DeviceManager
                     // Start working on the last thing the server sent us
                     currentWork = nextWork;
 
-                    StartWork(nextWork);
+                    StartWork(nextWork, false);
                 }
                 else
                 {
@@ -96,6 +101,8 @@ namespace DeviceManager
 
         public void Start()
         {
+            _submissionQueue = Queue.Synchronized(new Queue());
+
             // TODO: Make this throw an exception so that the system doesn't infinate loop
             Task.Factory.StartNew(() =>
             {
@@ -140,6 +147,9 @@ namespace DeviceManager
                 }
                 else
                 {
+                    d.Id = deviceId;
+                    deviceId++;
+
                     d.Load(this.SubmitWork);
                     loadedDevices.Add(d);
                 }

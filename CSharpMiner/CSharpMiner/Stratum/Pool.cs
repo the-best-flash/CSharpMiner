@@ -61,6 +61,8 @@ namespace CSharpMiner.Stratum
         private CancellationTokenSource threadStopping = null;
         private Action _disconnected = null;
 
+        private Object submissionLock = null;
+
         public Pool()
             : this("", "", "")
         {
@@ -78,6 +80,8 @@ namespace CSharpMiner.Stratum
 
         public void Start(Action<Object[], int> newWork, Action disconnected)
         {
+            submissionLock = new Object();
+
             if(newWork == null)
             {
                 throw new ArgumentNullException("newWork");
@@ -222,15 +226,23 @@ namespace CSharpMiner.Stratum
 
         public void SubmitWork(string jobId, string extranonce2, string ntime, string nonce)
         {
-            if (WorkSubmitIdQueue != null)
+            if (WorkSubmitIdQueue != null && submissionLock != null)
             {
                 // TODO: handle null connection
                 string[] param = { this.Username, jobId, extranonce2, ntime, nonce };
-                Command command = new Command(this.RequestId, Command.SubmitCommandString, param);
-                command.Serialize(this.connection.GetStream());
+                Command command = null;
 
-                WorkSubmitIdQueue.Enqueue(command);
-                this.RequestId++;
+                lock (submissionLock)
+                {
+                    command = new Command(this.RequestId, Command.SubmitCommandString, param);
+                    this.RequestId++;
+                    command.Serialize(this.connection.GetStream());
+                }
+
+                if (command != null)
+                {
+                    WorkSubmitIdQueue.Enqueue(command);
+                }
             }
         }
 

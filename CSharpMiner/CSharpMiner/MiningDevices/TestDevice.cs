@@ -19,6 +19,9 @@ namespace MiningDevice
         public int Cores { get; set; }
 
         [IgnoreDataMember]
+        public int Id { get; set; }
+
+        [IgnoreDataMember]
         public int HashRate
         {
             get { return 1; }
@@ -36,7 +39,7 @@ namespace MiningDevice
             Cores = cores;
         }
 
-        public void Load(Action<PoolWork, string> submitWork)
+        public void Load(Action<PoolWork, string, int> submitWork)
         {
             Console.WriteLine("Loading Miner {0}", Path);
         }
