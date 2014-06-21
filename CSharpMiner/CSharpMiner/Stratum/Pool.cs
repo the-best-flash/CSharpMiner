@@ -280,19 +280,21 @@ namespace CSharpMiner.Stratum
                             {
                                 if (WorkSubmitIdQueue.Count > 0)
                                 {
-                                    if (response.Id == ((Command)WorkSubmitIdQueue.Peek()).Id)
+                                    Object commandId = ((Command)WorkSubmitIdQueue.Peek()).Id;
+
+                                    if (commandId != null && response.Id == (int)commandId)
                                     {
                                         processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
                                     }
-                                    else if (response.Id > ((Command)WorkSubmitIdQueue.Peek()).Id) // Something odd happened, we probably missed some responses or the server decided not to send them
+                                    else if (commandId == null || response.Id > (int)commandId) // Something odd happened, we probably missed some responses or the server decided not to send them
                                     {
-                                        while (WorkSubmitIdQueue.Count > 0 && response.Id > ((Command)WorkSubmitIdQueue.Peek()).Id)
+                                        while (WorkSubmitIdQueue.Count > 0 && response.Id > (int)commandId)
                                         {
                                             // Get rid of the old stuff
                                             processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response, true);
                                         }
 
-                                        if (WorkSubmitIdQueue.Count > 0 && response.Id == ((Command)WorkSubmitIdQueue.Peek()).Id)
+                                        if (WorkSubmitIdQueue.Count > 0 && response.Id == (int)commandId)
                                         {
                                             processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
                                         }
