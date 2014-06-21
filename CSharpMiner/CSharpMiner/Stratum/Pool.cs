@@ -265,8 +265,6 @@ namespace CSharpMiner.Stratum
                     string str = s + "\n";
                     MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
 
-                    Console.WriteLine("Processing: {0}", str);
-
                     if (str.Contains("\"result\""))
                     {
                         Response response = null;
@@ -356,7 +354,6 @@ namespace CSharpMiner.Stratum
                 Rejected++;
             }
 
-            Console.Write("Work {0} ", response.Id);
             ConsoleColor defaultColor = Console.ForegroundColor;
             Console.ForegroundColor = (response.Data != null && response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
             Console.Write((response.Data != null && response.Data.Equals(true) ? "ACCEPTED" : "REJECTED"));

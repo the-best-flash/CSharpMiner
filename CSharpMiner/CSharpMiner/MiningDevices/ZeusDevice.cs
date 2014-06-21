@@ -129,8 +129,6 @@ namespace MiningDevice
 
         protected override void DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            Program.DebugConsoleLog("Data Recieved!");
-
             SerialPort sp = sender as SerialPort;
 
             if(sp != null)
@@ -147,7 +145,10 @@ namespace MiningDevice
         {
             if(currentWork != null)
             {
+                ConsoleColor defaultColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Blue;
                 Program.DebugConsoleLog(string.Format("Submitting {0} for job {1}.",HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")));
+                Console.ForegroundColor = defaultColor;
                 _submitWork(currentWork, HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet)), this.Id);
             }
         }
