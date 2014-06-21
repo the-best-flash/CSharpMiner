@@ -120,6 +120,11 @@ namespace CSharpMiner.Stratum
                 }
                 else if(str[0] == ']')
                 {
+                    if(str.Contains(','))
+                    {
+                        str = str.Substring(str.IndexOf(',') + 1);
+                    }
+
                     return new Tuple<Object[], string>(arr.ToArray(), str);
                 }
                 else
