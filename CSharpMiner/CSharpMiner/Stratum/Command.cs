@@ -75,7 +75,8 @@ namespace CSharpMiner.Stratum
                 Id = null;
             }
 
-            int methodPos = str.IndexOf("method");
+            string searchStr = "\"method\"";
+            int methodPos = str.IndexOf(searchStr) + searchStr.Length;
             string methodStr = str.Substring(methodPos, str.IndexOf("\"params\"") - methodPos);
 
             int firstQuote = methodStr.IndexOf('"') + 1;
