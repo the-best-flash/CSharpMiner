@@ -55,6 +55,8 @@ namespace CSharpMiner
                 LogHelper.ErrorLogFilePath = args[1];
             }
 
+            LogHelper.Verbosity = LogVerbosity.Verbose;
+
             do
             {
                 JsonConfiguration config = null;
@@ -84,11 +86,11 @@ namespace CSharpMiner
 
                         if (e.InnerException != null)
                         {
-                            LogHelper.ConsoleLog(e.InnerException.Message);
+                            LogHelper.ConsoleLog(e.InnerException.Message, LogVerbosity.Quiet);
                         }
                         else
                         {
-                            LogHelper.ConsoleLog(e);
+                            LogHelper.ConsoleLog(e, LogVerbosity.Quiet);
                         }
 
                         loop = false; // We cannot recover
@@ -101,10 +103,32 @@ namespace CSharpMiner
                         m.Start();
                     }
 
-                    while (Console.ReadKey().Key != ConsoleKey.Q)
+                    ConsoleKey pressedKey;
+
+                    do
                     {
-                        // Wait for user to press Q to quit
-                    }
+                        pressedKey = Console.ReadKey().Key;
+
+                        if(pressedKey == ConsoleKey.OemPlus || pressedKey == ConsoleKey.Add)
+                        {
+                            if(LogHelper.Verbosity != LogVerbosity.Verbose)
+                            {
+                                LogHelper.Verbosity = (LogVerbosity)((int)LogHelper.Verbosity + 1);
+                            }
+
+                            WriteVerbosity(LogHelper.Verbosity);
+                        }
+                        else if(pressedKey == ConsoleKey.OemMinus || pressedKey == ConsoleKey.Subtract)
+                        {
+                            if(LogHelper.Verbosity != LogVerbosity.VeryQuiet)
+                            {
+                                LogHelper.Verbosity = (LogVerbosity)((int)LogHelper.Verbosity - 1);
+                            }
+
+                            WriteVerbosity(LogHelper.Verbosity);
+                        }
+
+                    } while (pressedKey != ConsoleKey.Q);
 
                     loop = false;
 
@@ -117,8 +141,8 @@ namespace CSharpMiner
                 {
                     LogHelper.LogError(e);
 
-                    LogHelper.ConsoleLogError("There was an error. It has been logged to 'log.err'. More details below:");
-                    LogHelper.ConsoleLog(e);
+                    LogHelper.ConsoleLogError(string.Format("There was an error. It has been logged to '{0}'", LogHelper.ErrorLogFilePath));
+                    LogHelper.ConsoleLog(e, LogVerbosity.Verbose);
                 }
                 finally
                 {
@@ -133,9 +157,35 @@ namespace CSharpMiner
             }while(loop);
         }
 
+        static void WriteVerbosity(LogVerbosity verbosity)
+        {
+            string output = "";
+
+            switch(verbosity)
+            {
+                case LogVerbosity.Normal:
+                    output = "Normal";
+                    break;
+
+                case LogVerbosity.Quiet:
+                    output = "Quiet";
+                    break;
+                    
+                case LogVerbosity.Verbose:
+                    output = "Verbose";
+                    break;
+
+                case LogVerbosity.VeryQuiet:
+                    output = "VeryQuiet";
+                    break;
+            }
+
+            LogHelper.ConsoleLog(string.Format("Verbosity: {0}", output), LogVerbosity.VeryQuiet);
+        }
+
         static void WriteUsage()
         {
-            LogHelper.ConsoleLog("CSharpMiner.exe <Configuration File Path> [LogFilePath] [true|false]");
+            LogHelper.ConsoleLog("CSharpMiner.exe <Configuration File Path> [LogFilePath] [true|false]", LogVerbosity.VeryQuiet);
         }
     }
 }

@@ -200,7 +200,7 @@ namespace CSharpMiner.Stratum
                 LogHelper.DebugConsoleLogAsync(new Object[] {
                     string.Format("Extranonce1: {0}", data[1]),
                     string.Format("Extranonce2_size: {0}", data[2])
-                });
+                }, LogVerbosity.Verbose);
 
                 string[] param = {this.Username, this.Password};
 
@@ -268,7 +268,7 @@ namespace CSharpMiner.Stratum
                 LogHelper.DebugConsoleLog(new Object[] {
                     string.Format("Recieved data from {0}:", this.Url),
                     str
-                });
+                }, LogVerbosity.Verbose);
 
                 if (!string.IsNullOrEmpty(str.Trim()))
                 {
@@ -368,7 +368,7 @@ namespace CSharpMiner.Stratum
             }
             else
             {
-                LogHelper.ConsoleLogAsync(string.Format("Rejected with {0}", (response.Error != null ? response.Error[1] : "null")), ConsoleColor.Magenta);
+                LogHelper.ConsoleLogAsync(string.Format("Rejected with {0}", (response.Error != null ? response.Error[1] : "null")), ConsoleColor.Magenta, LogVerbosity.Verbose);
                 Rejected++;
             }
 
@@ -387,17 +387,17 @@ namespace CSharpMiner.Stratum
 
         private void processCommand(Command command)
         {
-            LogHelper.DebugConsoleLogAsync(string.Format("Command: {0}", command.Method));
+            LogHelper.DebugConsoleLogAsync(string.Format("Command: {0}", command.Method), LogVerbosity.Verbose);
 
             switch(command.Method.Trim())
             {
                 case Command.NotifyCommandString:
-                    LogHelper.ConsoleLogAsync(string.Format("Got Work from {0}!", this.Url));
+                    LogHelper.ConsoleLogAsync(string.Format("Got Work from {0}!", this.Url), LogVerbosity.Verbose);
 
                     if (command.Params.Length >= 9 && command.Params[8] != null && command.Params[8].Equals(true))
                     {
                         this.NewBlocks++;
-                        LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow);
+                        LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow, LogVerbosity.Verbose);
                     }
 
                     if (this.Alive && this._newWork != null)
@@ -411,7 +411,7 @@ namespace CSharpMiner.Stratum
                     break;
 
                 case Command.SetDifficlutyCommandString:
-                    LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", command.Params[0], this.Url));
+                    LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", command.Params[0], this.Url), LogVerbosity.Verbose);
 
                     this.Diff = (int)command.Params[0];
                     break;

@@ -74,7 +74,7 @@ namespace MiningDevice
         {
             if (this.usbPort != null && this.usbPort.IsOpen)
             {
-                LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.UARTPort, work.JobId));
+                LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.UARTPort, work.JobId), LogVerbosity.Verbose);
 
                 int diffCode = 0xFFFF / work.Diff;
                 byte[] cmd = CommandPacket;
@@ -101,7 +101,7 @@ namespace MiningDevice
             }
             else
             {
-                LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.UARTPort, work.JobId));
+                LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.UARTPort, work.JobId), LogVerbosity.Verbose);
 
                 this.pendingWork = work;
             }
@@ -138,7 +138,7 @@ namespace MiningDevice
         {
             if(currentWork != null)
             {
-                LogHelper.ConsoleLogAsync(string.Format("Submitting {0} for job {1}.",HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan);
+                LogHelper.ConsoleLogAsync(string.Format("Device {0} submitting {1} for job {2}.", this.UARTPort ,HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan);
                 _submitWork(currentWork, HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet)), this.Id);
             }
         }

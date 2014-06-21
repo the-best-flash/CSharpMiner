@@ -71,7 +71,7 @@ namespace MiningDevice
                 throw new SerialConnectionException(string.Format("Error connecting to {0}: {1}", UARTPort, e), e);
             }
 
-            LogHelper.ConsoleLogAsync(string.Format("Successfully connected to {0}.", UARTPort));
+            LogHelper.ConsoleLogAsync(string.Format("Successfully connected to {0}.", UARTPort), LogVerbosity.Verbose);
 
             if (this.pendingWork != null)
             {
