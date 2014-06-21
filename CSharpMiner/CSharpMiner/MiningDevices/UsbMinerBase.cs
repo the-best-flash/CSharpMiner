@@ -1,4 +1,5 @@
-﻿using CSharpMiner.Stratum;
+﻿using CSharpMiner;
+using CSharpMiner.Stratum;
 using DeviceManager;
 using System;
 using System.Collections.Generic;
@@ -68,6 +69,8 @@ namespace MiningDevice
                 this.Unload();
                 throw new SerialConnectionException(string.Format("Error connecting to {0}: {1}", UARTPort, e), e);
             }
+
+            Program.DebugConsoleLog(string.Format("Successfully connected to {0}.", UARTPort));
 
             if (this.pendingWork != null)
             {

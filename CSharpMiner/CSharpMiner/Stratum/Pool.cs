@@ -366,7 +366,7 @@ namespace CSharpMiner.Stratum
         {
             Program.DebugConsoleLog(string.Format("Command: {0}", command.Method));
 
-            switch(command.Method)
+            switch(command.Method.Trim())
             {
                 case Command.NotifyCommandString:
                     Program.DebugConsoleLog(string.Format("Got Work from {0}!", this.Url));
@@ -385,6 +385,10 @@ namespace CSharpMiner.Stratum
                     Program.DebugConsoleLog(string.Format("Got Diff: {0} from {1}", command.Params[0], this.Url));
 
                     this.Diff = (int)command.Params[0];
+                    break;
+
+                default:
+                    Program.DebugConsoleLog(string.Format("Unrecognized command: {0}", command.Method));
                     break;
             }
         }
