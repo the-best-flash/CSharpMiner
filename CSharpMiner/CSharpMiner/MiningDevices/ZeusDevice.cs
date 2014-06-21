@@ -146,7 +146,7 @@ namespace MiningDevice
             if(currentWork != null)
             {
                 ConsoleColor defaultColor = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
                 Program.DebugConsoleLog(string.Format("Submitting {0} for job {1}.",HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")));
                 Console.ForegroundColor = defaultColor;
                 _submitWork(currentWork, HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet)), this.Id);

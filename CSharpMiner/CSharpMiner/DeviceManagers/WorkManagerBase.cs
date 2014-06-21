@@ -50,11 +50,6 @@ namespace DeviceManager
                 // Pool asked us to toss out our old work
                 if (poolWorkData[8].Equals(true))
                 {
-                    ConsoleColor curColor = Console.ForegroundColor;
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Program.DebugConsoleLog("New block!");
-                    Console.ForegroundColor = curColor;
-
                     currentWork = newWork;
                     nextWork = newWork;
 

@@ -37,6 +37,9 @@ namespace CSharpMiner.Stratum
         public int Rejected { get; private set; }
 
         [IgnoreDataMember]
+        public int NewBlocks { get; private set; }
+
+        [IgnoreDataMember]
         public int Diff { get; private set; }
 
         [IgnoreDataMember]
@@ -129,6 +132,7 @@ namespace CSharpMiner.Stratum
         private void Connect()
         {
             WorkSubmitIdQueue = Queue.Synchronized(new Queue());
+            this.NewBlocks = 0;
 
             this.Running = true;
             this.Alive = false;
@@ -379,6 +383,15 @@ namespace CSharpMiner.Stratum
             {
                 case Command.NotifyCommandString:
                     Program.DebugConsoleLog(string.Format("Got Work from {0}!", this.Url));
+
+                    if (command.Params.Length >= 9 && command.Params[8] != null && command.Params[8].Equals(true))
+                    {
+                        this.NewBlocks++;
+                        ConsoleColor curColor = Console.ForegroundColor;
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                        Program.DebugConsoleLog(string.Format("New block! ({0})", this.NewBlocks));
+                        Console.ForegroundColor = curColor;
+                    }
 
                     if (this.Alive && this._newWork != null)
                     {
