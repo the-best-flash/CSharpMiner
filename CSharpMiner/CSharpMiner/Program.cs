@@ -35,60 +35,92 @@ namespace CSharpMiner
 
         static void Main(string[] args)
         {
-            if(args.Length != 1)
+            if(args.Length < 1 || args.Length > 2)
             {
                 WriteUsage();
                 return;
             }
 
-            DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(JsonConfiguration), GetKnownTypes());
-            JsonConfiguration config = null;
+            bool loop = (args.Length != 2 || args[2].ToLower().Trim() != "false");
 
-            try
+            do
             {
-                using (var inputFile = File.OpenRead(args[0]))
+                JsonConfiguration config = null;
+
+                try
                 {
-                    config = jsonSerializer.ReadObject(inputFile) as JsonConfiguration;
+                    DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(JsonConfiguration), GetKnownTypes());
+
+                    try
+                    {
+                        using (var inputFile = File.OpenRead(args[0]))
+                        {
+                            config = jsonSerializer.ReadObject(inputFile) as JsonConfiguration;
+                        }
+                    }
+                    catch (FileNotFoundException e)
+                    {
+                        Console.WriteLine("Configuration file not found. {0}", args[0]);
+                        loop = false; // We cannot recover
+                        throw new FileNotFoundException(string.Format("Configuration file not found. {0}", args[0]), e);
+                    }
+                    catch (SerializationException e)
+                    {
+                        Console.WriteLine("There was an error loading the configuration file:");
+                        if (e.InnerException != null)
+                        {
+                            Console.WriteLine(e.InnerException.Message);
+                        }
+                        else
+                        {
+                            Console.WriteLine(e);
+                        }
+                        loop = false; // We cannot recover
+                        throw new SerializationException("There was an error loading the configuration file:", e);
+                    }
+
+                    foreach (IMiningDeviceManager m in config.Managers)
+                    {
+                        m.Start();
+                    }
+
+                    while (Console.ReadKey().Key != ConsoleKey.D)
+                    {
+                        // Wait for user to press D to disconnect from pool
+                        loop = false;
+                    }
                 }
-            }
-            catch (FileNotFoundException)
-            {
-                Console.WriteLine("Configuration file not found. {0}", args[0]);
-                return;
-            }
-            catch(SerializationException e)
-            {
-                Console.WriteLine("There was an error loading the configuration file:");
-                if (e.InnerException != null)
+                catch (Exception e)
                 {
-                    Console.WriteLine(e.InnerException.Message);
-                }
-                else
-                {
+                    using(StreamWriter errLog = new StreamWriter(File.Open("log.err", FileMode.Append)))
+                    {
+                        errLog.WriteLine("Exception caught at {0}.", DateTime.Now);
+                        errLog.WriteLine(e);
+                        errLog.WriteLine();
+                    }
+
+                    ConsoleColor defaultColor = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("There was an error. It has been logged to 'log.err'. More details below:");
+                    Console.ForegroundColor = defaultColor;
                     Console.WriteLine(e);
                 }
-                return;
-            }
-
-            foreach(IMiningDeviceManager m in config.Managers)
-            {
-                m.Start();
-            }
-
-            while(Console.ReadKey().Key != ConsoleKey.D)
-            {
-                // Wait for user to press D to disconnect from pool
-            }
-
-            foreach (IMiningDeviceManager m in config.Managers)
-            {
-                m.Stop();
-            }
+                finally
+                {
+                    if (config != null)
+                    {
+                        foreach (IMiningDeviceManager m in config.Managers)
+                        {
+                            m.Stop();
+                        }
+                    }
+                }
+            }while(loop);
         }
 
         static void WriteUsage()
         {
-            Console.WriteLine("CSharpMiner.exe <Configuration File Path>");
+            Console.WriteLine("CSharpMiner.exe <Configuration File Path> [true|false]");
         }
     }
 }
