@@ -61,7 +61,7 @@ namespace MiningDevice
             {
                 continueRunning = true;
                 usbPort = new SerialPort(UARTPort, GetBaud());
-                usbPort.DataReceived += DataReceived;
+                //usbPort.DataReceived += DataReceived;
                 usbPort.Open();
             }
             catch (Exception e)
@@ -79,6 +79,16 @@ namespace MiningDevice
                         this.StartWork(pendingWork);
                         pendingWork = null;
                     });
+            }
+
+            while(this.continueRunning)
+            {
+                if(usbPort.BytesToRead > 0)
+                {
+                    DataReceived(usbPort, null);
+                }
+
+                Thread.Sleep(100);
             }
         }
 

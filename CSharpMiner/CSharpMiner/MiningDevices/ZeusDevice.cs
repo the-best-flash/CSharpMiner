@@ -141,7 +141,7 @@ namespace MiningDevice
                             ProcessEventPacket(EventPacket);
                         }
                     });
-            }
+            } 
         }
 
         private void ProcessEventPacket(byte[] packet)
