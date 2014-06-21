@@ -263,6 +263,8 @@ namespace CSharpMiner.Stratum
                     string str = s + "\n";
                     MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
 
+                    Console.WriteLine("Processing: {0}", str);
+
                     if (str.Contains("\"result\""))
                     {
                         Response response = null;
