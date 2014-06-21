@@ -256,20 +256,30 @@ namespace CSharpMiner.Stratum
         {
             Response result = null;
 
-            foreach (string str in commands)
+            foreach (string s in commands)
             {
-                if (!string.IsNullOrEmpty(str.Trim()))
+                if (!string.IsNullOrEmpty(s.Trim()))
                 {
+                    string str = s + "\n";
                     MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
-
-                    Console.WriteLine("Processing command: {0}", str);
 
                     if (str.Contains("\"result\""))
                     {
-                        Response response = Response.Deserialize(memStream);
+                        Response response = null;
+
+                        try
+                        {
+                            response = Response.Deserialize(memStream);
+                        }
+                        catch
+                        {
+                            Console.WriteLine("Deserialization failed for: {0}", str);
+                            throw;
+                            //response = new Response(str);
+                        }
 
                         // This is the response we're looking for
-                        if (id == (int)response.Id)
+                        if (response.Id == id)
                         {
                             result = response;
                         }
@@ -279,21 +289,19 @@ namespace CSharpMiner.Stratum
                             {
                                 if (WorkSubmitIdQueue.Count > 0)
                                 {
-                                    Object commandId = ((Command)WorkSubmitIdQueue.Peek()).Id;
-
-                                    if (commandId != null && (int)response.Id == (int)commandId)
+                                    if (response.Id == ((Command)WorkSubmitIdQueue.Peek()).Id)
                                     {
                                         processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
                                     }
-                                    else if (commandId == null || (int)response.Id > (int)commandId) // Something odd happened, we probably missed some responses or the server decided not to send them
+                                    else if (response.Id > ((Command)WorkSubmitIdQueue.Peek()).Id) // Something odd happened, we probably missed some responses or the server decided not to send them
                                     {
-                                        while (WorkSubmitIdQueue.Count > 0 && (int)response.Id > (int)commandId)
+                                        while (WorkSubmitIdQueue.Count > 0 && response.Id > ((Command)WorkSubmitIdQueue.Peek()).Id)
                                         {
                                             // Get rid of the old stuff
                                             processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response, true);
                                         }
 
-                                        if (WorkSubmitIdQueue.Count > 0 && (int)response.Id == (int)commandId)
+                                        if (WorkSubmitIdQueue.Count > 0 && response.Id == ((Command)WorkSubmitIdQueue.Peek()).Id)
                                         {
                                             processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
                                         }

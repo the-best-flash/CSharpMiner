@@ -39,7 +39,7 @@ namespace CSharpMiner.Stratum
         }
 
         [DataMember(Name = "id")]
-        public Object Id { get; set; }
+        public Nullable<int> Id { get; set; }
 
         [DataMember(Name = "method")]
         public string Method { get; set; }
