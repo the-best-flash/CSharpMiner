@@ -51,6 +51,134 @@ namespace CSharpMiner.Stratum
         {
         }
 
+        /// <summary>
+        /// Fall back to manually parsing if the JSON parser fails in mono
+        /// </summary>
+        /// <param name="str"></param>
+        public Command(string str)
+        {
+            int firstColon = str.IndexOf(':') + 1;
+            string idStr = str.Substring(firstColon, str.IndexOf(',') - firstColon);
+
+            if (!idStr.Contains("null"))
+            {
+                int i;
+                if (!int.TryParse(idStr, out i))
+                {
+                    throw new InvalidDataException(string.Format("Error parsing command: {0}", str));
+                }
+
+                Id = i;
+            }
+            else
+            {
+                Id = null;
+            }
+
+            int methodPos = str.IndexOf("method");
+            string methodStr = str.Substring(methodPos, str.IndexOf("\"params\"") - methodPos);
+
+            int firstQuote = methodStr.IndexOf('"') + 1;
+            methodStr = methodStr.Substring(firstQuote, methodStr.LastIndexOf('"') - firstQuote);
+            Method = methodStr;
+            
+            string [] paramToken = new []{"\"params\":"};
+
+            string[] split = str.Split(paramToken, StringSplitOptions.None);
+
+            if(split.Length < 2)
+            {
+                throw new InvalidDataException(string.Format("Error parsing {0}", str));
+            }
+
+            Params = ParseObjectArray(split[1]).Item1;
+        }
+
+        private Tuple<Object[], string> ParseObjectArray(string str)
+        {
+            List<Object> arr = new List<object>();
+
+            str = str.Trim();
+
+            if(!str.StartsWith("["))
+            {
+                throw new ArgumentException("Invalid object array string: {0}", str);
+            }
+
+            str = str.Substring(1);
+
+            while (!string.IsNullOrEmpty(str))
+            {
+                string startString = str;
+
+                if (str[0] == '[')
+                {
+                    Tuple<Object[], string> result = ParseObjectArray(str);
+                    arr.Add(result.Item1);
+                    str = result.Item2;
+                }
+                else if(str[0] == ']')
+                {
+                    return new Tuple<Object[], string>(arr.ToArray(), str);
+                }
+                else
+                {
+                    string item = null;
+                    int splitIdx = 0;
+                    bool isComma = false;
+
+                    if (str.Contains(',') && str.IndexOf(',') < str.IndexOf(']'))
+                    {
+                        splitIdx = str.IndexOf(',');
+                        isComma = true;
+                    }
+                    else
+                    {
+                        splitIdx = str.IndexOf(']');
+                    }
+
+                    item = str.Substring(0, splitIdx).Trim();
+                    str = str.Substring(splitIdx + (isComma? 1 : 0)); // Keep the ']' but get rid of the ','
+
+                    item = item.Trim();
+          
+                    if(item[0] == '"')
+                    {
+                        arr.Add(item.Replace("\"", ""));
+                    }
+                    else if(item.Contains("true"))
+                    {
+                        arr.Add(true);
+                    }
+                    else if (item.Contains("false"))
+                    {
+                        arr.Add(false);
+                    }
+                    else if(item.Contains("null"))
+                    {
+                        arr.Add(null);
+                    }
+                    else
+                    {
+                        int i;
+                        if(!int.TryParse(item, out i))
+                        {
+                            throw new InvalidDataException(string.Format("Failed to parse {0} in {1}", item, str));
+                        }
+
+                        arr.Add(i);
+                    }
+                }
+
+                if(str == startString)
+                {
+                    throw new InvalidDataException(string.Format("Infinate loop Error Parsing {0}", str));
+                }
+            }
+
+            return null;
+        }
+
         public Command(int id, string method, string[] paramArr)
         {
             Id = id;
