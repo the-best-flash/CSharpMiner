@@ -127,6 +127,8 @@ namespace MiningDevice
 
         protected override void DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
+            Program.DebugConsoleLog("Data Recieved!");
+
             SerialPort sp = sender as SerialPort;
 
             if(sp != null)
