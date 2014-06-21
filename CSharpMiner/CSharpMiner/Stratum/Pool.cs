@@ -195,8 +195,10 @@ namespace CSharpMiner.Stratum
                     this.Alive = true;
                 }
 
+                #if DEBUG
                 Program.DebugConsoleLog(string.Format("Extranonce1: {0}", data[1]));
                 Program.DebugConsoleLog(string.Format("Extranonce2_size: {0}", data[2]));
+                #endif
 
                 string[] param = {this.Username, this.Password};
 
@@ -359,12 +361,22 @@ namespace CSharpMiner.Stratum
             Console.ForegroundColor = (response.Data != null && response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
             Console.Write((response.Data != null && response.Data.Equals(true) ? "ACCEPTED" : "REJECTED"));
             Console.ForegroundColor = defaultColor;
-            Console.WriteLine();
+            Console.Write(" ( ");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write(this.Accepted);
+            Console.ForegroundColor = defaultColor;
+            Console.Write(" : ");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write(this.Rejected);
+            Console.ForegroundColor = defaultColor;
+            Console.WriteLine(" )");
         }
 
         private void processCommand(Command command)
         {
+            #if DEBUG
             Program.DebugConsoleLog(string.Format("Command: {0}", command.Method));
+            #endif
 
             switch(command.Method.Trim())
             {

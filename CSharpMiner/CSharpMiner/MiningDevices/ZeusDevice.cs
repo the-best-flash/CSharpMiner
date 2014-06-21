@@ -97,7 +97,9 @@ namespace MiningDevice
                 byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
                 CopyToByteArray(headerBytes, offset, cmd);
 
+                #if DEBUG
                 Program.DebugConsoleLog(string.Format("{0} getting: {1}", UARTPort, HexConversionHelper.ConvertToHexString(cmd)));
+                #endif
 
                 // Send work to the miner
                 this.currentWork = work;
@@ -133,14 +135,11 @@ namespace MiningDevice
 
             if(sp != null)
             {
-                Task.Factory.StartNew(() =>
-                    {
-                        while (sp.BytesToRead >= 4)
-                        {
-                            sp.Read(EventPacket, 0, 4);
-                            ProcessEventPacket(EventPacket);
-                        }
-                    });
+                while (sp.BytesToRead >= 4)
+                {
+                    sp.Read(EventPacket, 0, 4);
+                    ProcessEventPacket(EventPacket);
+                }
             } 
         }
 
