@@ -381,7 +381,7 @@ namespace CSharpMiner.Stratum
                 new Object[] { this.Accepted, ConsoleColor.Green, false },
                 new Object[] { " : ", false},
                 new Object[] { this.Rejected, ConsoleColor.Red, false },
-                new Object[] { " )" }
+                new Object[] { " )", true }
             });
         }
 
