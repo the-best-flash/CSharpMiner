@@ -19,7 +19,6 @@ namespace CSharpMiner
     {
         public const string VersionString = "0.0.1";
 
-        [Conditional("DEBUG")]
         public static void DebugConsoleLog(Object thing)
         {
             Console.WriteLine(thing);
