@@ -269,7 +269,7 @@ namespace CSharpMiner.Stratum
                         Response response = Response.Deserialize(memStream);
 
                         // This is the response we're looking for
-                        if (response.Id == id)
+                        if (id == (int)response.Id)
                         {
                             result = response;
                         }
@@ -281,19 +281,19 @@ namespace CSharpMiner.Stratum
                                 {
                                     Object commandId = ((Command)WorkSubmitIdQueue.Peek()).Id;
 
-                                    if (commandId != null && response.Id == (int)commandId)
+                                    if (commandId != null && (int)response.Id == (int)commandId)
                                     {
                                         processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
                                     }
-                                    else if (commandId == null || response.Id > (int)commandId) // Something odd happened, we probably missed some responses or the server decided not to send them
+                                    else if (commandId == null || (int)response.Id > (int)commandId) // Something odd happened, we probably missed some responses or the server decided not to send them
                                     {
-                                        while (WorkSubmitIdQueue.Count > 0 && response.Id > (int)commandId)
+                                        while (WorkSubmitIdQueue.Count > 0 && (int)response.Id > (int)commandId)
                                         {
                                             // Get rid of the old stuff
                                             processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response, true);
                                         }
 
-                                        if (WorkSubmitIdQueue.Count > 0 && response.Id == (int)commandId)
+                                        if (WorkSubmitIdQueue.Count > 0 && (int)response.Id == (int)commandId)
                                         {
                                             processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
                                         }

@@ -39,7 +39,7 @@ namespace CSharpMiner.Stratum
         }
 
         [DataMember(Name = "id")]
-        public int Id { get; set; }
+        public Object Id { get; set; }
 
         [DataMember(Name = "result")]
         public Object Data { get; set; }
