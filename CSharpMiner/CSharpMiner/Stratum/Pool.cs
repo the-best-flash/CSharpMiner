@@ -471,7 +471,7 @@ namespace CSharpMiner.Stratum
             }
             else
             {
-                LogHelper.ConsoleLogAsync(string.Format("Rejected with {0}", (response.Error != null ? response.Error[1] : "null")), ConsoleColor.Magenta, LogVerbosity.Verbose);
+                LogHelper.ConsoleLogAsync(string.Format("Rejected with {0}", (response.Error != null && response.Error.Length >= 2 ? response.Error[1] : "null")), ConsoleColor.Magenta, LogVerbosity.Verbose);
                 Rejected++;
             }
 
