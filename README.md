@@ -146,6 +146,10 @@ Planned Features:
     An ASP.NET wrapper that will expose an HTTP interface for changing settings
     Ability to connect both SHA265 and Scrypt ASICs at once.
     
+Known Issues:
+
+    With Zeus/GAW miners On very low difficluties it becomes likely that all four bytes won't be written and the underlying USB stream will get out of sync if a hardware error occurs. This will cause all the next shares to be invalid until the bytestream can be synchronized again. Hopefully I will be able to fix this by detecting consecutive invalid shares and resetting the bytestream once I implement nonce checking.
+    Random pool disconnects. I'm not sure if this is my Raspberry Pi or the null object reference in the Pool.Connect() function.
 
 Why make this? 
 
