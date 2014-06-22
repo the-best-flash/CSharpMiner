@@ -38,6 +38,9 @@ namespace DeviceLoader
         [DataMember(Name = "clock")]
         public int LtcClk { get; set; }
 
+        [DataMember(Name = "timeout")]
+        public int WatchdogTimeout { get; set; }
+
         [IgnoreDataMember]
         public int Id { get; set; }
 
@@ -65,7 +68,7 @@ namespace DeviceLoader
 
             foreach(string p in Ports)
             {
-                devices.Add(new ZeusDevice(p, LtcClk, Cores));
+                devices.Add(new ZeusDevice(p, LtcClk, Cores, WatchdogTimeout));
             }
 
             return devices;

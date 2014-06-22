@@ -82,11 +82,12 @@ namespace MiningDevice
 
         private PoolWork currentWork = null;
 
-        public ZeusDevice(string port, int clk, int cores)
+        public ZeusDevice(string port, int clk, int cores, int watchdogTimeout)
         {
             UARTPort = port;
             LtcClk = clk;
             Cores = cores;
+            WatchdogTimeout = watchdogTimeout;
         }
 
         public override void StartWork(PoolWork work)
