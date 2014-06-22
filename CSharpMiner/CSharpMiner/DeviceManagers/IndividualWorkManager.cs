@@ -28,22 +28,27 @@ namespace DeviceManager
 
         private int startingNonce = 0;
 
-        protected override void StartWork(PoolWork work, bool restartWork)
+        protected override void StartWork(PoolWork work, int deviceId, bool restartWork)
         {
             startingNonce = Random.Next();
-            StartWorking(work.CommandArray, work.Extranonce1, work.Diff);
+            StartWorkOnDevice(work, deviceId, restartWork);
+        }
+
+        private void StartWorkOnDevice(PoolWork work, int deviceId, bool restartWork)
+        {
+            if (!restartWork && deviceId >= 0 && deviceId < this.loadedDevices.Count)
+            {
+                StartWorkOnDevice(this.loadedDevices[deviceId], work.CommandArray, work.Extranonce1, work.Diff);
+            }
+            else if(restartWork)
+            {
+                StartWorking(work.CommandArray, work.Extranonce1, work.Diff);
+            }
         }
 
         protected override void NoWork(PoolWork oldWork, int deviceId)
         {
-            if (deviceId > 0 && deviceId < this.loadedDevices.Count)
-            {
-                StartWorkOnDevice(this.loadedDevices[deviceId], oldWork.CommandArray, oldWork.Extranonce1, oldWork.Diff);
-            }
-            else
-            {
-                StartWorking(oldWork.CommandArray, oldWork.Extranonce1, oldWork.Diff);
-            }
+            StartWorkOnDevice(oldWork, deviceId, false);
         }
 
         private void StartWorking(object[] param, string extranonce1, int diff)

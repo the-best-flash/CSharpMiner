@@ -38,7 +38,7 @@ namespace DeviceManager
 
         private int deviceId = 0;
 
-        protected abstract void StartWork(PoolWork work, bool restartAll);
+        protected abstract void StartWork(PoolWork work, int deviceId, bool restartAll);
         protected abstract void NoWork(PoolWork oldWork, int deviceId);
 
         public void NewWork(object[] poolWorkData, int diff)
@@ -54,7 +54,7 @@ namespace DeviceManager
                     nextWork = newWork;
 
                     working = true;
-                    StartWork(newWork, true);
+                    StartWork(newWork, -1, true);
                 }
                 else // We can keep the old work
                 {
@@ -64,7 +64,7 @@ namespace DeviceManager
                         nextWork = newWork;
 
                         working = true;
-                        StartWork(newWork, false);
+                        StartWork(newWork, -1, false);
                     }
                     else
                     {
@@ -99,7 +99,7 @@ namespace DeviceManager
                 // Start working on the last thing the server sent us
                 currentWork = nextWork;
 
-                StartWork(nextWork, false);
+                StartWork(nextWork, deviceId, false);
             }
             else
             {
@@ -110,6 +110,7 @@ namespace DeviceManager
 
         public void RequestWork(int deviceId)
         {
+            LogHelper.ConsoleLogAsync(string.Format("Device {0} requested new work.", deviceId));
             StartWorkOnDevice(this.currentWork, deviceId);
         }
 

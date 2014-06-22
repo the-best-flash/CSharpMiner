@@ -11,7 +11,7 @@ namespace DeviceManager
     [DataContract]
     public class DistributedWorkManager : WorkManagerBase
     {
-        protected override void StartWork(PoolWork work, bool restartWork)
+        protected override void StartWork(PoolWork work, int deviceId, bool restartWork)
         {
             throw new NotImplementedException();
         }
