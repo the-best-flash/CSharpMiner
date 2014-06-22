@@ -96,7 +96,7 @@ namespace DeviceManager
                     NoWork(work);
                 }
             }
-            else if(this.ActivePool != null && !this.ActivePool.Connected)
+            else if(this.ActivePool != null && !this.ActivePool.Connected && !this.ActivePool.Connecting)
             {
                 //Attempt to connect to another pool
                 this.AttemptPoolReconnect();
@@ -214,7 +214,7 @@ namespace DeviceManager
         public void AttemptPoolReconnect()
         {
             // TODO: Handle when all pools are unable to be reached
-            if (this.started && this.ActivePool != null)
+            if (this.started && this.ActivePool != null && !this.ActivePool.Connecting)
             {
                 this.ActivePool.Stop();
                 this.ActivePool = null;

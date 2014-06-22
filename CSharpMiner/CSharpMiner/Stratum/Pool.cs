@@ -71,6 +71,9 @@ namespace CSharpMiner.Stratum
             }
         }
 
+        [IgnoreDataMember]
+        public bool Connecting { get; private set; }
+
         private Queue WorkSubmitIdQueue = null;
         private TcpClient connection = null;
         private Object[] pendingWork = null;
@@ -102,6 +105,8 @@ namespace CSharpMiner.Stratum
         public void Start(Action<Object[], int> newWork, Action disconnected)
         {
             submissionLock = new Object();
+
+            this.Connecting = false;
 
             if(newWork == null)
             {
@@ -146,49 +151,62 @@ namespace CSharpMiner.Stratum
 
         private void Connect()
         {
-            WorkSubmitIdQueue = Queue.Synchronized(new Queue());
-            this.NewBlocks = 0;
-
-            this.Running = true;
-            this.Alive = false;
-
-            this._allowOldWork = true;
-            this.latestWork = null;
-
-            if(connection != null)
-            {
-                this.Stop();
-                connection = null;
-            }
-
-            string[] splitAddress = Url.Split(':');
-
-            if(splitAddress.Length != 3)
-            {
-                Exception e = new StratumConnectionFailureException(string.Format("Incorrect pool address: {0}", Url));
-                LogHelper.LogErrorSecondaryAsync(e);
-                throw e;
-            }
-
-            string hostName = splitAddress[1].Replace("/", "").Trim();
-            
-            int port;
-            if(!int.TryParse(splitAddress[2], out port))
-            {
-                Exception e = new StratumConnectionFailureException(string.Format("Incorrect port format: {0}", splitAddress[1]));
-                LogHelper.LogErrorSecondaryAsync(e);
-                throw e;
-            }
+            this.Connecting = true;
 
             try
             {
-                connection = new TcpClient(hostName, port);
+                WorkSubmitIdQueue = Queue.Synchronized(new Queue());
+                this.NewBlocks = 0;
+
+                this.Running = true;
+                this.Alive = false;
+
+                this._allowOldWork = true;
+                this.latestWork = null;
+
+                if (connection != null)
+                {
+                    this.Stop();
+                    connection = null;
+                }
+
+                string[] splitAddress = Url.Split(':');
+
+                if (splitAddress.Length != 3)
+                {
+                    Exception e = new StratumConnectionFailureException(string.Format("Incorrect pool address: {0}", Url));
+                    LogHelper.LogErrorSecondaryAsync(e);
+                    throw e;
+                }
+
+                string hostName = splitAddress[1].Replace("/", "").Trim();
+
+                int port;
+                if (!int.TryParse(splitAddress[2], out port))
+                {
+                    Exception e = new StratumConnectionFailureException(string.Format("Incorrect port format: {0}", splitAddress[1]));
+                    LogHelper.LogErrorSecondaryAsync(e);
+                    throw e;
+                }
+
+                try
+                {
+                    connection = new TcpClient(hostName, port);
+                }
+                catch (SocketException e)
+                {
+                    Exception exception = new StratumConnectionFailureException(e);
+                    LogHelper.LogErrorSecondaryAsync(exception);
+                    throw exception;
+                }
             }
-            catch(SocketException e)
+            catch
             {
-                Exception exception = new StratumConnectionFailureException(e);
-                LogHelper.LogErrorSecondaryAsync(exception);
-                throw exception;
+                throw;
+            }
+            finally
+            {
+                this.Connecting = false;
             }
 
             if (!connection.Connected)
