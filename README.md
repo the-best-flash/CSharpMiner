@@ -25,13 +25,14 @@ This is in an Alpha, working state. I am using it to mine with some Blizzards on
 
 You can run this on .NET or <a href="http://www.mono-project.com/Main_Page">Mono</a>. Mono can run binaries compiled for .NET, but it is recommended that you use a binary compiled for Mono.
 
-I will be adding precompiled binaries when things are a bit more stable, but if you want to compile it yourself you can use the steps below.
-
 If you wish to donate you can donate to the following addresses:
 
-    blar (BTC)
-    blar (LTC)
-    blar (DOGE)
+    1DguxkZenDbFY2xMSrYuJBiuYteH6vQTCu (BTC)
+    LX68osgfBkDk3r3tS7hYi8u2cVU2omZc2f (LTC)
+    DAF4pCnyiMVrkAGkmnxk4fzKS2mNjsDpD4 (DOGE)
+
+I will be adding precompiled binaries when things are a bit more stable, but if you want to compile it yourself you can use the steps below.
+
 
 To compile for .NET, use <a href="http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx">Visual Studio Express 2013 for Desktop</a> on Windows:
     
