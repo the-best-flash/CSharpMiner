@@ -55,6 +55,22 @@ namespace CSharpMiner.Stratum
         [IgnoreDataMember]
         public Thread Thread { get; private set; }
 
+        [IgnoreDataMember]
+        public bool Connected
+        {
+            get
+            {
+                if(this.connection != null)
+                {
+                    return this.connection.Connected;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
         private Queue WorkSubmitIdQueue = null;
         private TcpClient connection = null;
         private Object[] pendingWork = null;
@@ -252,6 +268,12 @@ namespace CSharpMiner.Stratum
 
         public void SubmitWork(string jobId, string extranonce2, string ntime, string nonce)
         {
+            if(this.connection == null || !this.connection.Connected)
+            {
+                LogHelper.ConsoleLogErrorAsync("Attempting to submit share to disconnected pool.");
+                return;
+            }
+
             if(!this._allowOldWork && (this.latestWork == null || jobId != this.latestWork.JobId))
             {
                 LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", jobId), ConsoleColor.Magenta, LogVerbosity.Verbose);

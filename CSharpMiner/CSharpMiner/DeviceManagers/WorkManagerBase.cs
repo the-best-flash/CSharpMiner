@@ -1,4 +1,5 @@
 ﻿using CSharpMiner;
+using CSharpMiner.Helpers;
 using CSharpMiner.Stratum;
 using DeviceLoader;
 using MiningDevice;
@@ -76,7 +77,7 @@ namespace DeviceManager
 
         public void SubmitWork(PoolWork work, string nonce, int deviceId)
         {
-            if (started && this.ActivePool != null && currentWork != null && this._submissionQueue != null)
+            if (started && this.ActivePool != null && currentWork != null && this._submissionQueue != null && this.ActivePool.Connected)
             {
                 _submissionQueue.Enqueue(deviceId);
 
@@ -94,6 +95,11 @@ namespace DeviceManager
                     working = false;
                     NoWork(work);
                 }
+            }
+            else if(this.ActivePool != null && !this.ActivePool.Connected)
+            {
+                //Attempt to connect to another pool
+                this.AttemptPoolReconnect();
             }
         }
 
@@ -196,12 +202,24 @@ namespace DeviceManager
 
         public void PoolDisconnected()
         {
-            // TODO: Handle when all pools are unable to be reached
-            if(this.started && this.ActivePool != null)
+            if (this.ActivePool != null)
             {
+                LogHelper.ConsoleLogErrorAsync(string.Format("Disconnected from pool {0}", this.ActivePool.Url));
+                LogHelper.LogErrorAsync(string.Format("Disconnected from pool {0}", this.ActivePool.Url));
+            }
+
+            AttemptPoolReconnect();
+        }
+
+        public void AttemptPoolReconnect()
+        {
+            // TODO: Handle when all pools are unable to be reached
+            if (this.started && this.ActivePool != null)
+            {
+                this.ActivePool.Stop();
                 this.ActivePool = null;
 
-                if(this.ActivePoolId + 1 < this.Pools.Length)
+                if (this.ActivePoolId + 1 < this.Pools.Length)
                 {
                     this.ActivePoolId++;
                 }
@@ -211,6 +229,7 @@ namespace DeviceManager
                 }
 
                 this.ActivePool = this.Pools[this.ActivePoolId];
+                LogHelper.ConsoleLog(string.Format("Attempting to connect to pool {0}", this.ActivePool.Url));
                 this.ActivePool.Start(this.NewWork, this.PoolDisconnected);
             }
         }
