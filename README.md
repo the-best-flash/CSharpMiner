@@ -19,11 +19,19 @@ CSharpMiner
 
 C# (Mono/.NET) crypto-currency mining stratum client for use with various kinds of ASICs.
 
-This is in an Alpha working state. I am using it to mine with some Blizzards on a Raspberry Pi right now, however I have not run it for over 24 hours without stop yet.
+A full description of why I made this and what benefits I hope it will have are at the end of this file. In short: it supports mining with different kind of ASICs at the same time and can support mining with ASICs for SHA256 (BTC) or Scrypt (LTC) at the same time, and support for more ASICs can be added by copying a 'plugin' to a folder.
 
-You can run this on .NET or <a href="http://www.mono-project.com/Main_Page">Mono</a>. Mono can run binaries compiled for .NET, but it is recommended that you use a binary compiled for Mono. 
+This is in an Alpha, working state. I am using it to mine with some Blizzards on a Raspberry Pi right now, however I have not run it for over 24 hours without stop yet.
+
+You can run this on .NET or <a href="http://www.mono-project.com/Main_Page">Mono</a>. Mono can run binaries compiled for .NET, but it is recommended that you use a binary compiled for Mono.
 
 I will be adding precompiled binaries when things are a bit more stable, but if you want to compile it yourself you can use the steps below.
+
+If you wish to donate you can donate to the following addresses:
+
+    blar (BTC)
+    blar (LTC)
+    blar (DOGE)
 
 To compile for .NET, use <a href="http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx">Visual Studio Express 2013 for Desktop</a> on Windows:
     
@@ -135,4 +143,17 @@ Planned Features:
     Exposing device stats through properties (Right now they may be difficlut to get from the mining manager class)
     An ASP.NET wrapper that will expose an HTTP interface for queying mining stats using HTTP requests
     An ASP.NET wrapper that will expose an HTTP interface for changing settings
+    Ability to connect both SHA265 and Scrypt ASICs at once.
     
+
+Why make this? 
+
+Currently every scrypt asic company seems to have their own version of open source mining programs that users need to download to use. As a result users need to have one mining program per ASIC type. This software aims to make the creation of 'plugins' or 'modules' simple. So companies or the mining community can make a 'plugin' to support new ASICs and the end user can simply place the 'plugin' into the specified folder and their mining program can support the new ASIC without needing to recompile.
+    
+This project also aims to create one mining program that can control a large number of different kinds of ASICs for different algorithms at once. The current plan is to support Scrypt and SHA265 mining and to provide support for 'plugins' to handle other algorithms. Ideally this would result in one program that can control any ASIC for any algorithm, and could be extended and customized by the community without requiring a full recompile of the code. 
+    
+Another goal of this project was to create a mining program that could be run behind a RESTful HTTP service that would allow web interfaces to get mining statistics and make configuration changes via HTTP requests. This would allow the statistic analysis and logging code to be done from a device separate from the one that is running the mining software. If a Raspberry PI was used, this would provide a benefit by decreasing the overhead of using a web API.
+    
+The final goal of this project was to create a mining program written in an Object Oriented language that was easy to modify and compile. Part of this goal is to attempt to make the program without using any libraries outside of the libraries provided as part of the .NET and Mono runtime.
+
+Also, I like programming things in my spare time and I had some mining ASICs. As a result it made sense to write a ASIC mining interface.
