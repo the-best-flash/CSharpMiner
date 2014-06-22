@@ -124,6 +124,7 @@ namespace CSharpMiner.Stratum
         public void Start(Action<Object[], int> newWork, Action disconnected)
         {
             submissionLock = new Object();
+            _writeLock = new Object();
 
             this.Connecting = false;
 
@@ -245,7 +246,9 @@ namespace CSharpMiner.Stratum
                 Command subscribeCommand = Command.SubscribeCommand;
                 subscribeCommand.Id = this.RequestId;
 
-                subscribeCommand.Serialize(netStream);
+                MemoryStream memStream = new MemoryStream();
+                subscribeCommand.Serialize(memStream);
+                this.SendData(memStream);
 
                 Response response = this.waitForResponse();
 
@@ -280,7 +283,9 @@ namespace CSharpMiner.Stratum
                 string[] param = { this.Username, this.Password };
 
                 Command command = new Command(this.RequestId, Command.AuthorizationCommandString, param);
-                command.Serialize(netStream);
+                memStream = new MemoryStream();
+                command.Serialize(memStream);
+                this.SendData(memStream);
 
                 Response successResponse = this.waitForResponse();
 
@@ -308,6 +313,18 @@ namespace CSharpMiner.Stratum
                 if (this._disconnected != null)
                 {
                     this._disconnected();
+                }
+            }
+        }
+
+        private object _writeLock = null;
+        private void SendData(MemoryStream stream)
+        {
+            if(_writeLock != null && connection != null && connection.Connected)
+            {
+                lock(_writeLock)
+                {
+                    stream.WriteTo(connection.GetStream());
                 }
             }
         }
@@ -342,7 +359,9 @@ namespace CSharpMiner.Stratum
                         {
                             if (this.connection != null && this.connection.Connected)
                             {
-                                command.Serialize(this.connection.GetStream());
+                                MemoryStream memStream = new MemoryStream();
+                                command.Serialize(memStream);
+                                this.SendData(memStream);
                             }
                         }
                         catch (Exception e)
