@@ -175,7 +175,7 @@ namespace MiningDevice
                         DataReceived(usbPort, null);
                     }
 
-                    Thread.Sleep(100);
+                    Thread.Sleep(10);
                 }
             }
             catch (Exception e)
