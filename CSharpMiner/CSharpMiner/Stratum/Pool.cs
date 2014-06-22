@@ -221,9 +221,7 @@ namespace CSharpMiner.Stratum
                     }
                     catch (SocketException e)
                     {
-                        Exception exception = new StratumConnectionFailureException(e);
-                        LogHelper.LogErrorSecondaryAsync(exception);
-                        throw exception;
+                        throw new StratumConnectionFailureException(e);
                     }
                 }
                 catch
@@ -251,7 +249,12 @@ namespace CSharpMiner.Stratum
 
                 Response response = this.waitForResponse();
 
-                Object[] data = response.Data as Object[];
+                Object[] data = (response != null ? response.Data as Object[] : null);
+
+                if(data == null)
+                {
+                    throw new StratumConnectionFailureException("Recieved null response from server subscription command.");
+                }
 
                 this.Extranonce1 = data[1] as String;
                 this.Extranonce2Size = (int)data[2];
@@ -281,7 +284,7 @@ namespace CSharpMiner.Stratum
 
                 Response successResponse = this.waitForResponse();
 
-                if (!successResponse.Data.Equals(true))
+                if (successResponse.Data == null || !successResponse.Data.Equals(true))
                 {
                     this.Alive = false;
 
