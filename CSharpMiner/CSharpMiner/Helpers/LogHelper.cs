@@ -18,6 +18,7 @@ namespace CSharpMiner.Helpers
 
     public static class LogHelper
     {
+        private static string _secondaryErrorLogPath = "log_secondary.err";
         private static string _errorLogPath = "log.err";
         public static string ErrorLogFilePath
         {
@@ -29,6 +30,15 @@ namespace CSharpMiner.Helpers
             set
             {
                 _errorLogPath = value;
+
+                if (_secondaryErrorLogPath.Contains('.'))
+                {
+                    _secondaryErrorLogPath = value.Insert(value.LastIndexOf('.'), "_secondary");
+                }
+                else
+                {
+                    _secondaryErrorLogPath = value + "_secondary";
+                }
             }
         }
 
@@ -295,6 +305,29 @@ namespace CSharpMiner.Helpers
         }
 
         [Conditional("DEBUG")]
+        public static void DebugLogErrorSecondary(Object error)
+        {
+            LogErrorSecondary(error);
+        }
+
+        public static void LogErrorSecondary(Object error)
+        {
+            lock (errorLogLock)
+            {
+                using (StreamWriter errLog = new StreamWriter(File.Open(_secondaryErrorLogPath, FileMode.Append)))
+                {
+                    errLog.WriteLine("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now);
+                    errLog.WriteLine(error);
+                    errLog.WriteLine();
+                }
+
+                ConsoleLog(string.Format("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now));
+                ConsoleLog(error);
+                ConsoleLog();
+            }
+        }
+
+        [Conditional("DEBUG")]
         public static void DebugLogErrorAsync(Object error)
         {
             LogErrorAsync(error);
@@ -306,6 +339,20 @@ namespace CSharpMiner.Helpers
             {
                 LogError(error);
             });
+        }
+
+        [Conditional("DEBUG")]
+        public static void DebugLogErrorSecondaryAsync(Object error)
+        {
+            LogErrorSecondaryAsync(error);
+        }
+
+        public static void LogErrorSecondaryAsync(Object error)
+        {
+            Task.Factory.StartNew(() =>
+                {
+                    LogErrorSecondary(error);
+                });
         }
     }
 }

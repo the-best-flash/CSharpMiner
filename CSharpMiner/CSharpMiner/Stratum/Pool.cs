@@ -62,7 +62,11 @@ namespace CSharpMiner.Stratum
         private CancellationTokenSource threadStopping = null;
         private Action _disconnected = null;
 
+        private PoolWork latestWork = null;
+
         private Object submissionLock = null;
+
+        private bool _allowOldWork = true;
 
         public Pool()
             : this("", "", "")
@@ -120,10 +124,7 @@ namespace CSharpMiner.Stratum
 
                 connection = null;
 
-                if (_disconnected != null)
-                {
-                    _disconnected();
-                }
+                latestWork = null;
             }
         }
 
@@ -135,9 +136,13 @@ namespace CSharpMiner.Stratum
             this.Running = true;
             this.Alive = false;
 
+            this._allowOldWork = true;
+            this.latestWork = null;
+
             if(connection != null)
             {
                 this.Stop();
+                connection = null;
             }
 
             string[] splitAddress = Url.Split(':');
@@ -218,10 +223,16 @@ namespace CSharpMiner.Stratum
                     throw new StratumConnectionFailureException(string.Format("Pool Username or Password rejected with: {0}", successResponse.Error));
                 }
             }
-            catch
+            catch (Exception e)
             {
+                LogHelper.LogErrorSecondaryAsync(e);
+
                 this.Stop();
-                throw;
+
+                if(this._disconnected != null)
+                {
+                    this._disconnected();
+                }
             }
 
             // Enter loop to monitor pool stratum
@@ -233,6 +244,12 @@ namespace CSharpMiner.Stratum
 
         public void SubmitWork(string jobId, string extranonce2, string ntime, string nonce)
         {
+            if(!this._allowOldWork && (this.latestWork == null || jobId != this.latestWork.JobId))
+            {
+                LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", jobId), LogVerbosity.Verbose);
+                return;
+            }
+
             if (WorkSubmitIdQueue != null && submissionLock != null)
             {
                 // TODO: handle null connection
@@ -243,7 +260,29 @@ namespace CSharpMiner.Stratum
                 {
                     command = new Command(this.RequestId, Command.SubmitCommandString, param);
                     this.RequestId++;
-                    command.Serialize(this.connection.GetStream());
+
+                    try
+                    {
+                        if (this.connection != null && this.connection.Connected)
+                        {
+                            command.Serialize(this.connection.GetStream());
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        LogHelper.LogErrorSecondaryAsync(e);
+                    }
+                    finally
+                    {
+                        if ((this.connection == null || !this.connection.Connected) && this.Running)
+                        {
+                            if (this._disconnected != null)
+                            {
+                                this.Stop();
+                                this._disconnected();
+                            }
+                        }
+                    }
                 }
 
                 if (command != null)
