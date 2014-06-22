@@ -26,6 +26,8 @@ namespace MiningDevice
     [DataContract]
     class ZeusDevice : UsbMinerBase
     {
+        private const int extraDataThreshold = 2; // Number of times through the main USB reading look that we will allow extra data to sit int he buffer
+
         private int _clk;
         [DataMember(Name = "clock")]
         public int LtcClk 
@@ -81,6 +83,7 @@ namespace MiningDevice
         }
 
         private PoolWork currentWork = null;
+        private int timesNonZero = 0;
 
         public ZeusDevice(string port, int clk, int cores, int watchdogTimeout)
         {
@@ -92,6 +95,7 @@ namespace MiningDevice
 
         public override void StartWork(PoolWork work)
         {
+            timesNonZero = 0;
             this.RestartWatchdogTimer();
 
             if (this.usbPort != null && this.usbPort.IsOpen)
@@ -155,6 +159,18 @@ namespace MiningDevice
                     this.RestartWatchdogTimer();
                     sp.Read(EventPacket, 0, 4);
                     ProcessEventPacket(EventPacket);
+                }
+
+                // Check if there was any left over data
+                if (sp.BytesToRead > 0)
+                    timesNonZero++;
+                else
+                    timesNonZero = 0;
+
+                if (timesNonZero >= extraDataThreshold)
+                {
+                    // Attempt to prevent a synchronization error in the underlying bytestream
+                    sp.DiscardInBuffer();
                 }
             } 
         }
