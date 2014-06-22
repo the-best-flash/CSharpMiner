@@ -74,7 +74,7 @@ namespace MiningDevice
             }
         }
         
-        private void RestartWatchdogTimer()
+        protected void RestartWatchdogTimer()
         {
             if(watchdogTimer != null)
             {

@@ -73,6 +73,8 @@ namespace MiningDevice
 
         public override void StartWork(PoolWork work)
         {
+            this.RestartWatchdogTimer();
+
             if (this.usbPort != null && this.usbPort.IsOpen)
             {
                 LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.UARTPort, work.JobId), LogVerbosity.Verbose);
@@ -129,6 +131,7 @@ namespace MiningDevice
             {
                 while (sp.BytesToRead >= 4)
                 {
+                    this.RestartWatchdogTimer();
                     sp.Read(EventPacket, 0, 4);
                     ProcessEventPacket(EventPacket);
                 }
