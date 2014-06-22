@@ -114,6 +114,11 @@ namespace MiningDevice
 
                 if (usbPort != null && usbPort.IsOpen)
                     usbPort.Close();
+
+                if(listenerThread != null)
+                    listenerThread.Join();
+
+                listenerThread = null;
             }
         }
 

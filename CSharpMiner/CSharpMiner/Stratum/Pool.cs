@@ -147,79 +147,82 @@ namespace CSharpMiner.Stratum
 
                 latestWork = null;
 
+                if (this.Thread != null)
+                    this.Thread.Join();
+
                 this.Thread = null;
             }
         }
 
         private void Connect()
         {
-            this.Connecting = true;
-
             try
             {
-                WorkSubmitIdQueue = Queue.Synchronized(new Queue());
-                this.NewBlocks = 0;
-
-                this.Running = true;
-                this.Alive = false;
-
-                this._allowOldWork = true;
-                this.latestWork = null;
-
-                if (connection != null)
-                {
-                    this.Stop();
-                    connection = null;
-                }
-
-                string[] splitAddress = Url.Split(':');
-
-                if (splitAddress.Length != 3)
-                {
-                    Exception e = new StratumConnectionFailureException(string.Format("Incorrect pool address: {0}", Url));
-                    LogHelper.LogErrorSecondaryAsync(e);
-                    throw e;
-                }
-
-                string hostName = splitAddress[1].Replace("/", "").Trim();
-
-                int port;
-                if (!int.TryParse(splitAddress[2], out port))
-                {
-                    Exception e = new StratumConnectionFailureException(string.Format("Incorrect port format: {0}", splitAddress[1]));
-                    LogHelper.LogErrorSecondaryAsync(e);
-                    throw e;
-                }
+                this.Connecting = true;
 
                 try
                 {
-                    connection = new TcpClient(hostName, port);
+                    WorkSubmitIdQueue = Queue.Synchronized(new Queue());
+                    this.NewBlocks = 0;
+
+                    this.Running = true;
+                    this.Alive = false;
+
+                    this._allowOldWork = true;
+                    this.latestWork = null;
+
+                    if (connection != null)
+                    {
+                        this.Stop();
+                        connection = null;
+                    }
+
+                    string[] splitAddress = Url.Split(':');
+
+                    if (splitAddress.Length != 3)
+                    {
+                        Exception e = new StratumConnectionFailureException(string.Format("Incorrect pool address: {0}", Url));
+                        LogHelper.LogErrorSecondaryAsync(e);
+                        throw e;
+                    }
+
+                    string hostName = splitAddress[1].Replace("/", "").Trim();
+
+                    int port;
+                    if (!int.TryParse(splitAddress[2], out port))
+                    {
+                        Exception e = new StratumConnectionFailureException(string.Format("Incorrect port format: {0}", splitAddress[1]));
+                        LogHelper.LogErrorSecondaryAsync(e);
+                        throw e;
+                    }
+
+                    try
+                    {
+                        connection = new TcpClient(hostName, port);
+                    }
+                    catch (SocketException e)
+                    {
+                        Exception exception = new StratumConnectionFailureException(e);
+                        LogHelper.LogErrorSecondaryAsync(exception);
+                        throw exception;
+                    }
                 }
-                catch (SocketException e)
+                catch
                 {
-                    Exception exception = new StratumConnectionFailureException(e);
-                    LogHelper.LogErrorSecondaryAsync(exception);
-                    throw exception;
+                    throw;
                 }
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                this.Connecting = false;
-            }
+                finally
+                {
+                    this.Connecting = false;
+                }
 
-            if (!connection.Connected)
-            {
-                Exception e = new StratumConnectionFailureException("Unknown connection failure.");
-                LogHelper.LogErrorSecondaryAsync(e);
-                throw e;
-            }
+                if (!connection.Connected)
+                {
+                    Exception e = new StratumConnectionFailureException("Unknown connection failure.");
+                    LogHelper.LogErrorSecondaryAsync(e);
+                    throw e;
+                }
 
-            try
-            {
                 NetworkStream netStream = connection.GetStream();
 
                 Command subscribeCommand = Command.SubscribeCommand;
@@ -235,7 +238,7 @@ namespace CSharpMiner.Stratum
                 this.Extranonce2Size = (int)data[2];
 
                 // If we recieved work before we started the device manager, give the work to the device manager now
-                if(pendingWork != null)
+                if (pendingWork != null)
                 {
                     _newWork(pendingWork, this.Diff);
                     pendingWork = null;
@@ -247,11 +250,12 @@ namespace CSharpMiner.Stratum
                 }
 
                 LogHelper.DebugConsoleLogAsync(new Object[] {
-                    string.Format("Extranonce1: {0}", data[1]),
-                    string.Format("Extranonce2_size: {0}", data[2])
-                }, LogVerbosity.Verbose);
+                        string.Format("Extranonce1: {0}", data[1]),
+                        string.Format("Extranonce2_size: {0}", data[2])
+                    },
+                    LogVerbosity.Verbose);
 
-                string[] param = {this.Username, this.Password};
+                string[] param = { this.Username, this.Password };
 
                 Command command = new Command(this.RequestId, Command.AuthorizationCommandString, param);
                 command.Serialize(netStream);
@@ -266,6 +270,12 @@ namespace CSharpMiner.Stratum
 
                     throw new StratumConnectionFailureException(string.Format("Pool Username or Password rejected with: {0}", successResponse.Error));
                 }
+
+                // Enter loop to monitor pool stratum
+                while (this.Running)
+                {
+                    this.processCommands(this.listenForData());
+                }
             }
             catch (Exception e)
             {
@@ -273,16 +283,10 @@ namespace CSharpMiner.Stratum
 
                 this.Stop();
 
-                if(this._disconnected != null)
+                if (this._disconnected != null)
                 {
                     this._disconnected();
                 }
-            }
-
-            // Enter loop to monitor pool stratum
-            while(this.Running)
-            {
-                this.processCommands(this.listenForData());
             }
         }
 
@@ -302,42 +306,48 @@ namespace CSharpMiner.Stratum
 
             if (WorkSubmitIdQueue != null && submissionLock != null)
             {
-                // TODO: handle null connection
-                string[] param = { this.Username, jobId, extranonce2, ntime, nonce };
-                Command command = null;
-
-                lock (submissionLock)
+                try
                 {
-                    command = new Command(this.RequestId, Command.SubmitCommandString, param);
-                    this.RequestId++;
+                    string[] param = { this.Username, jobId, extranonce2, ntime, nonce };
+                    Command command = null;
 
-                    try
+                    lock (submissionLock)
                     {
-                        if (this.connection != null && this.connection.Connected)
+                        command = new Command(this.RequestId, Command.SubmitCommandString, param);
+                        this.RequestId++;
+
+                        try
                         {
-                            command.Serialize(this.connection.GetStream());
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        LogHelper.LogErrorSecondaryAsync(e);
-                    }
-                    finally
-                    {
-                        if ((this.connection == null || !this.connection.Connected) && this.Running)
-                        {
-                            if (this._disconnected != null)
+                            if (this.connection != null && this.connection.Connected)
                             {
-                                this.Stop();
-                                this._disconnected();
+                                command.Serialize(this.connection.GetStream());
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            LogHelper.LogErrorSecondaryAsync(e);
+                        }
+                        finally
+                        {
+                            if ((this.connection == null || !this.connection.Connected) && this.Running)
+                            {
+                                if (this._disconnected != null)
+                                {
+                                    this.Stop();
+                                    this._disconnected();
+                                }
                             }
                         }
                     }
-                }
 
-                if (command != null)
+                    if (command != null)
+                    {
+                        WorkSubmitIdQueue.Enqueue(command);
+                    }
+                }
+                catch (Exception e)
                 {
-                    WorkSubmitIdQueue.Enqueue(command);
+                    LogHelper.LogErrorSecondaryAsync(e);
                 }
             }
         }
@@ -517,7 +527,7 @@ namespace CSharpMiner.Stratum
 
         private string listenForData()
         {
-            if (this.threadStopping != null)
+            if (this.threadStopping != null && this.connection != null && this.connection.Connected)
             {
                 // TODO: Handle null connection
                 byte[] arr = new byte[10000];
