@@ -148,7 +148,7 @@ namespace MiningDevice
                 {
                     continueRunning = true;
                     usbPort = new SerialPort(UARTPort, GetBaud());
-                    //usbPort.DataReceived += DataReceived;
+                    //usbPort.DataReceived += DataReceived; // This works on .NET in windows but not in Mono
                     usbPort.Open();
                 }
                 catch (Exception e)
