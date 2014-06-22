@@ -13,11 +13,11 @@ Expect high reject rates (5 - 10%) until I implement a method of verifying the c
 
 Command line format is:
 
-CSharpMiner.exe /path/to/config.conf
+    CSharpMiner.exe /path/to/config.conf
 
 Optional paramaters are: the path to output the error log and whether or not to attempt to keep the program running despite errors. For example:
 
-CSharpMiner.exe /path/to/config.conf /path/to/error.log false
+    CSharpMiner.exe /path/to/config.conf /path/to/error.log false
 
 If no error log path is specified it will log to an error file in the current working directory.
 
@@ -26,12 +26,14 @@ If you run into a bug the error log can help me debug it. There will also be an 
 I created this as a hobby so I cannot guarantee that I will get around to implementing all of the following features or fixing all of the submitted bugs.
 
 Current Support:
+
     ZeusMiner ASICs (Should be able to run different kinds of miners at the same time if the configuration file is set up correctly. Fore example you could run Furys and Thunders at the same time)
     Stratum Pool Mining
     Pool Auto-failover
     Pool Auto-reconnect
    
 Untested Features:
+
     ZeusMiner ASICs other than Furys.
     Multiple kinds of ZeusMiner ASICs.
     Multiple Pools
