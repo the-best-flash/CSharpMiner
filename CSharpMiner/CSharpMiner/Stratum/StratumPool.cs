@@ -109,9 +109,6 @@ namespace CSharpMiner.Stratum
 
         private bool _allowOldWork = true;
 
-        private Tuple<Object[], int> mostRecentWork = null;
-        private Tuple<Object[], int> mostRecentWorkCopy = null;
-
         public StratumPool()
             : this("", "", "")
         {
@@ -583,16 +580,6 @@ namespace CSharpMiner.Stratum
                     {
                         pendingWork = work;
                     }
-
-                    mostRecentWork = new Tuple<object[], int>(command.Params, this.Diff);
-
-                    Object[] copy = new Object[mostRecentWork.Item1.Length];
-                    mostRecentWork.Item1.CopyTo(copy, 0);
-
-                    if(copy.Length >= 9)
-                        copy[8] = true;
-
-                    mostRecentWorkCopy = new Tuple<object[], int>(copy, this.Diff);
                     break;
 
                 case StratumCommand.SetDifficlutyCommandString:
