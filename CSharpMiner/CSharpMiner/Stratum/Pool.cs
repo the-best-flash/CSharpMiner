@@ -468,24 +468,21 @@ namespace CSharpMiner.Stratum
                 return;
             }
 
+            string reason = "";
+            bool rejected = false;
+
             if (response.Data != null && response.Data.Equals(true))
             {
                 Accepted++;
             }
             else
             {
-                string reason = (response.Error != null && response.Error.Length >= 2 ? response.Error[1] : "null").ToString();
+                reason = (response.Error != null && response.Error.Length >= 2 ? response.Error[1] : "null").ToString();
 
                 LogHelper.ConsoleLogAsync(string.Format("Rejected with {0}", reason), ConsoleColor.Magenta, LogVerbosity.Verbose);
                 Rejected++;
 
-                if(reason.ToLower().Trim() == "job not found")
-                {
-                    if(mostRecentWorkCopy != null)
-                    {
-                        _newWork(mostRecentWorkCopy.Item1, mostRecentWorkCopy.Item2);
-                    }
-                }
+                rejected = true;
             }
 
             ConsoleColor color = (response.Data != null && response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
@@ -499,6 +496,14 @@ namespace CSharpMiner.Stratum
                 new Object[] { this.Rejected, ConsoleColor.Red, false },
                 new Object[] { " )", true }
             });
+
+            if (rejected && reason.ToLower().Trim() == "job not found")
+            {
+                if (mostRecentWorkCopy != null)
+                {
+                    _newWork(mostRecentWorkCopy.Item1, mostRecentWorkCopy.Item2);
+                }
+            }
         }
 
         private void processCommand(Command command)
