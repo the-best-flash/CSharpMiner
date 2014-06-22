@@ -33,6 +33,8 @@ namespace MiningDevice
                 byte[] cmd = CommandPacket;
                 cmd[0] = _freqCode;
                 cmd[1] = (byte)(0xFF - _freqCode);
+
+                HashRate = this.GetTheoreticalHashrate() * Cores;
             }
         }
 
@@ -78,6 +80,8 @@ namespace MiningDevice
             if (this.usbPort != null && this.usbPort.IsOpen)
             {
                 LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.UARTPort, work.JobId), LogVerbosity.Verbose);
+
+                this.RestartWorkRequestTimer();
 
                 int diffCode = 0xFFFF / work.Diff;
                 byte[] cmd = CommandPacket;
@@ -148,6 +152,11 @@ namespace MiningDevice
                         this.SubmitWork(currentWork, HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet)));
                     });
             }
+        }
+
+        protected override int GetTheoreticalHashrate()
+        {
+            return (int)(LtcClk * 87.5 * 8);
         }
     }
 }

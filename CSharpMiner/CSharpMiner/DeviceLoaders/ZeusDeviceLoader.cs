@@ -26,6 +26,12 @@ namespace DeviceLoader
         public int Id { get; set; }
 
         [IgnoreDataMember]
+        public System.Timers.Timer WorkRequestTimer
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        [IgnoreDataMember]
         public int HashRate
         {
             get { throw new NotImplementedException(); }

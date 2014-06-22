@@ -26,17 +26,24 @@ namespace DeviceManager
             }
         }
 
-        private int startingNonce = 0;
-
-        protected override void StartWork(PoolWork work, int deviceId, bool restartWork)
+        protected override void SetUpDevice(IMiningDevice d)
         {
-            startingNonce = Random.Next();
-            StartWorkOnDevice(work, deviceId, restartWork);
+            double fullHashTimeSec = Int32.MaxValue / d.HashRate; // Hashes devided by Hashes per second yeilds seconds
+            double safeWaitTime = fullHashTimeSec * 0.85 * 0.95; // Assume we lose 15% of our hash rate just in case then only wait until we've covered 95% of the hash space
+            d.WorkRequestTimer.Interval = safeWaitTime;
         }
 
-        private void StartWorkOnDevice(PoolWork work, int deviceId, bool restartWork)
+        private int startingNonce = 0;
+
+        protected override void StartWork(PoolWork work, int deviceId, bool restartWork, bool requested)
         {
-            if (!restartWork && deviceId >= 0 && deviceId < this.loadedDevices.Count)
+            startingNonce = Random.Next();
+            StartWorkOnDevice(work, deviceId, restartWork, requested);
+        }
+
+        private void StartWorkOnDevice(PoolWork work, int deviceId, bool restartWork, bool requested)
+        {
+            if (!restartWork && deviceId >= 0 && deviceId < this.loadedDevices.Count && requested)
             {
                 StartWorkOnDevice(this.loadedDevices[deviceId], work.CommandArray, work.Extranonce1, work.Diff);
             }
@@ -46,9 +53,9 @@ namespace DeviceManager
             }
         }
 
-        protected override void NoWork(PoolWork oldWork, int deviceId)
+        protected override void NoWork(PoolWork oldWork, int deviceId, bool requested)
         {
-            StartWorkOnDevice(oldWork, deviceId, false);
+            StartWorkOnDevice(oldWork, deviceId, false, requested);
         }
 
         private void StartWorking(object[] param, string extranonce1, int diff)

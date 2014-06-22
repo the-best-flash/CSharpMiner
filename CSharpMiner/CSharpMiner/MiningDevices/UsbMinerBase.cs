@@ -22,8 +22,21 @@ namespace MiningDevice
         [DataMember(Name = "port")]
         public string UARTPort { get; set; }
 
+        private int _cores = 1;
         [DataMember(Name = "cores")]
-        public int Cores { get; set; }
+        public int Cores 
+        {
+            get
+            {
+                return _cores;
+            }
+            set
+            {
+                _cores = value;
+
+                HashRate = this.GetTheoreticalHashrate() * Cores;
+            }
+        }
 
         [DataMember(Name = "timeout")]
         public int WatchdogTimeout { get; set; }
@@ -33,6 +46,19 @@ namespace MiningDevice
 
         [IgnoreDataMember]
         public int HardwareErrors { get; protected set; }
+
+        private System.Timers.Timer _timer = null;
+        [IgnoreDataMember]
+        public System.Timers.Timer WorkRequestTimer
+        {
+            get 
+            {
+                if (_timer == null)
+                    _timer = new System.Timers.Timer();
+
+                return _timer;
+            }
+        }
 
         private Action<PoolWork, string, int> _submitWork = null;
         protected Action<int> _requestWork = null;
@@ -46,6 +72,10 @@ namespace MiningDevice
 
         public void Load(Action<PoolWork, string, int> submitWork, Action<int> requestWork)
         {
+            HashRate = GetTheoreticalHashrate();
+
+            WorkRequestTimer.Stop();
+
             _submitWork = submitWork;
             _requestWork = requestWork;
 
@@ -62,6 +92,20 @@ namespace MiningDevice
             {
                 this.listenerThread = new Thread(new ThreadStart(this.Connect));
                 this.listenerThread.Start();
+            }
+        }
+
+        protected void RestartWorkRequestTimer()
+        {
+            WorkRequestTimer.Stop();
+            WorkRequestTimer.Start();
+        }
+
+        private void WorkRequestTimerExpired(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if(_requestWork != null)
+            {
+                _requestWork(this.Id);
             }
         }
 
@@ -175,6 +219,7 @@ namespace MiningDevice
         public abstract void StartWork(PoolWork work);
         public abstract int GetBaud();
         protected abstract void DataReceived(object sender, SerialDataReceivedEventArgs e);
+        protected abstract int GetTheoreticalHashrate();
 
         public void Dispose()
         {

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace MiningDevice
 {
@@ -32,6 +33,11 @@ namespace MiningDevice
         public int HardwareErrors
         {
             get { return 0; }
+        }
+
+        public Timer WorkRequestTimer
+        {
+            get { return new Timer(); }
         }
 
         public TestDevice(string path, int cores)

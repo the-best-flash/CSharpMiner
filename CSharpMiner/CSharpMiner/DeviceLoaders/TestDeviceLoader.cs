@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace DeviceLoader
 {
@@ -20,6 +21,12 @@ namespace DeviceLoader
 
         [IgnoreDataMember]
         public int Id { get; set; }
+
+        [IgnoreDataMember]
+        public Timer WorkRequestTimer
+        {
+            get { return new Timer(); }
+        }
 
         public IEnumerable<MiningDevice.IMiningDevice> LoadDevices()
         {

@@ -87,6 +87,9 @@ namespace CSharpMiner.Stratum
 
         private bool _allowOldWork = true;
 
+        private Tuple<Object[], int> mostRecentWork = null;
+        private Tuple<Object[], int> mostRecentWorkCopy = null;
+
         public Pool()
             : this("", "", "")
         {
@@ -471,8 +474,18 @@ namespace CSharpMiner.Stratum
             }
             else
             {
-                LogHelper.ConsoleLogAsync(string.Format("Rejected with {0}", (response.Error != null && response.Error.Length >= 2 ? response.Error[1] : "null")), ConsoleColor.Magenta, LogVerbosity.Verbose);
+                string reason = (response.Error != null && response.Error.Length >= 2 ? response.Error[1] : "null").ToString();
+
+                LogHelper.ConsoleLogAsync(string.Format("Rejected with {0}", reason), ConsoleColor.Magenta, LogVerbosity.Verbose);
                 Rejected++;
+
+                if(reason.ToLower().Trim() == "job not found")
+                {
+                    if(mostRecentWorkCopy != null)
+                    {
+                        _newWork(mostRecentWorkCopy.Item1, mostRecentWorkCopy.Item2);
+                    }
+                }
             }
 
             ConsoleColor color = (response.Data != null && response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
@@ -511,6 +524,16 @@ namespace CSharpMiner.Stratum
                     {
                         pendingWork = command.Params;
                     }
+
+                    mostRecentWork = new Tuple<object[], int>(command.Params, this.Diff);
+
+                    Object[] copy = new Object[mostRecentWork.Item1.Length];
+                    mostRecentWork.Item1.CopyTo(copy, 0);
+
+                    if(copy.Length >= 9)
+                        copy[8] = true;
+
+                    mostRecentWorkCopy = new Tuple<object[], int>(copy, this.Diff);
                     break;
 
                 case Command.SetDifficlutyCommandString:

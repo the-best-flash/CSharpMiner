@@ -38,8 +38,9 @@ namespace DeviceManager
 
         private int deviceId = 0;
 
-        protected abstract void StartWork(PoolWork work, int deviceId, bool restartAll);
-        protected abstract void NoWork(PoolWork oldWork, int deviceId);
+        protected abstract void StartWork(PoolWork work, int deviceId, bool restartAll, bool requested);
+        protected abstract void NoWork(PoolWork oldWork, int deviceId, bool requested);
+        protected abstract void SetUpDevice(IMiningDevice d);
 
         public void NewWork(object[] poolWorkData, int diff)
         {
@@ -54,7 +55,7 @@ namespace DeviceManager
                     nextWork = newWork;
 
                     working = true;
-                    StartWork(newWork, -1, true);
+                    StartWork(newWork, -1, true, false);
                 }
                 else // We can keep the old work
                 {
@@ -64,7 +65,7 @@ namespace DeviceManager
                         nextWork = newWork;
 
                         working = true;
-                        StartWork(newWork, -1, false);
+                        StartWork(newWork, -1, false, false);
                     }
                     else
                     {
@@ -83,7 +84,7 @@ namespace DeviceManager
                         this.ActivePool.SubmitWork(work.JobId, work.Extranonce2, work.Timestamp, nonce);
                     });
 
-                StartWorkOnDevice(work, deviceId);
+                StartWorkOnDevice(work, deviceId, false);
             }
             else if(this.ActivePool != null && !this.ActivePool.Connected && !this.ActivePool.Connecting)
             {
@@ -92,26 +93,26 @@ namespace DeviceManager
             }
         }
 
-        public void StartWorkOnDevice(PoolWork work, int deviceId)
+        public void StartWorkOnDevice(PoolWork work, int deviceId, bool requested)
         {
             if (nextWork.JobId != currentWork.JobId)
             {
                 // Start working on the last thing the server sent us
                 currentWork = nextWork;
 
-                StartWork(nextWork, deviceId, false);
+                StartWork(nextWork, deviceId, false, requested);
             }
             else
             {
                 working = false;
-                NoWork(work, deviceId);
+                NoWork(work, deviceId, requested);
             }
         }
 
         public void RequestWork(int deviceId)
         {
             LogHelper.ConsoleLogAsync(string.Format("Device {0} requested new work.", deviceId));
-            StartWorkOnDevice(this.currentWork, deviceId);
+            StartWorkOnDevice(this.currentWork, deviceId, true);
         }
 
         public void Start()
@@ -165,6 +166,8 @@ namespace DeviceManager
 
                     d.Load(this.SubmitWork, this.RequestWork);
                     loadedDevices.Add(d);
+
+                    this.SetUpDevice(d);
                 }
             }
         }
