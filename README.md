@@ -5,6 +5,28 @@ C# (Mono/.NET) crypto-currency mining stratum client for use with various kinds 
 
 This is in an Alpha working state. I am using it to mine with some Blizzards right now, however I have not run it for over 24 hours without stop yet.
 
+You can run this on .NET or <a href="http://www.mono-project.com/Main_Page">Mono</a>. Mono can run binaries compiled for .NET, but it is recommended that you use a binary compiled for Mono. 
+
+I will be adding precompiled binaries when things are a bit more stable, but if you want to compile it yourself you can use the steps below.
+
+To compile for .NET, use <a href="http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx">Visual Studio Express 2013 for Desktop</a> on Windows:
+    
+1. Load the solution file. *.sln
+2. Change the dropdown that says "Debug" to say "Release"
+3. Select "Build -> Build Solution"
+4. Navigate to the /Bin/Release folder in the same place as the source files
+
+To compile for Mono on linux use:
+
+1. sudo apt-get update
+2. sudo apt-get install mono-devl
+3. Navigate to the source folder and execute:
+   mcs -optimize+ -recurse:*.cs -out:CSharpMiner.exe -r:System,System.Core,System.Data,System.Data.DataSetExtensions,System.Security,System.Runtime.Serialization,System.Xml,System.Xml.Linq
+
+To run the program under Mono type "mono" before your command line parameters. Like so:
+
+    mono CSharpMiner.exe /path/to/config.conf
+
 When constructing the config file you will need to tell the system what type of object to load (With the C# class name) and then provide values for the various settings for thoes objects. Currently, the only way to find the available class names is to look at the code. One of the next features that I will be adding will be the ability to get a list of all the supported class names.
 
 The example.conf file is an example configuration file. It shows how to use shorthand to easily load multiple Blizzards with the same settings, another object that loads some Thunders, and a third object that shows how to specify settings for a single Fury.
