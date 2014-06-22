@@ -97,10 +97,10 @@ namespace MiningDevice
 
             if(WatchdogTimeout <= 0)
             {
-                WatchdogTimeout = 60000; // Default to one minute if not set
+                WatchdogTimeout = 60; // Default to one minute if not set
             }
 
-            watchdogTimer = new System.Timers.Timer(WatchdogTimeout);
+            watchdogTimer = new System.Timers.Timer(WatchdogTimeout * 1000);
             watchdogTimer.Elapsed += this.WatchdogExpired;
             watchdogTimer.AutoReset = true;
 
