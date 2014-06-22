@@ -43,6 +43,12 @@ To run the program under Mono type "mono" before your command line parameters. L
 
     mono CSharpMiner.exe /path/to/config.conf
 
+While running the program you can use the following keyboard commands:
+
+    q - Quit
+    + - Increase console logging verbosity (Makes it display more info if you've decreased it.) Note: You have to hold shift if you're using the plus key near backspace on a USA keyboard. I haven't gotten around to making it accept equals too.)
+    - - Decrease console logging verbosity (Makes it display less info the more you press it.) Note: This is the minus key.
+
 When constructing the config file you will need to tell the system what type of object to load (With the C# class name) and then provide values for the various settings for thoes objects. Currently, the only way to find the available class names is to look at the code. One of the next features that I will be adding will be the ability to get a list of all the supported class names.
 
 The example.conf file is an example configuration file. It shows how to use shorthand to easily load multiple Blizzards with the same settings, another object that loads some Thunders, and a third object that shows how to specify settings for a single Fury.
