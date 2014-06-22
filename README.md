@@ -44,7 +44,7 @@ To compile for .NET, use <a href="http://www.visualstudio.com/en-us/products/vis
 To compile for Mono on linux use:
 
     1. sudo apt-get update
-    2. sudo apt-get install mono-devl
+    2. sudo apt-get install mono-devel
     3. Navigate to the source folder and execute:
        mcs -optimize+ -recurse:*.cs -out:CSharpMiner.exe -r:System,System.Core,System.Data,System.Data.DataSetExtensions,System.Security,System.Runtime.Serialization,System.Xml,System.Xml.Linq
 
