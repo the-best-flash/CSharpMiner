@@ -91,7 +91,9 @@ namespace CSharpMiner.Stratum
         {
             if(serverCommandArray.Length < 8)
             {
-                throw new ArgumentException("Unrecognized work format from server. Work array length < 8.");
+                Exception e = new ArgumentException("Unrecognized work format from server. Work array length < 8.");
+                LogHelper.LogErrorSecondaryAsync(e);
+                throw e;
             }
 
             CommandArray = serverCommandArray;
@@ -123,7 +125,9 @@ namespace CSharpMiner.Stratum
             }
             else
             {
-                throw new ArgumentException("Unrecognized work format from server. Merkle_Branch is not an array.");
+                Exception e = new ArgumentException("Unrecognized work format from server. Merkle_Branch is not an array.");
+                LogHelper.LogErrorSecondaryAsync(e);
+                throw e;
             }
 
             LogHelper.DebugConsoleLogAsync(new Object[] {
