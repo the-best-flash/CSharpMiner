@@ -241,8 +241,6 @@ namespace CSharpMiner.Stratum
                     throw e;
                 }
 
-                NetworkStream netStream = connection.GetStream();
-
                 Command subscribeCommand = Command.SubscribeCommand;
                 subscribeCommand.Id = this.RequestId;
 
