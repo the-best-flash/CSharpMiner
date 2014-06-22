@@ -80,5 +80,10 @@ namespace DeviceManager
                 LogHelper.ConsoleLogAsync(string.Format("Pool {0} disconnected...", Pools[0].Url), LogVerbosity.Quiet);
             }
         }
+
+        public void RequestWork(int deviceId)
+        {
+            // do nothing
+        }
     }
 }

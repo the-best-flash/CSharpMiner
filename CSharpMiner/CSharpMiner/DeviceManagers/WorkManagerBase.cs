@@ -36,11 +36,10 @@ namespace DeviceManager
         protected PoolWork currentWork = null;
         protected PoolWork nextWork = null;
 
-        protected Queue _submissionQueue = null;
         private int deviceId = 0;
 
         protected abstract void StartWork(PoolWork work, bool restartAll);
-        protected abstract void NoWork(PoolWork oldWork);
+        protected abstract void NoWork(PoolWork oldWork, int deviceId);
 
         public void NewWork(object[] poolWorkData, int diff)
         {
@@ -77,24 +76,14 @@ namespace DeviceManager
 
         public void SubmitWork(PoolWork work, string nonce, int deviceId)
         {
-            if (started && this.ActivePool != null && currentWork != null && this._submissionQueue != null && this.ActivePool.Connected)
+            if (started && this.ActivePool != null && currentWork != null && this.ActivePool.Connected)
             {
-                _submissionQueue.Enqueue(deviceId);
+                Task.Factory.StartNew(() =>
+                    {
+                        this.ActivePool.SubmitWork(work.JobId, work.Extranonce2, work.Timestamp, nonce);
+                    });
 
-                this.ActivePool.SubmitWork(work.JobId, work.Extranonce2, work.Timestamp, nonce);
-
-                if (nextWork.JobId != currentWork.JobId)
-                {
-                    // Start working on the last thing the server sent us
-                    currentWork = nextWork;
-
-                    StartWork(nextWork, false);
-                }
-                else
-                {
-                    working = false;
-                    NoWork(work);
-                }
+                StartWorkOnDevice(work, deviceId);
             }
             else if(this.ActivePool != null && !this.ActivePool.Connected && !this.ActivePool.Connecting)
             {
@@ -103,10 +92,29 @@ namespace DeviceManager
             }
         }
 
+        public void StartWorkOnDevice(PoolWork work, int deviceId)
+        {
+            if (nextWork.JobId != currentWork.JobId)
+            {
+                // Start working on the last thing the server sent us
+                currentWork = nextWork;
+
+                StartWork(nextWork, false);
+            }
+            else
+            {
+                working = false;
+                NoWork(work, deviceId);
+            }
+        }
+
+        public void RequestWork(int deviceId)
+        {
+            StartWorkOnDevice(this.currentWork, deviceId);
+        }
+
         public void Start()
         {
-            _submissionQueue = Queue.Synchronized(new Queue());
-
             // TODO: Make this throw an exception so that the system doesn't infinate loop
             Task.Factory.StartNew(() =>
             {
@@ -154,7 +162,7 @@ namespace DeviceManager
                     d.Id = deviceId;
                     deviceId++;
 
-                    d.Load(this.SubmitWork);
+                    d.Load(this.SubmitWork, this.RequestWork);
                     loadedDevices.Add(d);
                 }
             }
@@ -178,7 +186,10 @@ namespace DeviceManager
                 {
                     foreach (IHotplugLoader hotplugLoader in hotplugLoaders)
                     {
-                        hotplugLoader.StopListening();
+                        if (hotplugLoader != null)
+                        {
+                            hotplugLoader.StopListening();
+                        }
                     }
                 }
 
@@ -186,15 +197,16 @@ namespace DeviceManager
                 {
                     foreach (IMiningDevice d in this.loadedDevices)
                     {
-                        d.Unload();
+                        if (d != null)
+                        {
+                            d.Unload();
+                        }
                     }
                 }
 
                 if (this.ActivePool != null)
                 {
                     this.ActivePool.Stop();
-                    this.ActivePool.Thread.Join();
-
                     this.ActivePool = null;
                 }
             }

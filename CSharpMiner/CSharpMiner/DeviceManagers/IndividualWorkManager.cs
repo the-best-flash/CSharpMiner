@@ -34,11 +34,11 @@ namespace DeviceManager
             StartWorking(work.CommandArray, work.Extranonce1, work.Diff);
         }
 
-        protected override void NoWork(PoolWork oldWork)
+        protected override void NoWork(PoolWork oldWork, int deviceId)
         {
-            if (this._submissionQueue != null && this._submissionQueue.Count != 0)
+            if (deviceId > 0 && deviceId < this.loadedDevices.Count)
             {
-                StartWorkOnDevice(this.loadedDevices[(int)this._submissionQueue.Dequeue()], oldWork.CommandArray, oldWork.Extranonce1, oldWork.Diff);
+                StartWorkOnDevice(this.loadedDevices[deviceId], oldWork.CommandArray, oldWork.Extranonce1, oldWork.Diff);
             }
             else
             {

@@ -58,7 +58,7 @@ namespace DeviceLoader
             
         }
 
-        public void Load(Action<PoolWork, string, int> submitWork)
+        public void Load(Action<PoolWork, string, int> submitWork, Action<int> requestWork)
         {
             throw new NotImplementedException();
         }

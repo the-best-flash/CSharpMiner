@@ -16,7 +16,7 @@ namespace DeviceManager
             throw new NotImplementedException();
         }
 
-        protected override void NoWork(PoolWork oldWork)
+        protected override void NoWork(PoolWork oldWork, int deviceId)
         {
             throw new NotImplementedException();
         }

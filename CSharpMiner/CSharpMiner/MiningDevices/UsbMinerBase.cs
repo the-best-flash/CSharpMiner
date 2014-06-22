@@ -25,22 +25,38 @@ namespace MiningDevice
         [DataMember(Name = "cores")]
         public int Cores { get; set; }
 
+        [DataMember(Name = "timeout")]
+        public int WatchdogTimeout { get; set; }
+
         [IgnoreDataMember]
         public int HashRate { get; protected set; }
 
         [IgnoreDataMember]
         public int HardwareErrors { get; protected set; }
 
-        protected Action<PoolWork, string, int> _submitWork = null;
+        private Action<PoolWork, string, int> _submitWork = null;
+        protected Action<int> _requestWork = null;
         protected Thread listenerThread = null;
         protected SerialPort usbPort = null;
         protected PoolWork pendingWork = null;
 
+        private System.Timers.Timer watchdogTimer = null;
+
         private bool continueRunning = true;
 
-        public void Load(Action<PoolWork, string, int> submitWork)
+        public void Load(Action<PoolWork, string, int> submitWork, Action<int> requestWork)
         {
             _submitWork = submitWork;
+            _requestWork = requestWork;
+
+            if(WatchdogTimeout <= 0)
+            {
+                WatchdogTimeout = 60000; // Default to one minute if not set
+            }
+
+            watchdogTimer = new System.Timers.Timer(WatchdogTimeout);
+            watchdogTimer.Elapsed += this.WatchdogExpired;
+            watchdogTimer.AutoReset = true;
 
             if (this.listenerThread == null)
             {
@@ -49,8 +65,28 @@ namespace MiningDevice
             }
         }
 
+        private void WatchdogExpired(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if(_requestWork != null)
+            {
+                LogHelper.ConsoleLogErrorAsync(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.UARTPort, (double)WatchdogTimeout / 1000));
+                _requestWork(this.Id);
+            }
+        }
+        
+        private void RestartWatchdogTimer()
+        {
+            if(watchdogTimer != null)
+            {
+                watchdogTimer.Stop();
+                watchdogTimer.Start();
+            }
+        }
+
         private void Connect()
         {
+            RestartWatchdogTimer();
+
             try
             {
                 string[] portNames = SerialPort.GetPortNames();
@@ -102,7 +138,16 @@ namespace MiningDevice
             {
                 LogHelper.LogErrorAsync(e);
                 this.Unload();
-                this.Load(_submitWork);
+                this.Load(_submitWork, _requestWork);
+            }
+        }
+
+        protected void SubmitWork(PoolWork work, string nonce)
+        {
+            if(_submitWork != null)
+            {
+                this.RestartWatchdogTimer();
+                _submitWork(work, nonce, this.Id);
             }
         }
 
@@ -110,6 +155,11 @@ namespace MiningDevice
         {
             if (continueRunning)
             {
+                if(this.watchdogTimer != null)
+                {
+                    this.watchdogTimer.Stop();
+                }
+
                 continueRunning = false;
 
                 if (usbPort != null && usbPort.IsOpen)

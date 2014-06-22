@@ -1,4 +1,5 @@
-﻿using CSharpMiner.Stratum;
+﻿using CSharpMiner.Helpers;
+using CSharpMiner.Stratum;
 using DeviceManager;
 using System;
 using System.Collections.Generic;
@@ -39,22 +40,21 @@ namespace MiningDevice
             Cores = cores;
         }
 
-        public void Load(Action<PoolWork, string, int> submitWork)
+        public void Load(Action<PoolWork, string, int> submitWork, Action<int> requestWork)
         {
-            
-            Console.WriteLine("Loading Miner {0}", Path);
+            LogHelper.ConsoleLogAsync(string.Format("Loading Miner {0}", Path), LogVerbosity.Verbose);
         }
 
         public void Unload()
         {
-            Console.WriteLine("Unloading Miner {0}", Path);
+            LogHelper.ConsoleLogAsync(string.Format("Unloading Miner {0}", Path), LogVerbosity.Verbose);
         }
 
         public void StartWork(PoolWork work)
         {
-            Console.WriteLine("Miner {0} starting work {1} with:", Path, work.JobId);
-            Console.WriteLine("\tExtranonce2: {0}", work.Extranonce2);
-            Console.WriteLine("\tStartNonce:  {0}", work.StartingNonce);
+            LogHelper.ConsoleLogAsync(string.Format("Miner {0} starting work {1} with:", Path, work.JobId), LogVerbosity.Verbose);
+            LogHelper.ConsoleLogAsync(string.Format("\tExtranonce2: {0}", work.Extranonce2), LogVerbosity.Verbose);
+            LogHelper.ConsoleLogAsync(string.Format("\tStartNonce:  {0}", work.StartingNonce), LogVerbosity.Verbose);
         }
 
         public void Dispose()
