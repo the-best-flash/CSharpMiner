@@ -11,17 +11,17 @@ I will be adding precompiled binaries when things are a bit more stable, but if 
 
 To compile for .NET, use <a href="http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx">Visual Studio Express 2013 for Desktop</a> on Windows:
     
-1. Load the solution file. *.sln
-2. Change the dropdown that says "Debug" to say "Release"
-3. Select "Build -> Build Solution"
-4. Navigate to the /Bin/Release folder in the same place as the source files
+    1. Load the solution file. *.sln
+    2. Change the dropdown that says "Debug" to say "Release"
+    3. Select "Build -> Build Solution"
+    4. Navigate to the /Bin/Release folder in the same place as the source files
 
 To compile for Mono on linux use:
 
-1. sudo apt-get update
-2. sudo apt-get install mono-devl
-3. Navigate to the source folder and execute:
-   mcs -optimize+ -recurse:*.cs -out:CSharpMiner.exe -r:System,System.Core,System.Data,System.Data.DataSetExtensions,System.Security,System.Runtime.Serialization,System.Xml,System.Xml.Linq
+    1. sudo apt-get update
+    2. sudo apt-get install mono-devl
+    3. Navigate to the source folder and execute:
+       mcs -optimize+ -recurse:*.cs -out:CSharpMiner.exe -r:System,System.Core,System.Data,System.Data.DataSetExtensions,System.Security,System.Runtime.Serialization,System.Xml,System.Xml.Linq
 
 To run the program under Mono type "mono" before your command line parameters. Like so:
 
