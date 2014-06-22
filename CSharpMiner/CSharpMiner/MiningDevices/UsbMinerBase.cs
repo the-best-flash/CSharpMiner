@@ -55,7 +55,11 @@ namespace MiningDevice
 
             if(!portNames.Contains(UARTPort))
             {
-                throw new SerialConnectionException(string.Format("{0} is not a valid USB port.", (UARTPort != null ? UARTPort : "null")));
+                Exception e =  new SerialConnectionException(string.Format("{0} is not a valid USB port.", (UARTPort != null ? UARTPort : "null")));
+
+                LogHelper.LogErrorSecondary(e);
+
+                throw e;
             }
 
             try
@@ -68,7 +72,10 @@ namespace MiningDevice
             catch (Exception e)
             {
                 this.Unload();
-                throw new SerialConnectionException(string.Format("Error connecting to {0}: {1}", UARTPort, e), e);
+
+                Exception exception = new SerialConnectionException(string.Format("Error connecting to {0}: {1}", UARTPort, e), e);
+                LogHelper.LogErrorSecondaryAsync(exception);
+                throw exception;
             }
 
             LogHelper.ConsoleLogAsync(string.Format("Successfully connected to {0}.", UARTPort), LogVerbosity.Verbose);

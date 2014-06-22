@@ -149,7 +149,9 @@ namespace CSharpMiner.Stratum
 
             if(splitAddress.Length != 3)
             {
-                throw new StratumConnectionFailureException(string.Format("Incorrect pool address: {0}", Url));
+                Exception e = new StratumConnectionFailureException(string.Format("Incorrect pool address: {0}", Url));
+                LogHelper.LogErrorSecondaryAsync(e);
+                throw e;
             }
 
             string hostName = splitAddress[1].Replace("/", "").Trim();
@@ -157,7 +159,9 @@ namespace CSharpMiner.Stratum
             int port;
             if(!int.TryParse(splitAddress[2], out port))
             {
-                throw new StratumConnectionFailureException(string.Format("Incorrect port format: {0}", splitAddress[1]));
+                Exception e = new StratumConnectionFailureException(string.Format("Incorrect port format: {0}", splitAddress[1]));
+                LogHelper.LogErrorSecondaryAsync(e);
+                throw e;
             }
 
             try
@@ -166,12 +170,16 @@ namespace CSharpMiner.Stratum
             }
             catch(SocketException e)
             {
-                throw new StratumConnectionFailureException(e);
+                Exception exception = new StratumConnectionFailureException(e);
+                LogHelper.LogErrorSecondaryAsync(exception);
+                throw exception;
             }
 
             if (!connection.Connected)
             {
-                throw new StratumConnectionFailureException("Unknown connection failure.");
+                Exception e = new StratumConnectionFailureException("Unknown connection failure.");
+                LogHelper.LogErrorSecondaryAsync(e);
+                throw e;
             }
 
             try
@@ -330,7 +338,9 @@ namespace CSharpMiner.Stratum
                         }
                         catch (Exception e)
                         {
-                            throw new InvalidDataException(string.Format("Error parsing response {0}", str), e);
+                            Exception exception = new InvalidDataException(string.Format("Error parsing response {0}", str), e);
+                            LogHelper.LogErrorSecondaryAsync(exception);
+                            throw exception;
                         }
 
                         // This is the response we're looking for
@@ -382,7 +392,9 @@ namespace CSharpMiner.Stratum
                         }
                         catch (Exception e)
                         {
-                            throw new InvalidDataException(string.Format("Error parsing command {0}", str), e);
+                            Exception exception = new InvalidDataException(string.Format("Error parsing command {0}", str), e);
+                            LogHelper.LogErrorSecondaryAsync(exception);
+                            throw exception;
                         }
 
                         processCommand(command);
@@ -473,12 +485,14 @@ namespace CSharpMiner.Stratum
                 {
                     asyncTask = connection.GetStream().ReadAsync(arr, 0, 10000, this.threadStopping.Token);
                     asyncTask.Wait();
-                } catch(OperationCanceledException)
+                } catch(OperationCanceledException e)
                 {
+                    LogHelper.LogErrorSecondaryAsync(e);
                     return string.Empty;
                 }
-                catch (AggregateException)
+                catch (AggregateException e)
                 {
+                    LogHelper.LogErrorSecondaryAsync(e);
                     return string.Empty;
                 }
 
