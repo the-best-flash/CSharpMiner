@@ -15,6 +15,7 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.Helpers;
+using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using System;
 using System.IO.Ports;
@@ -82,7 +83,7 @@ namespace MiningDevice
             }
         }
 
-        private PoolWork currentWork = null;
+        private StratumWork currentWork = null;
         private int timesNonZero = 0;
 
         public ZeusDevice(string port, int clk, int cores, int watchdogTimeout)
@@ -93,45 +94,50 @@ namespace MiningDevice
             WatchdogTimeout = watchdogTimeout;
         }
 
-        public override void StartWork(PoolWork work)
+        public override void StartWork(IPoolWork poolWork)
         {
-            timesNonZero = 0;
-            this.RestartWatchdogTimer();
+            StratumWork work = poolWork as StratumWork;
 
-            if (this.usbPort != null && this.usbPort.IsOpen)
+            if (work != null)
             {
-                LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.UARTPort, work.JobId), LogVerbosity.Verbose);
+                timesNonZero = 0;
+                this.RestartWatchdogTimer();
 
-                this.RestartWorkRequestTimer();
+                if (this.usbPort != null && this.usbPort.IsOpen)
+                {
+                    LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.UARTPort, work.JobId), LogVerbosity.Verbose);
 
-                int diffCode = 0xFFFF / work.Diff;
-                byte[] cmd = CommandPacket;
+                    this.RestartWorkRequestTimer();
 
-                cmd[3] = (byte)diffCode;
-                cmd[2] = (byte)(diffCode >> 8);
+                    int diffCode = 0xFFFF / work.Diff;
+                    byte[] cmd = CommandPacket;
 
-                int offset = 4;
+                    cmd[3] = (byte)diffCode;
+                    cmd[2] = (byte)(diffCode >> 8);
 
-                // Starting nonce
-                byte[] nonceBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Swap(string.Format("{0,8:X8}", work.StartingNonce)));
-                CopyToByteArray(nonceBytes, offset, cmd);
-                offset += nonceBytes.Length;
+                    int offset = 4;
 
-                byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
-                CopyToByteArray(headerBytes, offset, cmd);
+                    // Starting nonce
+                    byte[] nonceBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Swap(string.Format("{0,8:X8}", work.StartingNonce)));
+                    CopyToByteArray(nonceBytes, offset, cmd);
+                    offset += nonceBytes.Length;
 
-                LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", UARTPort, HexConversionHelper.ConvertToHexString(cmd)));
+                    byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
+                    CopyToByteArray(headerBytes, offset, cmd);
 
-                // Send work to the miner
-                this.currentWork = work;
-                this.usbPort.DiscardInBuffer();
-                this.usbPort.Write(cmd, 0, cmd.Length);
-            }
-            else
-            {
-                LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.UARTPort, work.JobId), LogVerbosity.Verbose);
+                    LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", UARTPort, HexConversionHelper.ConvertToHexString(cmd)));
 
-                this.pendingWork = work;
+                    // Send work to the miner
+                    this.currentWork = work;
+                    this.usbPort.DiscardInBuffer();
+                    this.usbPort.Write(cmd, 0, cmd.Length);
+                }
+                else
+                {
+                    LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.UARTPort, work.JobId), LogVerbosity.Verbose);
+
+                    this.pendingWork = work;
+                }
             }
         }
 
@@ -175,6 +181,12 @@ namespace MiningDevice
             } 
         }
 
+        private bool ValidateNonce(string nonce)
+        {
+            // TODO: Make this do something
+            return true;
+        }
+
         private void ProcessEventPacket(byte[] packet)
         {
             if(currentWork != null)
@@ -182,7 +194,17 @@ namespace MiningDevice
                 Task.Factory.StartNew(() =>
                     {
                         LogHelper.ConsoleLogAsync(string.Format("Device {0} submitting {1} for job {2}.", this.UARTPort, HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan);
-                        this.SubmitWork(currentWork, HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet)));
+
+                        string nonce = HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet));
+
+                        if (this.ValidateNonce(nonce))
+                        {
+                            this.SubmitWork(currentWork, nonce);
+                        }
+                        else
+                        {
+                            this.OnInvalidNonce(currentWork);
+                        }
                     });
             }
         }

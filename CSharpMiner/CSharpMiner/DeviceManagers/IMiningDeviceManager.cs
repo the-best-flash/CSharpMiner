@@ -26,13 +26,15 @@ namespace DeviceManager
 {
     public interface IMiningDeviceManager
     {
-        IMiningDevice[] MiningDevices { get; }
-        Pool[] Pools { get; }
+        IEnumerable<IMiningDevice> LoadedDevices { get; }
+        StratumPool[] Pools { get; }
 
-        void NewWork(Object[] poolWorkData, int diff);
-        void SubmitWork(PoolWork work, string nonce, int id);
-        void RequestWork(int deviceId);
-        void PoolDisconnected();
+        void AddNewPool(StratumPool pool);
+        void AddNewDevice(IMiningDevice device);
+
+        void RemovePool(int poolIndex);
+        void RemoveDevice(int deviceIndex);
+
         void Start();
         void Stop();
     }

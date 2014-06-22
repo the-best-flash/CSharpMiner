@@ -20,9 +20,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSharpMiner.Stratum
+namespace CSharpMiner.Pools
 {
-    public static class ComputationHelpers
+    public interface IPoolWork
     {
+        string JobId { get; }
+        int Diff { get; }
     }
 }

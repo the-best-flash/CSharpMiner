@@ -16,6 +16,7 @@
 
 using CSharpMiner;
 using CSharpMiner.Helpers;
+using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using DeviceLoader;
 using MiningDevice;
@@ -33,74 +34,83 @@ namespace DeviceManager
     public abstract class WorkManagerBase : IMiningDeviceManager
     {
         [DataMember(Name = "pools")]
-        public Pool[] Pools { get; set; }
+        public StratumPool[] Pools { get; set; }
 
         [DataMember(Name = "devices")]
         public IMiningDevice[] MiningDevices { get; private set; }
 
         [IgnoreDataMember]
-        public Pool ActivePool { get; private set; }
+        public IPool ActivePool { get; private set; }
 
         [IgnoreDataMember]
         public int ActivePoolId { get; private set; }
+
+        [IgnoreDataMember]
+        public IEnumerable<IMiningDevice> LoadedDevices
+        {
+            get { return loadedDevices; }
+        }
 
         private bool working = false;
         private bool started = false;
         protected List<IMiningDevice> loadedDevices = null;
         protected List<IHotplugLoader> hotplugLoaders = null;
 
-        protected PoolWork currentWork = null;
-        protected PoolWork nextWork = null;
+        protected IPoolWork currentWork = null;
+        protected IPoolWork nextWork = null;
 
         private int deviceId = 0;
 
-        protected abstract void StartWork(PoolWork work, int deviceId, bool restartAll, bool requested);
-        protected abstract void NoWork(PoolWork oldWork, int deviceId, bool requested);
+        protected abstract void StartWork(IPoolWork work, IMiningDevice device, bool restartAll, bool requested);
+        protected abstract void NoWork(IPoolWork oldWork, IMiningDevice device, bool requested);
         protected abstract void SetUpDevice(IMiningDevice d);
 
-        public void NewWork(object[] poolWorkData, int diff)
+        bool boundPools = false;
+
+        public void NewWork(IPool pool, IPoolWork newWork, bool forceStart)
         {
             if (started && ActivePool != null)
             {
-                PoolWork newWork = new PoolWork(poolWorkData, ActivePool.Extranonce1, "00000000", diff);
-
-                // Pool asked us to toss out our old work or we don't have any work yet
-                if (poolWorkData[8].Equals(true) || currentWork == null)
+                if (newWork != null)
                 {
-                    currentWork = newWork;
-                    nextWork = newWork;
-
-                    working = true;
-                    StartWork(newWork, -1, true, false);
-                }
-                else // We can keep the old work
-                {
-                    if (!working)
+                    // Pool asked us to toss out our old work or we don't have any work yet
+                    if (forceStart || currentWork == null)
                     {
                         currentWork = newWork;
                         nextWork = newWork;
 
                         working = true;
-                        StartWork(newWork, -1, false, false);
+                        StartWork(newWork, null, true, false);
                     }
-                    else
+                    else // We can keep the old work
                     {
-                        nextWork = newWork;
+                        if (!working)
+                        {
+                            currentWork = newWork;
+                            nextWork = newWork;
+
+                            working = true;
+                            StartWork(newWork, null, false, false);
+                        }
+                        else
+                        {
+                            nextWork = newWork;
+                        }
                     }
                 }
             }
         }
 
-        public void SubmitWork(PoolWork work, string nonce, int deviceId)
+        public void SubmitWork(IMiningDevice device, IPoolWork work, string nonce)
         {
             if (started && this.ActivePool != null && currentWork != null && this.ActivePool.Connected)
             {
                 Task.Factory.StartNew(() =>
                     {
-                        this.ActivePool.SubmitWork(work.JobId, work.Extranonce2, work.Timestamp, nonce);
+                        this.ActivePool.SubmitWork(work, new Object[] {device, nonce});
                     });
 
-                StartWorkOnDevice(work, deviceId, false);
+                StartWorkOnDevice(work, device, false);
             }
             else if(this.ActivePool != null && !this.ActivePool.Connected && !this.ActivePool.Connecting)
             {
@@ -109,30 +119,41 @@ namespace DeviceManager
             }
         }
 
-        public void StartWorkOnDevice(PoolWork work, int deviceId, bool requested)
+        public void StartWorkOnDevice(IPoolWork work, IMiningDevice device, bool requested)
         {
             if (nextWork.JobId != currentWork.JobId)
             {
                 // Start working on the last thing the server sent us
                 currentWork = nextWork;
 
-                StartWork(nextWork, deviceId, false, requested);
+                StartWork(nextWork, device, false, requested);
             }
             else
             {
                 working = false;
-                NoWork(work, deviceId, requested);
+                NoWork(work, device, requested);
             }
         }
 
-        public void RequestWork(int deviceId)
+        public void RequestWork(IMiningDevice device)
         {
-            LogHelper.ConsoleLogAsync(string.Format("Device {0} requested new work.", deviceId));
-            StartWorkOnDevice(this.currentWork, deviceId, true);
+            LogHelper.ConsoleLogAsync(string.Format("Device {0} requested new work.", device.Id));
+            StartWorkOnDevice(this.currentWork, device, true);
         }
 
         public void Start()
         {
+            if(!boundPools)
+            {
+                foreach(StratumPool pool in this.Pools)
+                {
+                    pool.Disconnected += this.PoolDisconnected;
+                    pool.NewWorkRecieved += this.NewWork;
+                }
+
+                boundPools = true;
+            }
+
             // TODO: Make this throw an exception so that the system doesn't infinate loop
             Task.Factory.StartNew(() =>
             {
@@ -148,7 +169,7 @@ namespace DeviceManager
                 {
                     this.ActivePool = Pools[0];
                     this.ActivePoolId = 0;
-                    this.ActivePool.Start(this.NewWork, this.PoolDisconnected);
+                    this.ActivePool.Start();
                 }
 
                 started = true;
@@ -180,7 +201,11 @@ namespace DeviceManager
                     d.Id = deviceId;
                     deviceId++;
 
-                    d.Load(this.SubmitWork, this.RequestWork);
+                    d.ValidNonce += this.SubmitWork;
+                    d.WorkRequested += this.RequestWork;
+                    d.InvalidNonce += this.InvalidNonce;
+
+                    d.Load();
                     loadedDevices.Add(d);
 
                     this.SetUpDevice(d);
@@ -188,7 +213,7 @@ namespace DeviceManager
             }
         }
 
-        private void AddNewDevice(IMiningDevice d)
+        public void AddNewDevice(IMiningDevice d)
         {
             Task.Factory.StartNew(() =>
                 {
@@ -198,6 +223,15 @@ namespace DeviceManager
 
         public void Stop()
         {
+            if(boundPools)
+            {
+                foreach(StratumPool pool in this.Pools)
+                {
+                    pool.Disconnected -= this.PoolDisconnected;
+                    pool.NewWorkRecieved -= this.NewWork;
+                }
+            }
+
             if (this.started)
             {
                 this.started = false;
@@ -219,6 +253,10 @@ namespace DeviceManager
                     {
                         if (d != null)
                         {
+                            d.WorkRequested -= this.RequestWork;
+                            d.ValidNonce -= this.SubmitWork;
+                            d.InvalidNonce -= this.InvalidNonce;
+
                             d.Unload();
                         }
                     }
@@ -232,15 +270,23 @@ namespace DeviceManager
             }
         }
 
-        public void PoolDisconnected()
+        public void InvalidNonce(IMiningDevice device, IPoolWork work)
         {
-            if (this.ActivePool != null)
+            throw new NotImplementedException();
+        }
+
+        public void PoolDisconnected(IPool pool)
+        {
+            StratumPool stratumPool = pool as StratumPool;
+
+            if (stratumPool != null)
             {
-                LogHelper.ConsoleLogErrorAsync(string.Format("Disconnected from pool {0}", this.ActivePool.Url));
-                LogHelper.LogErrorAsync(string.Format("Disconnected from pool {0}", this.ActivePool.Url));
+                LogHelper.ConsoleLogErrorAsync(string.Format("Disconnected from pool {0}", stratumPool.Url));
+                LogHelper.LogErrorAsync(string.Format("Disconnected from pool {0}", stratumPool.Url));
             }
 
-            AttemptPoolReconnect();
+            if(stratumPool == this.ActivePool)
+                AttemptPoolReconnect();
         }
 
         public void AttemptPoolReconnect()
@@ -262,8 +308,23 @@ namespace DeviceManager
 
                 this.ActivePool = this.Pools[this.ActivePoolId];
                 LogHelper.ConsoleLog(string.Format("Attempting to connect to pool {0}", this.ActivePool.Url));
-                this.ActivePool.Start(this.NewWork, this.PoolDisconnected);
+                this.ActivePool.Start();
             }
+        }
+
+        public void AddNewPool(StratumPool pool)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemovePool(int poolIndex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveDevice(int deviceIndex)
+        {
+            throw new NotImplementedException();
         }
     }
 }

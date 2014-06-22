@@ -16,6 +16,7 @@
 
 using CSharpMiner;
 using CSharpMiner.Helpers;
+using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using DeviceManager;
 using System;
@@ -76,24 +77,38 @@ namespace MiningDevice
             }
         }
 
-        private Action<PoolWork, string, int> _submitWork = null;
-        protected Action<int> _requestWork = null;
+        [IgnoreDataMember]
+        public int Accepted { get; set; }
+
+        [IgnoreDataMember]
+        public int Rejected { get; set; }
+
+        [IgnoreDataMember]
+        public int AcceptedWorkUnits { get; set; }
+
+        [IgnoreDataMember]
+        public int RejectedWorkUnits { get; set; }
+
+        [IgnoreDataMember]
+        public int DiscardedWorkUnits { get; set; }
+
+        public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
+        public event Action<IMiningDevice> WorkRequested;
+        public event Action<IMiningDevice, IPoolWork> InvalidNonce;
+
         protected Thread listenerThread = null;
         protected SerialPort usbPort = null;
-        protected PoolWork pendingWork = null;
+        protected StratumWork pendingWork = null;
 
         private System.Timers.Timer watchdogTimer = null;
 
         private bool continueRunning = true;
 
-        public void Load(Action<PoolWork, string, int> submitWork, Action<int> requestWork)
+        public void Load()
         {
             HashRate = GetTheoreticalHashrate();
 
             WorkRequestTimer.Stop();
-
-            _submitWork = submitWork;
-            _requestWork = requestWork;
 
             if(WatchdogTimeout <= 0)
             {
@@ -119,18 +134,18 @@ namespace MiningDevice
 
         private void WorkRequestTimerExpired(object sender, System.Timers.ElapsedEventArgs e)
         {
-            if(_requestWork != null)
+            if(this.WorkRequested != null)
             {
-                _requestWork(this.Id);
+                this.WorkRequested(this);
             }
         }
 
         private void WatchdogExpired(object sender, System.Timers.ElapsedEventArgs e)
         {
-            if(_requestWork != null)
+            if(this.WorkRequested != null)
             {
                 LogHelper.ConsoleLogErrorAsync(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.UARTPort, (double)WatchdogTimeout / 1000));
-                _requestWork(this.Id);
+                this.WorkRequested(this);
             }
         }
         
@@ -198,16 +213,17 @@ namespace MiningDevice
             {
                 LogHelper.LogErrorAsync(e);
                 this.Unload();
-                this.Load(_submitWork, _requestWork);
+                this.Load();
             }
         }
 
-        protected void SubmitWork(PoolWork work, string nonce)
+        protected void SubmitWork(StratumWork work, string nonce)
         {
-            if(_submitWork != null)
+            this.RestartWatchdogTimer();
+
+            if(this.ValidNonce != null)
             {
-                this.RestartWatchdogTimer();
-                _submitWork(work, nonce, this.Id);
+                this.ValidNonce(this, work, nonce);
             }
         }
 
@@ -232,14 +248,19 @@ namespace MiningDevice
             }
         }
 
-        public abstract void StartWork(PoolWork work);
-        public abstract int GetBaud();
-        protected abstract void DataReceived(object sender, SerialDataReceivedEventArgs e);
-        protected abstract int GetTheoreticalHashrate();
+        protected void OnInvalidNonce(IPoolWork work)
+        {
+            this.InvalidNonce(this, work);
+        }
 
         public void Dispose()
         {
             this.Unload();
         }
+
+        public abstract void StartWork(IPoolWork work);
+        public abstract int GetBaud();
+        protected abstract void DataReceived(object sender, SerialDataReceivedEventArgs e);
+        protected abstract int GetTheoreticalHashrate();
     }
 }

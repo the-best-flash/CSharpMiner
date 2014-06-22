@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using MiningDevice;
 using System;
@@ -44,6 +45,75 @@ namespace DeviceLoader
             get { return new Timer(); }
         }
 
+        [IgnoreDataMember]
+        public int Accepted
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [IgnoreDataMember]
+        public int Rejected
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [IgnoreDataMember]
+        public int AcceptedWorkUnits
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [IgnoreDataMember]
+        public int RejectedWorkUnits
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [IgnoreDataMember]
+        public int DiscardedWorkUnits
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
+        public event Action<IMiningDevice> WorkRequested;
+        public event Action<IMiningDevice, IPoolWork> InvalidNonce;
+
         public IEnumerable<MiningDevice.IMiningDevice> LoadDevices()
         {
             List<IMiningDevice> devices = new List<IMiningDevice>();
@@ -71,7 +141,7 @@ namespace DeviceLoader
             throw new NotImplementedException();
         }
 
-        public void StartWork(CSharpMiner.Stratum.PoolWork work)
+        public void StartWork(IPoolWork work)
         {
             throw new NotImplementedException();
         }
@@ -81,7 +151,7 @@ namespace DeviceLoader
             
         }
 
-        public void Load(Action<PoolWork, string, int> submitWork, Action<int> requestWork)
+        public void Load()
         {
             throw new NotImplementedException();
         }

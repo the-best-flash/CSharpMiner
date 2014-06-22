@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 namespace CSharpMiner.Stratum
 {
     [DataContract]
-    public class Response : SerializedJsonObjectBase
+    public class StratumResponse : SerializedJsonObjectBase
     {
         public static DataContractJsonSerializer _serializer = null;
 
@@ -35,7 +35,7 @@ namespace CSharpMiner.Stratum
             get
             {
                 if (_serializer == null)
-                    _serializer = new DataContractJsonSerializer(typeof(Response));
+                    _serializer = new DataContractJsonSerializer(typeof(StratumResponse));
 
                 return _serializer;
             }
@@ -45,13 +45,13 @@ namespace CSharpMiner.Stratum
         {
             get
             {
-                return Response.SerializerObject;
+                return StratumResponse.SerializerObject;
             }
         }
 
-        public static Response Deserialize(Stream stream)
+        public static StratumResponse Deserialize(Stream stream)
         {
-            return (Response)Response.SerializerObject.ReadObject(stream);
+            return (StratumResponse)StratumResponse.SerializerObject.ReadObject(stream);
         }
 
         [DataMember(Name = "id")]
@@ -63,7 +63,7 @@ namespace CSharpMiner.Stratum
         [DataMember(Name = "error")]
         public Object[] Error { get; set; }
 
-        public Response()
+        public StratumResponse()
         {
         }
 
@@ -71,7 +71,7 @@ namespace CSharpMiner.Stratum
         /// Fallback method for mono JSON parsing failure
         /// </summary>
         /// <param name="str">JSON string</param>
-        public Response(string str)
+        public StratumResponse(string str)
         {
             int idParam = str.IndexOf("id");
             string idParamStr = str.Substring(idParam, str.IndexOf(',', idParam) - idParam);

@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using MiningDevice;
 using System;
@@ -51,27 +52,37 @@ namespace DeviceManager
 
         private int startingNonce = 0;
 
-        protected override void StartWork(PoolWork work, int deviceId, bool restartWork, bool requested)
+        protected override void StartWork(IPoolWork work, IMiningDevice device, bool restartAll, bool requested)
         {
-            startingNonce = Random.Next();
-            StartWorkOnDevice(work, deviceId, restartWork, requested);
+            StratumWork stratumWork = work as StratumWork;
+
+            if (stratumWork != null)
+            {
+                startingNonce = Random.Next();
+                StartWorkOnDevice(stratumWork, device, restartAll, requested);
+            }
         }
 
-        private void StartWorkOnDevice(PoolWork work, int deviceId, bool restartWork, bool requested)
+        protected override void NoWork(IPoolWork oldWork, IMiningDevice device, bool requested)
         {
-            if (!restartWork && deviceId >= 0 && deviceId < this.loadedDevices.Count && requested)
+            StratumWork stratumWork = oldWork as StratumWork;
+
+            if (stratumWork != null)
             {
-                StartWorkOnDevice(this.loadedDevices[deviceId], work.CommandArray, work.Extranonce1, work.Diff);
+                StartWorkOnDevice(stratumWork, device, false, requested);
+            }
+        }
+
+        private void StartWorkOnDevice(StratumWork work, IMiningDevice device, bool restartWork, bool requested)
+        {
+            if (!restartWork && device != null && requested)
+            {
+                StartWorkOnDevice(device, work.CommandArray, work.Extranonce1, work.Diff);
             }
             else if(restartWork)
             {
                 StartWorking(work.CommandArray, work.Extranonce1, work.Diff);
             }
-        }
-
-        protected override void NoWork(PoolWork oldWork, int deviceId, bool requested)
-        {
-            StartWorkOnDevice(oldWork, deviceId, false, requested);
         }
 
         private void StartWorking(object[] param, string extranonce1, int diff)
@@ -84,7 +95,7 @@ namespace DeviceManager
 
         private void StartWorkOnDevice(IMiningDevice device, object[] param, string extranonce1, int diff)
         {
-            device.StartWork(new PoolWork(param, extranonce1, string.Format("{0,8:X8}", startingNonce), diff));
+            device.StartWork(new StratumWork(param, extranonce1, string.Format("{0,8:X8}", startingNonce), diff));
             if (startingNonce != int.MaxValue)
             {
                 startingNonce++;

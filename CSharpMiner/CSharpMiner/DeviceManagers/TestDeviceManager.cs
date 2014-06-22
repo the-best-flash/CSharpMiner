@@ -16,6 +16,7 @@
 
 using CSharpMiner;
 using CSharpMiner.Helpers;
+using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using MiningDevice;
 using System;
@@ -31,7 +32,7 @@ namespace DeviceManager
     public class TestDeviceManager : IMiningDeviceManager
     {
         [DataMember(Name = "pools")]
-        public Pool[] Pools { get; set; }
+        public StratumPool[] Pools { get; set; }
 
         [IgnoreDataMember]
         public IMiningDevice[] MiningDevices { get; private set; }
@@ -46,9 +47,14 @@ namespace DeviceManager
         [IgnoreDataMember]
         public bool Started { get { return started; } }
 
+        public IEnumerable<IMiningDevice> LoadedDevices
+        {
+            get { return MiningDevices; }
+        }
+
         public void NewWork(object[] poolWorkData, int diff)
         {
-            PoolWork work = new PoolWork(poolWorkData, this.ExtraNonce1, "00000000", diff);
+            StratumWork work = new StratumWork(poolWorkData, this.ExtraNonce1, "00000000", diff);
 
             LogHelper.ConsoleLog(new Object[] {
                 string.Format("JobID: {0}", work.JobId),
@@ -63,7 +69,7 @@ namespace DeviceManager
             });
         }
 
-        public void SubmitWork(PoolWork work, string nonce, int startWork)
+        public void SubmitWork(StratumWork work, string nonce, int startWork)
         {
             // Do nothing
         }
@@ -74,7 +80,8 @@ namespace DeviceManager
 
             if(Pools.Length > 0)
             {
-                Pools[0].Start(this.NewWork, this.PoolDisconnected);
+                Pools[0].Disconnected += this.PoolDisconnected;
+                Pools[0].Start();
             }
         }
 
@@ -89,7 +96,7 @@ namespace DeviceManager
         }
 
 
-        public void PoolDisconnected()
+        public void PoolDisconnected(IPool pool)
         {
             if (started && Pools.Length > 0)
             {
@@ -100,6 +107,26 @@ namespace DeviceManager
         public void RequestWork(int deviceId)
         {
             // do nothing
+        }
+
+        public void AddNewPool(StratumPool pool)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddNewDevice(IMiningDevice device)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemovePool(int poolIndex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveDevice(int deviceIndex)
+        {
+            throw new NotImplementedException();
         }
     }
 }

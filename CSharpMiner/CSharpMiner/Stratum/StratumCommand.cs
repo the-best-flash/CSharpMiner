@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 namespace CSharpMiner.Stratum
 {
     [DataContract]
-    public class Command : SerializedJsonObjectBase
+    public class StratumCommand : SerializedJsonObjectBase
     {
         public static DataContractJsonSerializer _serializer = null;
 
@@ -35,7 +35,7 @@ namespace CSharpMiner.Stratum
             get
             {
                 if (_serializer == null)
-                    _serializer = new DataContractJsonSerializer(typeof(Command));
+                    _serializer = new DataContractJsonSerializer(typeof(StratumCommand));
 
                 return _serializer;
             }
@@ -45,13 +45,13 @@ namespace CSharpMiner.Stratum
         {
             get
             {
-                return Command.SerializerObject;
+                return StratumCommand.SerializerObject;
             }
         }
 
-        public static Command Deserialize(Stream stream)
+        public static StratumCommand Deserialize(Stream stream)
         {
-            return (Command)Command.SerializerObject.ReadObject(stream);
+            return (StratumCommand)StratumCommand.SerializerObject.ReadObject(stream);
         }
 
         [DataMember(Name = "id")]
@@ -63,7 +63,7 @@ namespace CSharpMiner.Stratum
         [DataMember(Name = "params")]
         public Object[] Params { get; set; }
 
-        public Command()
+        public StratumCommand()
         {
         }
 
@@ -71,7 +71,7 @@ namespace CSharpMiner.Stratum
         /// Fall back to manually parsing if the JSON parser fails in mono
         /// </summary>
         /// <param name="str"></param>
-        public Command(string str)
+        public StratumCommand(string str)
         {
             int firstColon = str.IndexOf(':') + 1;
             string idStr = str.Substring(firstColon, str.IndexOf(',') - firstColon);
@@ -201,7 +201,7 @@ namespace CSharpMiner.Stratum
             return null;
         }
 
-        public Command(int id, string method, string[] paramArr)
+        public StratumCommand(int id, string method, string[] paramArr)
         {
             Id = id;
             Method = method;
@@ -217,11 +217,11 @@ namespace CSharpMiner.Stratum
         public const string ClientGetVersionCommandString = "client.get_version";
         public const string ClientShowMessageCommandString = "client.show_message";
 
-        public static Command SubscribeCommand 
+        public static StratumCommand SubscribeCommand 
         {
             get
             {
-                return new Command(1, SubscribeCommandString, Command.SubscribeParamArray);
+                return new StratumCommand(1, SubscribeCommandString, StratumCommand.SubscribeParamArray);
             }
         }
 

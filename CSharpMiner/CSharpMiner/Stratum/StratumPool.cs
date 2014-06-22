@@ -15,6 +15,8 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.Helpers;
+using CSharpMiner.Pools;
+using MiningDevice;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,7 +30,7 @@ using System.Threading.Tasks;
 namespace CSharpMiner.Stratum
 {
     [DataContract]
-    public class Pool : IDisposable
+    public class StratumPool : IPool
     {
         public const string StratumPrefix = "stratum+tcp";
 
@@ -90,14 +92,18 @@ namespace CSharpMiner.Stratum
         [IgnoreDataMember]
         public bool Connecting { get; private set; }
 
-        private Queue WorkSubmitIdQueue = null;
-        private TcpClient connection = null;
-        private Object[] pendingWork = null;
-        private Action<Object[], int> _newWork = null;
-        private CancellationTokenSource threadStopping = null;
-        private Action _disconnected = null;
+        public event Action<IPool, IPoolWork, bool> NewWorkRecieved;
+        public event Action<IPool> Disconnected;
+        public event Action<IPool, IPoolWork, IMiningDevice> WorkAccepted;
+        public event Action<IPool, IPoolWork, IMiningDevice> WorkRejected;
 
-        private PoolWork latestWork = null;
+        private Queue WorkSubmitQueue = null;
+        private TcpClient connection = null;
+        private StratumWork pendingWork = null;
+
+        private CancellationTokenSource threadStopping = null;
+
+        private StratumWork latestWork = null;
 
         private Object submissionLock = null;
 
@@ -106,12 +112,12 @@ namespace CSharpMiner.Stratum
         private Tuple<Object[], int> mostRecentWork = null;
         private Tuple<Object[], int> mostRecentWorkCopy = null;
 
-        public Pool()
+        public StratumPool()
             : this("", "", "")
         {
         }
 
-        public Pool(string url, string username, string password)
+        public StratumPool(string url, string username, string password)
         {
             Url = url;
             Username = username;
@@ -121,29 +127,17 @@ namespace CSharpMiner.Stratum
             Rejected = 0;
         }
 
-        public void Start(Action<Object[], int> newWork, Action disconnected)
+        public void Start()
         {
             submissionLock = new Object();
             _writeLock = new Object();
 
             this.Connecting = false;
 
-            if(newWork == null)
-            {
-                throw new ArgumentNullException("newWork");
-            }
-
-            if(disconnected == null)
-            {
-                throw new ArgumentNullException("disconnected");
-            }
-
             if(this.Thread == null)
             {
                 threadStopping = new CancellationTokenSource();
 
-                _newWork = newWork;
-                _disconnected = disconnected;
                 this.Thread = new Thread(new ThreadStart(this.Connect));
                 this.Thread.Start();
             }
@@ -151,6 +145,8 @@ namespace CSharpMiner.Stratum
 
         public void Stop()
         {
+            this.WorkSubmitQueue.Clear();
+
             if (this.Running)
             {
                 this.Running = false;
@@ -182,7 +178,7 @@ namespace CSharpMiner.Stratum
 
                 try
                 {
-                    WorkSubmitIdQueue = Queue.Synchronized(new Queue());
+                    WorkSubmitQueue = Queue.Synchronized(new Queue());
                     this.NewBlocks = 0;
 
                     this.Running = true;
@@ -241,14 +237,14 @@ namespace CSharpMiner.Stratum
                     throw e;
                 }
 
-                Command subscribeCommand = Command.SubscribeCommand;
+                StratumCommand subscribeCommand = StratumCommand.SubscribeCommand;
                 subscribeCommand.Id = this.RequestId;
 
                 MemoryStream memStream = new MemoryStream();
                 subscribeCommand.Serialize(memStream);
                 this.SendData(memStream);
 
-                Response response = this.waitForResponse();
+                StratumResponse response = this.waitForResponse();
 
                 Object[] data = (response != null ? response.Data as Object[] : null);
 
@@ -263,7 +259,10 @@ namespace CSharpMiner.Stratum
                 // If we recieved work before we started the device manager, give the work to the device manager now
                 if (pendingWork != null)
                 {
-                    _newWork(pendingWork, this.Diff);
+                    if(NewWorkRecieved != null)
+                    {
+                        NewWorkRecieved(this, pendingWork, true);
+                    }
                     pendingWork = null;
                 }
 
@@ -280,12 +279,12 @@ namespace CSharpMiner.Stratum
 
                 string[] param = { this.Username, this.Password };
 
-                Command command = new Command(this.RequestId, Command.AuthorizationCommandString, param);
+                StratumCommand command = new StratumCommand(this.RequestId, StratumCommand.AuthorizationCommandString, param);
                 memStream = new MemoryStream();
                 command.Serialize(memStream);
                 this.SendData(memStream);
 
-                Response successResponse = this.waitForResponse();
+                StratumResponse successResponse = this.waitForResponse();
 
                 if (successResponse.Data == null || !successResponse.Data.Equals(true))
                 {
@@ -308,9 +307,9 @@ namespace CSharpMiner.Stratum
 
                 this.Stop();
 
-                if (this._disconnected != null)
+                if (this.Disconnected != null)
                 {
-                    this._disconnected();
+                    this.Disconnected(this);
                 }
             }
         }
@@ -327,7 +326,7 @@ namespace CSharpMiner.Stratum
             }
         }
 
-        public void SubmitWork(string jobId, string extranonce2, string ntime, string nonce)
+        public void SubmitWork(StratumWork work, IMiningDevice device, string nonce)
         {
             if(this.connection == null || !this.connection.Connected)
             {
@@ -335,22 +334,22 @@ namespace CSharpMiner.Stratum
                 return;
             }
 
-            if(!this._allowOldWork && (this.latestWork == null || jobId != this.latestWork.JobId))
+            if(!this._allowOldWork && (this.latestWork == null || work.JobId != this.latestWork.JobId))
             {
-                LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", jobId), ConsoleColor.Magenta, LogVerbosity.Verbose);
+                LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", work.JobId), ConsoleColor.Magenta, LogVerbosity.Verbose);
                 return;
             }
 
-            if (WorkSubmitIdQueue != null && submissionLock != null)
+            if (WorkSubmitQueue != null && submissionLock != null)
             {
                 try
                 {
-                    string[] param = { this.Username, jobId, extranonce2, ntime, nonce };
-                    Command command = null;
+                    string[] param = { this.Username, work.JobId, work.Extranonce2, work.Timestamp, nonce };
+                    StratumCommand command = null;
 
                     lock (submissionLock)
                     {
-                        command = new Command(this.RequestId, Command.SubmitCommandString, param);
+                        command = new StratumCommand(this.RequestId, StratumCommand.SubmitCommandString, param);
                         this.RequestId++;
 
                         try
@@ -370,10 +369,11 @@ namespace CSharpMiner.Stratum
                         {
                             if ((this.connection == null || !this.connection.Connected) && this.Running)
                             {
-                                if (this._disconnected != null)
+                                this.Stop();
+
+                                if (this.Disconnected != null)
                                 {
-                                    this.Stop();
-                                    this._disconnected();
+                                    this.Disconnected(this);
                                 }
                             }
                         }
@@ -381,7 +381,7 @@ namespace CSharpMiner.Stratum
 
                     if (command != null)
                     {
-                        WorkSubmitIdQueue.Enqueue(command);
+                        WorkSubmitQueue.Enqueue(new Tuple<StratumCommand, StratumWork, IMiningDevice>(command, work, device));
                     }
                 }
                 catch (Exception e)
@@ -397,9 +397,9 @@ namespace CSharpMiner.Stratum
             this.processCommands(responses, this.RequestId);
         }
 
-        private Response processCommands(string[] commands, int id = -1)
+        private StratumResponse processCommands(string[] commands, int id = -1)
         {
-            Response result = null;
+            StratumResponse result = null;
 
             foreach (string str in commands)
             {
@@ -414,17 +414,18 @@ namespace CSharpMiner.Stratum
 
                     if (str.Contains("\"result\""))
                     {
-                        Response response = null;
+                        StratumResponse response = null;
 
                         try
                         {
                             try
                             {
-                                response = Response.Deserialize(memStream);
+                                response = StratumResponse.Deserialize(memStream);
                             }
                             catch
                             {
-                                response = new Response(str);
+                                LogHelper.LogErrorSecondaryAsync(string.Format("Failing over to manual parsing. Could not deserialize:\n\r {0}", str));
+                                response = new StratumResponse(str);
                             }
                         }
                         catch (Exception e)
@@ -441,25 +442,34 @@ namespace CSharpMiner.Stratum
                         }
                         else // This should be a work submit response. We expect these to come back in order
                         {
-                            if (WorkSubmitIdQueue != null)
+                            if (WorkSubmitQueue != null)
                             {
-                                if (WorkSubmitIdQueue.Count > 0)
+                                if (WorkSubmitQueue.Count > 0)
                                 {
-                                    if (response.Id == ((Command)WorkSubmitIdQueue.Peek()).Id)
+                                    Tuple<StratumCommand, StratumWork, IMiningDevice> workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+
+                                    if (response.Id == workItem.Item1.Id)
                                     {
-                                        processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
+                                        processWorkAcceptCommand(workItem.Item2, workItem.Item3, response);
+                                        WorkSubmitQueue.Dequeue();
                                     }
-                                    else if (response.Id > ((Command)WorkSubmitIdQueue.Peek()).Id) // Something odd happened, we probably missed some responses or the server decided not to send them
+                                    else if (response.Id >  workItem.Item1.Id) // Something odd happened, we probably missed some responses or the server decided not to send them
                                     {
-                                        while (WorkSubmitIdQueue.Count > 0 && response.Id > ((Command)WorkSubmitIdQueue.Peek()).Id)
+                                        workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+
+                                        while (WorkSubmitQueue.Count > 0 && response.Id > workItem.Item1.Id)
                                         {
                                             // Get rid of the old stuff
-                                            processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response, true);
+                                            WorkSubmitQueue.Dequeue();
+
+                                            workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
                                         }
 
-                                        if (WorkSubmitIdQueue.Count > 0 && response.Id == ((Command)WorkSubmitIdQueue.Peek()).Id)
+                                        if (WorkSubmitQueue.Count > 0 && response.Id == ((Tuple<StratumCommand, StratumWork, IMiningDevice>)WorkSubmitQueue.Peek()).Item1.Id)
                                         {
-                                            processWorkAcceptCommand((Command)WorkSubmitIdQueue.Dequeue(), response);
+                                            workItem = WorkSubmitQueue.Dequeue() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+
+                                            processWorkAcceptCommand( workItem.Item2, workItem.Item3, response);
                                         }
                                     }
                                 }
@@ -468,17 +478,17 @@ namespace CSharpMiner.Stratum
                     }
                     else // This is a command from the server
                     {
-                        Command command = null;
+                        StratumCommand command = null;
 
                         try
                         {
                             try
                             {
-                                command = Command.Deserialize(memStream);
+                                command = StratumCommand.Deserialize(memStream);
                             }
                             catch
                             {
-                                command = new Command(str);
+                                command = new StratumCommand(str);
                             }
                         }
                         catch (Exception e)
@@ -496,18 +506,18 @@ namespace CSharpMiner.Stratum
             return result;
         }
 
-        private void processWorkAcceptCommand(Command sentCommand, Response response, bool error = false)
+        private void processWorkAcceptCommand(StratumWork work, IMiningDevice device, StratumResponse response, bool error = false)
         {
             if(error)
             {
-                LogHelper.DebugConsoleLogAsync(string.Format("Error. Unknown work result. Mismatch in work queue ID and recieved response ID. Dequing waiting command ID {0} since we recieved response {1}.", sentCommand.Id, response.Id), ConsoleColor.Red);
+                LogHelper.DebugConsoleLogError("Error. Unknown work result. Mismatch in work queue ID and recieved response ID.");
                 return;
             }
 
             string reason = "";
-            bool rejected = false;
+            bool accepted = response.Data != null && response.Data.Equals(true);
 
-            if (response.Data != null && response.Data.Equals(true))
+            if (accepted)
             {
                 Accepted++;
             }
@@ -517,8 +527,6 @@ namespace CSharpMiner.Stratum
 
                 LogHelper.ConsoleLogAsync(string.Format("Rejected with {0}", reason), ConsoleColor.Magenta, LogVerbosity.Verbose);
                 Rejected++;
-
-                rejected = true;
             }
 
             ConsoleColor color = (response.Data != null && response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
@@ -533,22 +541,29 @@ namespace CSharpMiner.Stratum
                 new Object[] { " )", true }
             });
 
-            if (rejected && reason.ToLower().Trim() == "job not found")
+            if (accepted)
             {
-                if (mostRecentWorkCopy != null)
+                if(this.WorkAccepted != null)
                 {
-                    _newWork(mostRecentWorkCopy.Item1, mostRecentWorkCopy.Item2);
+                    this.WorkAccepted(this, work, device);
+                }
+            }
+            else
+            {
+                if(this.WorkRejected != null)
+                {
+                    this.WorkRejected(this, work, device);
                 }
             }
         }
 
-        private void processCommand(Command command)
+        private void processCommand(StratumCommand command)
         {
             LogHelper.DebugConsoleLogAsync(string.Format("Command: {0}", command.Method), LogVerbosity.Verbose);
 
             switch(command.Method.Trim())
             {
-                case Command.NotifyCommandString:
+                case StratumCommand.NotifyCommandString:
                     LogHelper.ConsoleLogAsync(string.Format("Got Work from {0}!", this.Url), LogVerbosity.Verbose);
 
                     if (command.Params.Length >= 9 && command.Params[8] != null && command.Params[8].Equals(true))
@@ -557,13 +572,16 @@ namespace CSharpMiner.Stratum
                         LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow, LogVerbosity.Verbose);
                     }
 
-                    if (this.Alive && this._newWork != null)
+                    StratumWork work = new StratumWork(command.Params, this.Extranonce1, "00000000", this.Diff);
+
+                    if (this.Alive && this.NewWorkRecieved != null)
                     {
-                        _newWork(command.Params, this.Diff);
+                        bool forceRestart = (command.Params != null && command.Params.Length >= 9 && command.Params[8] is bool ? (bool)command.Params[8] : true);
+                        NewWorkRecieved(this, work, forceRestart);
                     }
                     else
                     {
-                        pendingWork = command.Params;
+                        pendingWork = work;
                     }
 
                     mostRecentWork = new Tuple<object[], int>(command.Params, this.Diff);
@@ -577,7 +595,7 @@ namespace CSharpMiner.Stratum
                     mostRecentWorkCopy = new Tuple<object[], int>(copy, this.Diff);
                     break;
 
-                case Command.SetDifficlutyCommandString:
+                case StratumCommand.SetDifficlutyCommandString:
                     LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", command.Params[0], this.Url), LogVerbosity.Verbose);
 
                     this.Diff = (int)command.Params[0];
@@ -622,10 +640,10 @@ namespace CSharpMiner.Stratum
             return string.Empty;
         }
 
-        private Response waitForResponse()
+        private StratumResponse waitForResponse()
         {
             // TODO: handle null connection
-            Response response = null;
+            StratumResponse response = null;
             NetworkStream netStream = connection.GetStream();
             string responseStr = "";
 
@@ -656,11 +674,28 @@ namespace CSharpMiner.Stratum
             return response;
         }
 
-        void IDisposable.Dispose()
+        public void Dispose()
         {
             if(this.Running)
             {
                 this.Stop();
+            }
+        }
+
+        public void SubmitWork(IPoolWork work, object workData)
+        {
+            StratumWork stratumWork = work as StratumWork;
+            Object[] data = workData as Object[];
+
+            if (stratumWork != null && data != null && data.Length >= 2)
+            {
+                IMiningDevice device = data[0] as IMiningDevice;
+                string nonce = data[1] as string;
+
+                if (device != null && nonce != null)
+                {
+                    this.SubmitWork(stratumWork, device, nonce);
+                }
             }
         }
     }

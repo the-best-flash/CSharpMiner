@@ -18,10 +18,11 @@ using CSharpMiner.Helpers;
 using System;
 using System.Security.Cryptography;
 using System.Linq;
+using CSharpMiner.Pools;
 
 namespace CSharpMiner.Stratum
 {
-    public class PoolWork
+    public class StratumWork : IPoolWork
     {
         Object _lock = new Object();
 
@@ -89,21 +90,7 @@ namespace CSharpMiner.Stratum
             }
         }
 
-        private static SHA256 _sha256 = null;
-        public static SHA256 SHA256Hash
-        {
-            get
-            {
-                if(_sha256 == null)
-                {
-                    _sha256 = SHA256.Create();
-                }
-
-                return _sha256;
-            }
-        }
-
-        public PoolWork(Object[] serverCommandArray, string extranonce1, string extranonce2, int diff, int startingNonce = 0)
+        public StratumWork(Object[] serverCommandArray, string extranonce1, string extranonce2, int diff, int startingNonce = 0)
         {
             if(serverCommandArray.Length < 8)
             {
@@ -164,17 +151,7 @@ namespace CSharpMiner.Stratum
         private string ComputeMerkleRoot()
         {
             string coinbase = string.Format("{0}{1}{2}{3}", Coinbase1, Extranonce1, Extranonce2, Coinbase2);
-            byte[] coinbaseBinary = HexConversionHelper.ConvertFromHexString(coinbase);
-
-            SHA256 sha256 = SHA256Hash;
-            byte[] merkleRoot = sha256.ComputeHash(sha256.ComputeHash(coinbaseBinary));
-
-            foreach (string str in MerkleBranch)
-            {
-                merkleRoot = sha256.ComputeHash(sha256.ComputeHash(merkleRoot.Concat(HexConversionHelper.ConvertFromHexString(str)).ToArray()));
-            }
-
-            return HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(merkleRoot));
+            return HashHelper.ComputeMerkleRoot(coinbase, MerkleBranch);
         }
 
         private string MakeHeader()

@@ -15,6 +15,7 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.Helpers;
+using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using DeviceManager;
 using System;
@@ -51,10 +52,30 @@ namespace MiningDevice
             get { return 0; }
         }
 
+        [IgnoreDataMember]
         public Timer WorkRequestTimer
         {
             get { return new Timer(); }
         }
+
+        [IgnoreDataMember]
+        public int Accepted { get; set; }
+
+        [IgnoreDataMember]
+        public int Rejected { get; set; }
+
+        [IgnoreDataMember]
+        public int AcceptedWorkUnits { get; set; }
+
+        [IgnoreDataMember]
+        public int RejectedWorkUnits { get; set; }
+
+        [IgnoreDataMember]
+        public int DiscardedWorkUnits { get; set; }
+
+        public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
+        public event Action<IMiningDevice> WorkRequested;
+        public event Action<IMiningDevice, IPoolWork> InvalidNonce;
 
         public TestDevice(string path, int cores)
         {
@@ -62,7 +83,7 @@ namespace MiningDevice
             Cores = cores;
         }
 
-        public void Load(Action<PoolWork, string, int> submitWork, Action<int> requestWork)
+        public void Load()
         {
             LogHelper.ConsoleLogAsync(string.Format("Loading Miner {0}", Path), LogVerbosity.Verbose);
         }
@@ -72,11 +93,17 @@ namespace MiningDevice
             LogHelper.ConsoleLogAsync(string.Format("Unloading Miner {0}", Path), LogVerbosity.Verbose);
         }
 
-        public void StartWork(PoolWork work)
+        public void StartWork(IPoolWork work)
         {
+            StratumWork stratumWork = work as StratumWork;
+
             LogHelper.ConsoleLogAsync(string.Format("Miner {0} starting work {1} with:", Path, work.JobId), LogVerbosity.Verbose);
-            LogHelper.ConsoleLogAsync(string.Format("\tExtranonce2: {0}", work.Extranonce2), LogVerbosity.Verbose);
-            LogHelper.ConsoleLogAsync(string.Format("\tStartNonce:  {0}", work.StartingNonce), LogVerbosity.Verbose);
+
+            if (stratumWork != null)
+            {
+                LogHelper.ConsoleLogAsync(string.Format("\tExtranonce2: {0}", stratumWork.Extranonce2), LogVerbosity.Verbose);
+                LogHelper.ConsoleLogAsync(string.Format("\tStartNonce:  {0}", stratumWork.StartingNonce), LogVerbosity.Verbose);
+            }
         }
 
         public void Dispose()
