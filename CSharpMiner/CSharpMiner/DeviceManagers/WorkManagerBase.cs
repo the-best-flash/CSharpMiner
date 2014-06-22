@@ -64,8 +64,8 @@ namespace DeviceManager
             {
                 PoolWork newWork = new PoolWork(poolWorkData, ActivePool.Extranonce1, "00000000", diff);
 
-                // Pool asked us to toss out our old work
-                if (poolWorkData[8].Equals(true))
+                // Pool asked us to toss out our old work or we don't have any work yet
+                if (poolWorkData[8].Equals(true) || currentWork == null)
                 {
                     currentWork = newWork;
                     nextWork = newWork;
