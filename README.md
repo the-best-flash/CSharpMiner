@@ -19,7 +19,7 @@ CSharpMiner
 
 C# (Mono/.NET) crypto-currency mining stratum client for use with various kinds of ASICs.
 
-This is in an Alpha working state. I am using it to mine with some Blizzards right now, however I have not run it for over 24 hours without stop yet.
+This is in an Alpha working state. I am using it to mine with some Blizzards on a Raspberry Pi right now, however I have not run it for over 24 hours without stop yet.
 
 You can run this on .NET or <a href="http://www.mono-project.com/Main_Page">Mono</a>. Mono can run binaries compiled for .NET, but it is recommended that you use a binary compiled for Mono. 
 
