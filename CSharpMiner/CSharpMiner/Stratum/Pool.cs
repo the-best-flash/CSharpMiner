@@ -146,6 +146,8 @@ namespace CSharpMiner.Stratum
                 connection = null;
 
                 latestWork = null;
+
+                this.Thread = null;
             }
         }
 

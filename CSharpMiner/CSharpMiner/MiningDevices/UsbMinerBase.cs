@@ -51,52 +51,58 @@ namespace MiningDevice
 
         private void Connect()
         {
-            string[] portNames = SerialPort.GetPortNames();
-
-            if(!portNames.Contains(UARTPort))
-            {
-                Exception e =  new SerialConnectionException(string.Format("{0} is not a valid USB port.", (UARTPort != null ? UARTPort : "null")));
-
-                LogHelper.LogErrorSecondary(e);
-
-                throw e;
-            }
-
             try
             {
-                continueRunning = true;
-                usbPort = new SerialPort(UARTPort, GetBaud());
-                //usbPort.DataReceived += DataReceived;
-                usbPort.Open();
+                string[] portNames = SerialPort.GetPortNames();
+
+                if (!portNames.Contains(UARTPort))
+                {
+                    Exception e = new SerialConnectionException(string.Format("{0} is not a valid USB port.", (UARTPort != null ? UARTPort : "null")));
+
+                    LogHelper.LogErrorSecondary(e);
+
+                    throw e;
+                }
+
+                try
+                {
+                    continueRunning = true;
+                    usbPort = new SerialPort(UARTPort, GetBaud());
+                    //usbPort.DataReceived += DataReceived;
+                    usbPort.Open();
+                }
+                catch (Exception e)
+                {
+                    LogHelper.ConsoleLogErrorAsync(string.Format("Error connecting to {0}.", UARTPort));
+                    throw new SerialConnectionException(string.Format("Error connecting to {0}: {1}", UARTPort, e), e);
+                }
+
+                LogHelper.ConsoleLogAsync(string.Format("Successfully connected to {0}.", UARTPort), LogVerbosity.Verbose);
+
+                if (this.pendingWork != null)
+                {
+                    Task.Factory.StartNew(() =>
+                        {
+                            this.StartWork(pendingWork);
+                            pendingWork = null;
+                        });
+                }
+
+                while (this.continueRunning)
+                {
+                    if (usbPort.BytesToRead > 0)
+                    {
+                        DataReceived(usbPort, null);
+                    }
+
+                    Thread.Sleep(100);
+                }
             }
             catch (Exception e)
             {
+                LogHelper.LogErrorAsync(e);
                 this.Unload();
-
-                Exception exception = new SerialConnectionException(string.Format("Error connecting to {0}: {1}", UARTPort, e), e);
-                LogHelper.LogErrorSecondaryAsync(exception);
-                throw exception;
-            }
-
-            LogHelper.ConsoleLogAsync(string.Format("Successfully connected to {0}.", UARTPort), LogVerbosity.Verbose);
-
-            if (this.pendingWork != null)
-            {
-                Task.Factory.StartNew(() =>
-                    {
-                        this.StartWork(pendingWork);
-                        pendingWork = null;
-                    });
-            }
-
-            while(this.continueRunning)
-            {
-                if(usbPort.BytesToRead > 0)
-                {
-                    DataReceived(usbPort, null);
-                }
-
-                Thread.Sleep(100);
+                this.Load(_submitWork);
             }
         }
 
