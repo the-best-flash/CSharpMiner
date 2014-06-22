@@ -31,6 +31,43 @@ When constructing the config file you will need to tell the system what type of 
 
 The example.conf file is an example configuration file. It shows how to use shorthand to easily load multiple Blizzards with the same settings, another object that loads some Thunders, and a third object that shows how to specify settings for a single Fury.
 
+Example:
+
+    {
+        "managers" : [
+        {
+            "__type" : "IndividualWorkManager:#DeviceManager",
+            "pools" : [
+                    {
+                        "url" : "stratum+tcp://SomePool.com:3333",
+                        "user" : "SomeUsername",
+                        "pass" : "SomePassword"
+                    }
+                ],
+            "devices" : [
+                    {
+                        "__type" : "ZeusDeviceLoader:#DeviceLoader",
+                        "ports" : ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyUSB2", "/dev/ttyUSB3", "/dev/ttyUSB4", "/dev/ttyUSB5", "COM1" ],
+                        "cores" : 6,
+                        "clock" : 328
+                    },
+                    {
+                        "__type" : "ZeusDeviceLoader:#DeviceLoader",
+                        "ports" : ["/dev/ttyUSB6", "/dev/ttyUSB7", "/dev/ttyUSB8" ],
+                        "cores" : 96,
+                        "clock" : 328
+                    },
+                    {
+                        "__type" : "ZeusDevice:#MiningDevice",
+                        "port" : "/dev/ttyUSB9",
+                        "cores" : 6,
+                        "clock" : 382
+                    }
+                ]
+            }
+        ]
+    }
+
 Expect high reject rates (5 - 10%) until I implement a method of verifying the correctness of the nonce before submitting it. However, you will also see higher hash rates on pools that report your total hashrate including rejects. Overall this seems to be getting about the same hashrate as CGminer for my Furys once the reject rate is taken into account.
 
 Command line format is:
