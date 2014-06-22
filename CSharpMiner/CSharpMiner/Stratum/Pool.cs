@@ -254,7 +254,7 @@ namespace CSharpMiner.Stratum
         {
             if(!this._allowOldWork && (this.latestWork == null || jobId != this.latestWork.JobId))
             {
-                LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", jobId), LogVerbosity.Verbose);
+                LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", jobId), ConsoleColor.Magenta, LogVerbosity.Verbose);
                 return;
             }
 
