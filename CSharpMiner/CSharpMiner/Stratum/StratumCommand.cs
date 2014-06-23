@@ -248,7 +248,7 @@ namespace CSharpMiner.Stratum
                 if (_subscribeParamArray == null)
                 {
                     _subscribeParamArray = new string[1];
-                    _subscribeParamArray[0] = string.Format("CSharpMiner_{0}", CSharpMiner.VersionString);
+                    _subscribeParamArray[0] = string.Format("CSharpMiner_{0}", Miner.VersionString);
                 }
 
                 return _subscribeParamArray;

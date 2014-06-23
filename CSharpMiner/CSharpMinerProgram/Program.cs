@@ -14,12 +14,13 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner;
 using CSharpMiner.Helpers;
 using CSharpMiner.ModuleLoading;
 using System;
 using System.IO;
 
-namespace CSharpMiner
+namespace CSharpMinerProgram
 {
     class Program
     {
@@ -65,13 +66,13 @@ namespace CSharpMiner
             LogHelper.Verbosity = LogVerbosity.Verbose;
 
             bool loaded = false; // Make sure that we don't loop indefinately if we can't even get the miner started
-            CSharpMiner miner = null;
+            Miner miner = null;
 
             do
             {
                 try
                 {
-                    miner = new CSharpMiner();
+                    miner = new Miner();
 
                     miner.Start(args[0]);
 

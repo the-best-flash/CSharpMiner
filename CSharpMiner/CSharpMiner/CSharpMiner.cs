@@ -29,7 +29,7 @@ using System.Threading.Tasks;
 
 namespace CSharpMiner
 {
-    public class CSharpMiner
+    public class Miner
     {
         public const string VersionString = "0.0.1";
 
