@@ -729,7 +729,6 @@ namespace Stratum
         {
             // TODO: handle null connection
             StratumResponse response = null;
-            NetworkStream netStream = connection.GetStream();
             string responseStr = "";
 
             // TODO: Make this not an infinate loop
