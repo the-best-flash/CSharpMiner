@@ -56,6 +56,8 @@
     <Compile Include="Helpers\LogHelper.cs" />
     <Compile Include="Interfaces\IMiningDevice.cs" />
     <Compile Include="Interfaces\IMiningDeviceManager.cs" />
+    <Compile Include="Interfaces\IMiningDeviceObject.cs" />
+    <Compile Include="Interfaces\IUSBDeviceSettings.cs" />
     <Compile Include="MiningDevices\SerialConnectionException.cs" />
     <Compile Include="MiningDevices\UsbMinerBase.cs" />
     <Compile Include="DeviceManagers\WorkManagerBase.cs" />

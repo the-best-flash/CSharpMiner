@@ -36,90 +36,6 @@ namespace DeviceLoader
         [MiningSetting(ExampleValue="42", Optional=true, Description="Because Optional=true this will have the word '(Optional)' appended after the property type.")]
         public int Cores { get; set; }
 
-        [IgnoreDataMember]
-        public int Id { get; set; }
-
-        [IgnoreDataMember]
-        public Timer WorkRequestTimer
-        {
-            get { return new Timer(); }
-        }
-
-        [IgnoreDataMember]
-        public string Name
-        {
-            get { return "TestDeviceLoader";  }
-        }
-
-        [IgnoreDataMember]
-        public int Accepted
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        [IgnoreDataMember]
-        public int Rejected
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        [IgnoreDataMember]
-        public int AcceptedWorkUnits
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        [IgnoreDataMember]
-        public int RejectedWorkUnits
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        [IgnoreDataMember]
-        public int DiscardedWorkUnits
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
-        public event Action<IMiningDevice> WorkRequested;
-        public event Action<IMiningDevice, IPoolWork> InvalidNonce;
-
         public IEnumerable<IMiningDevice> LoadDevices()
         {
             List<IMiningDevice> devices = new List<IMiningDevice>();
@@ -130,48 +46,6 @@ namespace DeviceLoader
             }
 
             return devices;
-        }
-
-        public int HashRate
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        public int HardwareErrors
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public void Unload()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void StartWork(IPoolWork work)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Dispose()
-        {
-            
-        }
-
-        public void Load()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void WorkRejected(IPoolWork work)
-        {
-            throw new NotImplementedException();
         }
     }
 }

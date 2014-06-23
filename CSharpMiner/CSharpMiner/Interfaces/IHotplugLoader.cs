@@ -18,7 +18,7 @@ using System;
 
 namespace CSharpMiner.Interfaces
 {
-    public interface IHotplugLoader : IMiningDevice, IDisposable
+    public interface IHotplugLoader : IMiningDeviceObject, IDisposable
     {
         event Action<IMiningDevice> DeviceFound;
 

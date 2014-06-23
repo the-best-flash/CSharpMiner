@@ -46,7 +46,7 @@ namespace CSharpMiner.DeviceManager
 		    'clock' : 382
     }
 ]")]
-        public IMiningDevice[] MiningDevices { get; set; }
+        public IMiningDeviceObject[] MiningDevices { get; set; }
 
         [IgnoreDataMember]
         public IPool ActivePool { get; private set; }
@@ -189,7 +189,7 @@ namespace CSharpMiner.DeviceManager
                 loadedDevices = new List<IMiningDevice>();
                 hotplugLoaders = new List<IHotplugLoader>();
 
-                foreach(IMiningDevice d in this.MiningDevices)
+                foreach(IMiningDeviceObject d in this.MiningDevices)
                 {
                     LoadDevice(d);
                 }
@@ -205,7 +205,7 @@ namespace CSharpMiner.DeviceManager
             });
         }
 
-        private void LoadDevice(IMiningDevice d)
+        private void LoadDevice(IMiningDeviceObject d)
         {
             IDeviceLoader loader = d as IDeviceLoader;
 
@@ -232,21 +232,26 @@ namespace CSharpMiner.DeviceManager
                 }
                 else
                 {
-                    lock (deviceListLock)
+                    IMiningDevice device = d as IMiningDevice;
+
+                    if (device != null)
                     {
-                        d.Id = deviceId;
-                        deviceId++;
+                        lock (deviceListLock)
+                        {
+                            device.Id = deviceId;
+                            deviceId++;
 
-                        loadedDevices.Add(d);
+                            loadedDevices.Add(device);
+                        }
+
+                        device.ValidNonce += this.SubmitWork;
+                        device.WorkRequested += this.RequestWork;
+                        device.InvalidNonce += this.InvalidNonce;
+
+                        device.Load();
+
+                        this.SetUpDevice(device);
                     }
-
-                    d.ValidNonce += this.SubmitWork;
-                    d.WorkRequested += this.RequestWork;
-                    d.InvalidNonce += this.InvalidNonce;
-
-                    d.Load();
-
-                    this.SetUpDevice(d);
                 }
             }
         }
@@ -294,15 +299,29 @@ namespace CSharpMiner.DeviceManager
         {
             LogHelper.ConsoleLogAsync(new Object[] {
                     new Object[] {string.Format("Device {0} ", d.Name), false},
-                    new Object[] {" ( ", false },
+                    new Object[] {" ( ", false},
                     new Object[] {d.Accepted, ConsoleColor.Green, false},
                     new Object[] {" : ", false},
                     new Object[] {d.Rejected, ConsoleColor.Red, false},
                     new Object[] {" : ", false},
                     new Object[] {d.HardwareErrors, ConsoleColor.Magenta, false},
-                    new Object[] {" ) ", true}
+                    new Object[] {" ) ", false},
+                    new Object[] {" ( ", false},
+                    new Object[] {MegaHashDisplayString(d.AcceptedHashRate), ConsoleColor.Green, false},
+                    new Object[] {" : ", false},
+                    new Object[] {MegaHashDisplayString(d.RejectedHashRate), ConsoleColor.Red, false},
+                    new Object[] {" : ", false},
+                    new Object[] {MegaHashDisplayString(d.DiscardedHashRate), ConsoleColor.Magenta, false},
+                    new Object[] {" )", true}
                 },
                 LogVerbosity.Verbose);
+        }
+
+        private string MegaHashDisplayString(double hashesPerSec)
+        {
+            double mHash = hashesPerSec / 1000000;
+
+            return string.Format("{0:N2}Mh", mHash);
         }
 
         public virtual void Stop()

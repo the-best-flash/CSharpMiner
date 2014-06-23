@@ -19,7 +19,7 @@ using System.Timers;
 
 namespace CSharpMiner.Interfaces
 {
-    public interface IMiningDevice : IDisposable
+    public interface IMiningDevice : IMiningDeviceObject, IDisposable
     {
         int Id { get; set; }
         int Cores { get; }
@@ -33,6 +33,10 @@ namespace CSharpMiner.Interfaces
         int AcceptedWorkUnits { get; set; }
         int RejectedWorkUnits { get; set; }
         int DiscardedWorkUnits { get; set; }
+
+        double AcceptedHashRate { get; }
+        double RejectedHashRate { get; }
+        double DiscardedHashRate { get; }
 
         Timer WorkRequestTimer { get; }
 

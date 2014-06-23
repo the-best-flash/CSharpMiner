@@ -110,8 +110,8 @@ namespace CSharpMiner.ModuleLoading
             IEnumerable<Type> knownTypes = KnownTypes;
 
             IEnumerable<Type> hotplugLoaders = knownTypes.Where(t => t.GetInterfaces().Contains(typeof(IHotplugLoader)));
-            IEnumerable<Type> deviceLoaders = knownTypes.Except(hotplugLoaders).Where(t => t.GetInterfaces().Contains(typeof(IDeviceLoader)));
-            IEnumerable<Type> devices = knownTypes.Except(deviceLoaders).Where(t => t.GetInterfaces().Contains(typeof(IMiningDevice)));
+            IEnumerable<Type> deviceLoaders = knownTypes.Where(t => t.GetInterfaces().Contains(typeof(IDeviceLoader)));
+            IEnumerable<Type> devices = knownTypes.Where(t => t.GetInterfaces().Contains(typeof(IMiningDevice)));
             IEnumerable<Type> deviceManagers = knownTypes.Where(t => t.GetInterfaces().Contains(typeof(IMiningDeviceManager)));
             IEnumerable<Type> pools = knownTypes.Where(t => t.GetInterfaces().Contains(typeof(IPool)));
             IEnumerable<Type> others = knownTypes.Except(deviceLoaders).Except(deviceManagers).Except(devices).Except(pools);

@@ -19,21 +19,17 @@ using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using ZeusMinerGen1Plugin;
 
 namespace ZeusMiner
 {
     [DataContract]
     [MiningModule(Description = "Configures many ZeusMiner(Gen1) or GAWMiner(A1) devices at once.")]
-    public class ZeusDeviceLoader : USBDeviceLoader
+    public class ZeusDeviceLoader : USBDeviceLoader, IZeusDeviceSettings
     {
         [DataMember(Name = "clock")]
         [MiningSetting(ExampleValue="328", Description="The clockspeed of the miner. Max = 382", Optional=true)]
         public int LtcClk { get; set; }
-
-        public override string Name
-        {
-            get { return "ZeusDeviceLoader"; }
-        }
 
         public override IEnumerable<IMiningDevice> LoadDevices()
         {

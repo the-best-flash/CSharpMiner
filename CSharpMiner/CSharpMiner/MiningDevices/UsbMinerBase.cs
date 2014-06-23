@@ -27,7 +27,7 @@ using System.Linq;
 namespace CSharpMiner.MiningDevice
 {
     [DataContract]
-    public abstract class UsbMinerBase : IMiningDevice
+    public abstract class UsbMinerBase : IMiningDevice, IUSBDeviceSettings
     {
         protected const int defaultPollTime = 10;
 
@@ -36,7 +36,7 @@ namespace CSharpMiner.MiningDevice
 
         [DataMember(Name = "port")]
         [MiningSetting(ExampleValue = "dev/ttyUSB0", Optional = false, Description = "The port the device is connected to. Linux /dev/tty* and Windows COM*")]
-        public string UARTPort { get; set; }
+        public string Port { get; set; }
 
         private int _cores = 1;
         [DataMember(Name = "cores")]
@@ -109,17 +109,112 @@ namespace CSharpMiner.MiningDevice
         [IgnoreDataMember]
         public int Rejected { get; set; }
 
+        int _acceptedWork = 0;
         [IgnoreDataMember]
-        public int AcceptedWorkUnits { get; set; }
+        public int AcceptedWorkUnits
+        {
+            get
+            {
+                return _acceptedWork;
+            }
 
-        [IgnoreDataMember]
-        public int RejectedWorkUnits { get; set; }
+            set
+            {
+                _acceptedWork = value;
+                _acceptedHashRateValid = false;
+            }
+        }
 
+        int _rejectedWork = 0;
         [IgnoreDataMember]
-        public int DiscardedWorkUnits { get; set; }
+        public int RejectedWorkUnits
+        {
+            get
+            {
+                return _rejectedWork;
+            }
+
+            set
+            {
+                _rejectedWork = value;
+                _rejectedHashRateValid = false;
+            }
+        }
+
+        int _discardedWork = 0;
+        [IgnoreDataMember]
+        public int DiscardedWorkUnits
+        {
+            get
+            {
+                return _discardedWork;
+            }
+
+            set
+            {
+                _discardedWork = value;
+                _discardedHashRateValid = false;
+            }
+        }
 
         [IgnoreDataMember]
         public abstract string Name { get;}
+
+        private double _acceptedHashRate = 0;
+        private bool _acceptedHashRateValid = false;
+        [IgnoreDataMember]
+        public double AcceptedHashRate
+        {
+            get 
+            { 
+                if(!_acceptedHashRateValid)
+                {
+                    _acceptedHashRate = ComputeHashRate(AcceptedWorkUnits);
+                    _acceptedHashRateValid = true;
+                }
+
+                return _acceptedHashRate;
+            }
+        }
+
+        private double _rejectedHashRate = 0;
+        private bool _rejectedHashRateValid = false;
+        [IgnoreDataMember]
+        public double RejectedHashRate
+        {
+            get
+            {
+                if (!_rejectedHashRateValid)
+                {
+                    _rejectedHashRate = ComputeHashRate(RejectedWorkUnits);
+                    _rejectedHashRateValid = true;
+                }
+
+                return _rejectedHashRate;
+            }
+        }
+
+        private double _discardedHashRate = 0;
+        private bool _discardedHashRateValid = false;
+        [IgnoreDataMember]
+        public double DiscardedHashRate
+        {
+            get
+            {
+                if (!_discardedHashRateValid)
+                {
+                    _discardedHashRate = ComputeHashRate(DiscardedWorkUnits);
+                    _discardedHashRateValid = true;
+                }
+
+                return _discardedHashRate;
+            }
+        }
+
+        private double ComputeHashRate(int workUnits)
+        {
+            return 65535 * workUnits / start.Subtract(DateTime.Now).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
+        }
 
         public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
         public event Action<IMiningDevice> WorkRequested;
@@ -131,10 +226,22 @@ namespace CSharpMiner.MiningDevice
 
         private System.Timers.Timer watchdogTimer = null;
 
+        private DateTime start;
+
         private bool continueRunning = true;
 
         public void Load()
         {
+            start = DateTime.Now;
+
+            Accepted = 0;
+            Rejected = 0;
+            HardwareErrors = 0;
+
+            AcceptedWorkUnits = 0;
+            RejectedWorkUnits = 0;
+            DiscardedWorkUnits = 0;
+
             HashRate = GetTheoreticalHashrate();
 
             WorkRequestTimer.Stop();
@@ -199,9 +306,9 @@ namespace CSharpMiner.MiningDevice
             {
                 string[] portNames = SerialPort.GetPortNames();
 
-                if (!portNames.Contains(UARTPort))
+                if (!portNames.Contains(Port))
                 {
-                    Exception e = new SerialConnectionException(string.Format("{0} is not a valid USB port.", (UARTPort != null ? UARTPort : "null")));
+                    Exception e = new SerialConnectionException(string.Format("{0} is not a valid USB port.", (Port != null ? Port : "null")));
 
                     LogHelper.LogErrorSecondary(e);
 
@@ -211,17 +318,17 @@ namespace CSharpMiner.MiningDevice
                 try
                 {
                     continueRunning = true;
-                    usbPort = new SerialPort(UARTPort, GetBaud());
+                    usbPort = new SerialPort(Port, GetBaud());
                     //usbPort.DataReceived += DataReceived; // This works on .NET in windows but not in Mono
                     usbPort.Open();
                 }
                 catch (Exception e)
                 {
-                    LogHelper.ConsoleLogErrorAsync(string.Format("Error connecting to {0}.", UARTPort));
-                    throw new SerialConnectionException(string.Format("Error connecting to {0}: {1}", UARTPort, e), e);
+                    LogHelper.ConsoleLogErrorAsync(string.Format("Error connecting to {0}.", Port));
+                    throw new SerialConnectionException(string.Format("Error connecting to {0}: {1}", Port, e), e);
                 }
 
-                LogHelper.ConsoleLogAsync(string.Format("Successfully connected to {0}.", UARTPort), LogVerbosity.Verbose);
+                LogHelper.ConsoleLogAsync(string.Format("Successfully connected to {0}.", Port), LogVerbosity.Verbose);
 
                 if (this.pendingWork != null)
                 {

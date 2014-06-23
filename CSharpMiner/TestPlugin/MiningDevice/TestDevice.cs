@@ -64,6 +64,21 @@ namespace MiningDevice
         [IgnoreDataMember]
         public int DiscardedWorkUnits { get; set; }
 
+        public double AcceptedHashRate
+        {
+            get { return 0.0; }
+        }
+
+        public double RejectedHashRate
+        {
+            get { return 0.0; }
+        }
+
+        public double DiscardedHashRate
+        {
+            get { return 0.0; }
+        }
+
         [IgnoreDataMember]
         public string Name
         {

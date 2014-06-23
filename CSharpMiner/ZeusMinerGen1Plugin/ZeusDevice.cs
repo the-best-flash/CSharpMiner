@@ -22,12 +22,13 @@ using System;
 using System.IO.Ports;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using ZeusMinerGen1Plugin;
 
 namespace ZeusMiner
 {
     [DataContract]
     [MiningModule(Description = "Configures a ZeusMiner Gen1 or GAWMiner A1 device.")]
-    class ZeusDevice : UsbMinerBase
+    class ZeusDevice : UsbMinerBase, IZeusDeviceSettings
     {
         private const int extraDataThreshold = 2; // Number of times through the main USB reading look that we will allow extra data to sit int he buffer
 
@@ -92,7 +93,7 @@ namespace ZeusMiner
         [IgnoreDataMember]
         public override string Name
         {
-            get { return this.UARTPort; }
+            get { return this.Port; }
         }
 
         private IPoolWork currentWork = null;
@@ -100,7 +101,7 @@ namespace ZeusMiner
 
         public ZeusDevice(string port, int clk, int cores, int watchdogTimeout, int pollFrequency = defaultPollTime)
         {
-            UARTPort = port;
+            Port = port;
             LtcClk = clk;
             Cores = cores;
             WatchdogTimeout = watchdogTimeout;

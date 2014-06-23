@@ -18,7 +18,7 @@ using System.Collections.Generic;
 
 namespace CSharpMiner.Interfaces
 {
-    public interface IDeviceLoader : IMiningDevice
+    public interface IDeviceLoader : IMiningDeviceObject
     {
         IEnumerable<IMiningDevice> LoadDevices();
     }
