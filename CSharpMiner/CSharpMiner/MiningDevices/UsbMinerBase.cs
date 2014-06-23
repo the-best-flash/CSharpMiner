@@ -337,10 +337,18 @@ namespace CSharpMiner.MiningDevice
                 if (usbPort != null && usbPort.IsOpen)
                     usbPort.Close();
 
-                if(listenerThread != null)
-                    listenerThread.Join();
-
-                listenerThread = null;
+                try
+                {
+                    if (listenerThread != null)
+                    {
+                        listenerThread.Join(200);
+                        listenerThread.Abort();
+                    }
+                }
+                finally
+                {
+                    listenerThread = null;
+                }
             }
         }
         

@@ -180,8 +180,18 @@ namespace Stratum
                 this.threadStopping.Cancel();
             }
 
-            if (this.Thread != null)
-                this.Thread.Join();
+            try
+            {
+                if (this.Thread != null)
+                {
+                    this.Thread.Join(200);
+                    this.Thread.Abort();
+                }
+            }
+            finally
+            {
+                this.Thread = null;
+            }
 
             if (connection != null)
                 connection.Close();
@@ -189,8 +199,6 @@ namespace Stratum
             connection = null;
 
             latestWork = null;
-
-            this.Thread = null;
 
             this.Connecting = false;
             this.Alive = false;
@@ -723,7 +731,7 @@ namespace Stratum
                 try
                 {
                     asyncTask = connection.GetStream().ReadAsync(arr, 0, 10000, this.threadStopping.Token);
-                    asyncTask.Wait();
+                    asyncTask.Wait(this.threadStopping.Token);
                 } catch(OperationCanceledException e)
                 {
                     LogHelper.LogErrorSecondaryAsync(e);
