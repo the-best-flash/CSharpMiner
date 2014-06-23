@@ -39,7 +39,7 @@ namespace DeviceManager
         public StratumPool[] Pools { get; set; }
 
         [DataMember(Name = "devices")]
-        [MiningSetting(Description="A collection of MiningDevice or DeviceManager JSON objects.", Optional=false, 
+        [MiningSetting(Description="A collection of MiningDevice or DeviceLoader JSON objects.", Optional=false, 
            ExampleValue=@"[
     {
 		    '__type' : 'ZeusDeviceLoader:#DeviceLoader',
