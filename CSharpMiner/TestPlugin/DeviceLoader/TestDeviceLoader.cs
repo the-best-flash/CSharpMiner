@@ -46,6 +46,12 @@ namespace DeviceLoader
         }
 
         [IgnoreDataMember]
+        public string Name
+        {
+            get { return "TestDeviceLoader";  }
+        }
+
+        [IgnoreDataMember]
         public int Accepted
         {
             get
@@ -155,7 +161,6 @@ namespace DeviceLoader
         {
             throw new NotImplementedException();
         }
-
 
         public void WorkRejected(IPoolWork work)
         {

@@ -118,6 +118,9 @@ namespace CSharpMiner.MiningDevice
         [IgnoreDataMember]
         public int DiscardedWorkUnits { get; set; }
 
+        [IgnoreDataMember]
+        public abstract string Name { get;}
+
         public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
         public event Action<IMiningDevice> WorkRequested;
         public event Action<IMiningDevice, IPoolWork> InvalidNonce;
@@ -163,7 +166,7 @@ namespace CSharpMiner.MiningDevice
         {
             if(this.WorkRequested != null)
             {
-                LogHelper.ConsoleLogErrorAsync(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.UARTPort, (double)WatchdogTimeout / 1000));
+                LogHelper.ConsoleLogErrorAsync(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.Name, (double)WatchdogTimeout / 1000));
                 RequestWork();
             }
         }

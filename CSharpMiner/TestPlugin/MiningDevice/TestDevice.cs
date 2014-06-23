@@ -67,6 +67,12 @@ namespace MiningDevice
         [IgnoreDataMember]
         public int DiscardedWorkUnits { get; set; }
 
+        [IgnoreDataMember]
+        public string Name
+        {
+            get { return string.Format("TestDevice{0}", this.Id); }
+        }
+
         public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
         public event Action<IMiningDevice> WorkRequested;
         public event Action<IMiningDevice, IPoolWork> InvalidNonce;

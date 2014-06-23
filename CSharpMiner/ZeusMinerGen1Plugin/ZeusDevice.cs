@@ -89,6 +89,12 @@ namespace ZeusMiner
             }
         }
 
+        [IgnoreDataMember]
+        public override string Name
+        {
+            get { return this.UARTPort; }
+        }
+
         private IPoolWork currentWork = null;
         private int timesNonZero = 0;
 
@@ -110,7 +116,7 @@ namespace ZeusMiner
 
                 if (this.usbPort != null && this.usbPort.IsOpen)
                 {
-                    LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.UARTPort, work.JobId), LogVerbosity.Verbose);
+                    LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
 
                     this.RestartWorkRequestTimer();
 
@@ -130,7 +136,7 @@ namespace ZeusMiner
                     byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
                     CopyToByteArray(headerBytes, offset, cmd);
 
-                    LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", UARTPort, HexConversionHelper.ConvertToHexString(cmd)));
+                    LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)));
 
                     // Send work to the miner
                     this.currentWork = work;
@@ -139,7 +145,7 @@ namespace ZeusMiner
                 }
                 else
                 {
-                    LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.UARTPort, work.JobId), LogVerbosity.Verbose);
+                    LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
 
                     this.pendingWork = work;
                 }
@@ -198,7 +204,7 @@ namespace ZeusMiner
             {
                 Task.Factory.StartNew(() =>
                     {
-                        LogHelper.ConsoleLogAsync(string.Format("Device {0} submitting {1} for job {2}.", this.UARTPort, HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan);
+                        LogHelper.ConsoleLogAsync(string.Format("Device {0} submitting {1} for job {2}.", this.Name, HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan);
 
                         string nonce = HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet));
 

@@ -37,7 +37,7 @@ namespace CSharpMiner.Interfaces
         event Action<IPool> Disconnected;
 
         event Action<IPool, IPoolWork, IMiningDevice> WorkAccepted;
-        event Action<IPool, IPoolWork, IMiningDevice> WorkRejected;
+        event Action<IPool, IPoolWork, IMiningDevice, string> WorkRejected;
 
         void Start();
         void Stop();

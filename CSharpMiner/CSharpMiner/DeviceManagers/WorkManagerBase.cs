@@ -78,6 +78,7 @@ namespace CSharpMiner.DeviceManager
 
         Object deviceListLock = new Object();
         Object hotplugListLock = new Object();
+        private Object reconnectLock = new Object();
 
         public void NewWork(IPool pool, IPoolWork newWork, bool forceStart)
         {
@@ -113,7 +114,7 @@ namespace CSharpMiner.DeviceManager
             }
         }
 
-        public void SubmitWork(IMiningDevice device, IPoolWork work, string nonce)
+        public virtual void SubmitWork(IMiningDevice device, IPoolWork work, string nonce)
         {
             if (started && this.ActivePool != null && currentWork != null && this.ActivePool.Connected)
             {
@@ -153,7 +154,7 @@ namespace CSharpMiner.DeviceManager
             StartWorkOnDevice(this.currentWork, device, true);
         }
 
-        public void Start()
+        public virtual void Start()
         {
             if (deviceListLock == null)
             {
@@ -163,6 +164,11 @@ namespace CSharpMiner.DeviceManager
             if(hotplugListLock == null)
             {
                 hotplugListLock = new Object();
+            }
+
+            if(reconnectLock == null)
+            {
+                reconnectLock = new Object();
             }
 
             if(!boundPools)
@@ -251,7 +257,17 @@ namespace CSharpMiner.DeviceManager
                 });
         }
 
-        public void Stop()
+        protected virtual void OnWorkRejected(IPool pool, IPoolWork work, IMiningDevice device, string reason)
+        {
+            // Do nothing
+        }
+
+        protected virtual void OnWorkAccepted(IPool pool, IPoolWork work, IMiningDevice device)
+        {
+            // Do nothing
+        }
+
+        public virtual void Stop()
         {
             if(boundPools)
             {
@@ -259,6 +275,8 @@ namespace CSharpMiner.DeviceManager
                 {
                     pool.Disconnected -= this.PoolDisconnected;
                     pool.NewWorkRecieved -= this.NewWork;
+                    pool.WorkRejected -= this.OnWorkRejected;
+                    pool.WorkAccepted -= this.OnWorkAccepted;
                 }
 
                 boundPools = false;
@@ -309,7 +327,7 @@ namespace CSharpMiner.DeviceManager
             }
         }
 
-        public void InvalidNonce(IMiningDevice device, IPoolWork work)
+        public virtual void InvalidNonce(IMiningDevice device, IPoolWork work)
         {
             throw new NotImplementedException();
         }
@@ -328,24 +346,30 @@ namespace CSharpMiner.DeviceManager
 
         public void AttemptPoolReconnect()
         {
-            // TODO: Handle when all pools are unable to be reached
-            if (this.started && this.ActivePool != null && !this.ActivePool.Connecting)
+            lock (reconnectLock)
             {
-                this.ActivePool.Stop();
-                this.ActivePool = null;
-
-                if (this.ActivePoolId + 1 < this.Pools.Length)
+                if (this.ActivePool != null && !this.ActivePool.Connecting)
                 {
-                    this.ActivePoolId++;
-                }
-                else
-                {
-                    this.ActivePoolId = 0;
+                    this.ActivePool.Stop();
+                    this.ActivePool = null;
                 }
 
-                this.ActivePool = this.Pools[this.ActivePoolId];
-                LogHelper.ConsoleLog(string.Format("Attempting to connect to pool {0}", this.ActivePool.Url));
-                this.ActivePool.Start();
+                // TODO: Handle when all pools are unable to be reached
+                if (this.started && (this.ActivePool == null || !this.ActivePool.Connecting))
+                {
+                    if (this.ActivePoolId + 1 < this.Pools.Length)
+                    {
+                        this.ActivePoolId++;
+                    }
+                    else
+                    {
+                        this.ActivePoolId = 0;
+                    }
+
+                    this.ActivePool = this.Pools[this.ActivePoolId];
+                    LogHelper.ConsoleLog(string.Format("Attempting to connect to pool {0}", this.ActivePool.Url));
+                    this.ActivePool.Start();
+                }
             }
         }
 

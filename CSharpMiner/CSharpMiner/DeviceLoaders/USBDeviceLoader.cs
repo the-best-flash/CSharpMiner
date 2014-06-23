@@ -45,6 +45,9 @@ namespace CSharpMiner.DeviceLoader
         public int Id { get; set; }
 
         [IgnoreDataMember]
+        public abstract string Name { get; }
+
+        [IgnoreDataMember]
         public System.Timers.Timer WorkRequestTimer
         {
             get { throw new NotImplementedException(); }

@@ -36,6 +36,8 @@ namespace CSharpMiner.Interfaces
 
         Timer WorkRequestTimer { get; }
 
+        string Name { get; }
+
         event Action<IMiningDevice, IPoolWork, string> ValidNonce;
         event Action<IMiningDevice> WorkRequested;
         event Action<IMiningDevice, IPoolWork> InvalidNonce;

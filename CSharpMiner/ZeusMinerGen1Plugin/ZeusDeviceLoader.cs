@@ -30,6 +30,11 @@ namespace ZeusMiner
         [MiningSetting(ExampleValue="328", Description="The clockspeed of the miner. Max = 382", Optional=true)]
         public int LtcClk { get; set; }
 
+        public override string Name
+        {
+            get { return "ZeusDeviceLoader"; }
+        }
+
         public override IEnumerable<IMiningDevice> LoadDevices()
         {
             List<IMiningDevice> devices = new List<IMiningDevice>();

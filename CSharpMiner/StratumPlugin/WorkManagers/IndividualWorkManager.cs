@@ -15,6 +15,7 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.DeviceManager;
+using CSharpMiner.Helpers;
 using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
 using Stratum;
@@ -81,6 +82,15 @@ namespace StratumManager
             if (stratumWork != null)
             {
                 StartWorkOnDevice(stratumWork, device, false, requested);
+            }
+        }
+
+        protected override void OnWorkRejected(IPool pool, IPoolWork work, IMiningDevice device, string reason)
+        {
+            if(reason.Contains("job not found"))
+            {
+                LogHelper.ConsoleLog(string.Format("Device {0} submitted stale share. Restarting with new work.", device.Name), LogVerbosity.Verbose);
+                this.RequestWork(device);
             }
         }
 

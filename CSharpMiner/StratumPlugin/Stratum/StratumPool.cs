@@ -98,7 +98,7 @@ namespace Stratum
         public event Action<IPool, IPoolWork, bool> NewWorkRecieved;
         public event Action<IPool> Disconnected;
         public event Action<IPool, IPoolWork, IMiningDevice> WorkAccepted;
-        public event Action<IPool, IPoolWork, IMiningDevice> WorkRejected;
+        public event Action<IPool, IPoolWork, IMiningDevice, string> WorkRejected;
 
         private Queue WorkSubmitQueue = null;
         private TcpClient connection = null;
@@ -373,13 +373,13 @@ namespace Stratum
             }
         }
 
-        private void OnWorkRejected(StratumWork work, IMiningDevice device)
+        private void OnWorkRejected(StratumWork work, IMiningDevice device, string reason)
         {
             if (this.WorkRejected != null)
             {
                 Task.Factory.StartNew(() =>
                     {
-                        this.WorkRejected(this, work, device);
+                        this.WorkRejected(this, work, device, reason);
                     });
             }
         }
@@ -610,8 +610,13 @@ namespace Stratum
             }
             else
             {
-                this.OnWorkRejected(work, device);
+                this.OnWorkRejected(work, device, GetRejectReason(response));
             }
+        }
+
+        private string GetRejectReason(StratumResponse response)
+        {
+            return (response.Error != null && response.Error.Length >= 2 ? response.Error[1].ToString() : string.Empty);
         }
 
         private void DisplaySubmissionResponse(bool accepted, StratumResponse response)
@@ -630,7 +635,7 @@ namespace Stratum
             else
             {
                 LogHelper.ConsoleLogAsync(new Object[] {
-                    new Object[] {string.Format("Rejected with {0}", (response.Error != null && response.Error.Length >= 2 ? response.Error[1].ToString() : "null")), ConsoleColor.Magenta, true},
+                    new Object[] {string.Format("Rejected with {0}", GetRejectReason(response)), ConsoleColor.Magenta, true},
                     new Object[] { (accepted ? "ACCEPTED" : "REJECTED"), (accepted ? ConsoleColor.Green : ConsoleColor.Red), false },
                     new Object[] { " ( ", false },
                     new Object[] { this.Accepted, ConsoleColor.Green, false },
