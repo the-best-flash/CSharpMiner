@@ -383,25 +383,39 @@ namespace Stratum
             }
         }
 
-        private void OnWorkAccepted(StratumWork work, IMiningDevice device)
+        private void OnWorkAccepted(StratumWork work, IMiningDevice device, bool async = true)
         {
             if (this.WorkAccepted != null)
             {
-                Task.Factory.StartNew(() =>
-                    {
-                        this.WorkAccepted(this, work, device);
-                    });
+                if (async)
+                {
+                    Task.Factory.StartNew(() =>
+                        {
+                            this.WorkAccepted(this, work, device);
+                        });
+                }
+                else
+                {
+                    this.WorkAccepted(this, work, device);
+                }
             }
         }
 
-        private void OnWorkRejected(StratumWork work, IMiningDevice device, string reason)
+        private void OnWorkRejected(StratumWork work, IMiningDevice device, string reason, bool async = true)
         {
             if (this.WorkRejected != null)
             {
-                Task.Factory.StartNew(() =>
-                    {
-                        this.WorkRejected(this, work, device, reason);
-                    });
+                if (async)
+                {
+                    Task.Factory.StartNew(() =>
+                        {
+                            this.WorkRejected(this, work, device, reason);
+                        });
+                }
+                else
+                {
+                    this.WorkRejected(this, work, device, reason);
+                }
             }
         }
 
@@ -628,16 +642,19 @@ namespace Stratum
                 RejectedWorkUnits += work.Diff;
             }
 
-            DisplaySubmissionResponse(accepted, response);
+            Task.Factory.StartNew(() =>
+                {
+                    if (accepted)
+                    {
+                        this.OnWorkAccepted(work, device, false);
+                    }
+                    else
+                    {
+                        this.OnWorkRejected(work, device, GetRejectReason(response), false);
+                    }
 
-            if (accepted)
-            {
-                this.OnWorkAccepted(work, device);
-            }
-            else
-            {
-                this.OnWorkRejected(work, device, GetRejectReason(response));
-            }
+                    DisplaySubmissionResponse(accepted, response);
+                });
         }
 
         private string GetRejectReason(StratumResponse response)
