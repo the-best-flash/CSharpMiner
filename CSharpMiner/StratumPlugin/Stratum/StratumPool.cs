@@ -715,8 +715,16 @@ namespace Stratum
                     }
                     else
                     {
-                        string result = partialData + Encoding.ASCII.GetString(arr, 0, bytesRead);
+                        string result = Encoding.ASCII.GetString(arr, 0, bytesRead).Trim();
+                        
+                        // Guard against messing up good commands because a bad partial command was recieved
+                        if (!result.StartsWith("{"))
+                        {
+                            result = partialData + result;
+                        }
+
                         partialData = null;
+
                         return result;
                     }
                 }
