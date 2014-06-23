@@ -151,7 +151,8 @@ Planned Features:
 Known Issues:
 
     Possible strange, infinate loop of pool connection attempts after a pool failure.
-    It doesn't always exit right away when you quit. Some thread somewhere isn't noticing right away that its time to quit working.
+    May not attempt to reconnect to a pool of the connection is lost.
+    Does not work on all stratum pools when running on Mono. Need to make the fallback parser order independant.
 
 Why make this? 
 
