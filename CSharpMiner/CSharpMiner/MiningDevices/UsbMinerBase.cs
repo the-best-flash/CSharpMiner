@@ -109,105 +109,42 @@ namespace CSharpMiner.MiningDevice
         [IgnoreDataMember]
         public int Rejected { get; set; }
 
-        int _acceptedWork = 0;
         [IgnoreDataMember]
-        public int AcceptedWorkUnits
-        {
-            get
-            {
-                return _acceptedWork;
-            }
+        public int AcceptedWorkUnits { get; set; }
 
-            set
-            {
-                _acceptedWork = value;
-                _acceptedHashRateValid = false;
-            }
-        }
-
-        int _rejectedWork = 0;
         [IgnoreDataMember]
-        public int RejectedWorkUnits
-        {
-            get
-            {
-                return _rejectedWork;
-            }
+        public int RejectedWorkUnits { get; set; }
 
-            set
-            {
-                _rejectedWork = value;
-                _rejectedHashRateValid = false;
-            }
-        }
-
-        int _discardedWork = 0;
         [IgnoreDataMember]
-        public int DiscardedWorkUnits
-        {
-            get
-            {
-                return _discardedWork;
-            }
-
-            set
-            {
-                _discardedWork = value;
-                _discardedHashRateValid = false;
-            }
-        }
+        public int DiscardedWorkUnits { get; set; }
 
         [IgnoreDataMember]
         public abstract string Name { get;}
 
-        private double _acceptedHashRate = 0;
-        private bool _acceptedHashRateValid = false;
         [IgnoreDataMember]
         public double AcceptedHashRate
         {
-            get 
-            { 
-                if(!_acceptedHashRateValid)
-                {
-                    _acceptedHashRate = ComputeHashRate(AcceptedWorkUnits);
-                    _acceptedHashRateValid = true;
-                }
-
-                return _acceptedHashRate;
+            get
+            {
+                return ComputeHashRate(AcceptedWorkUnits);
             }
         }
 
-        private double _rejectedHashRate = 0;
-        private bool _rejectedHashRateValid = false;
         [IgnoreDataMember]
         public double RejectedHashRate
         {
             get
             {
-                if (!_rejectedHashRateValid)
-                {
-                    _rejectedHashRate = ComputeHashRate(RejectedWorkUnits);
-                    _rejectedHashRateValid = true;
-                }
-
-                return _rejectedHashRate;
+                return ComputeHashRate(RejectedWorkUnits);
             }
         }
 
-        private double _discardedHashRate = 0;
-        private bool _discardedHashRateValid = false;
         [IgnoreDataMember]
         public double DiscardedHashRate
         {
             get
             {
-                if (!_discardedHashRateValid)
-                {
-                    _discardedHashRate = ComputeHashRate(DiscardedWorkUnits);
-                    _discardedHashRateValid = true;
-                }
-
-                return _discardedHashRate;
+                return ComputeHashRate(DiscardedWorkUnits);
             }
         }
 
