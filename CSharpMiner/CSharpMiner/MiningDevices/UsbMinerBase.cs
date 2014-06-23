@@ -145,11 +145,7 @@ namespace CSharpMiner.MiningDevice
             watchdogTimer.Elapsed += this.WatchdogExpired;
             watchdogTimer.AutoReset = true;
 
-            if (this.listenerThread == null)
-            {
-                this.listenerThread = new Thread(new ThreadStart(this.Connect));
-                this.listenerThread.Start();
-            }
+            Task.Factory.StartNew(this.Connect);
         }
 
         protected void RestartWorkRequestTimer()
@@ -176,7 +172,10 @@ namespace CSharpMiner.MiningDevice
         {
             if (this.WorkRequested != null)
             {
-                this.WorkRequested(this);
+                Task.Factory.StartNew(() =>
+                    {
+                        this.WorkRequested(this);
+                    });
             }
         }
 
@@ -230,32 +229,51 @@ namespace CSharpMiner.MiningDevice
                         });
                 }
 
-                while (this.continueRunning)
+                if (this.listenerThread == null)
                 {
-                    if (usbPort.BytesToRead > 0)
-                    {
-                        DataReceived(usbPort, null);
-                    }
+                    this.listenerThread = new Thread(new ThreadStart(() =>
+                        {
+                            try
+                            {
+                                while (this.continueRunning)
+                                {
+                                    if (usbPort.BytesToRead > 0)
+                                    {
+                                        DataReceived(usbPort, null);
+                                    }
 
-                    Thread.Sleep(PollFrequency);
+                                    Thread.Sleep(PollFrequency);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                LogHelper.LogErrorAsync(e);
+
+                                Task.Factory.StartNew(() =>
+                                    {
+                                        this.Restart();
+                                    });
+                            }
+                        }));
+                    this.listenerThread.Start();
                 }
             }
             catch (Exception e)
             {
                 LogHelper.LogErrorAsync(e);
-                this.Unload();
-                this.Load();
+                this.Restart();
             }
+        }
+
+        private void Restart()
+        {
+            this.Unload();
+            this.Load();
         }
 
         protected void SubmitWork(IPoolWork work, string nonce)
         {
-            this.RestartWatchdogTimer();
-
-            if(this.ValidNonce != null)
-            {
-                this.ValidNonce(this, work, nonce);
-            }
+            this.OnValidNonce(work, nonce);
         }
 
         public void Unload()
@@ -278,10 +296,29 @@ namespace CSharpMiner.MiningDevice
                 listenerThread = null;
             }
         }
+        
+        protected void OnValidNonce(IPoolWork work, string nonce)
+        {
+            this.RestartWatchdogTimer();
+
+            if (this.ValidNonce != null)
+            {
+                Task.Factory.StartNew(() =>
+                    {
+                        this.ValidNonce(this, work, nonce);
+                    });
+            }
+        }
 
         protected void OnInvalidNonce(IPoolWork work)
         {
-            this.InvalidNonce(this, work);
+            if (this.InvalidNonce != null)
+            {
+                Task.Factory.StartNew(() =>
+                    {
+                        this.InvalidNonce(this, work);
+                    });
+            }
         }
 
         public void Dispose()

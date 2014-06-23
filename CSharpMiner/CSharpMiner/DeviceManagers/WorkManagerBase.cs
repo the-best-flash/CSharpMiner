@@ -76,6 +76,9 @@ namespace CSharpMiner.DeviceManager
 
         bool boundPools = false;
 
+        Object deviceListLock = new Object();
+        Object hotplugListLock = new Object();
+
         public void NewWork(IPool pool, IPoolWork newWork, bool forceStart)
         {
             if (started && ActivePool != null)
@@ -152,6 +155,16 @@ namespace CSharpMiner.DeviceManager
 
         public void Start()
         {
+            if (deviceListLock == null)
+            {
+                deviceListLock = new Object();
+            }
+
+            if(hotplugListLock == null)
+            {
+                hotplugListLock = new Object();
+            }
+
             if(!boundPools)
             {
                 foreach(IPool pool in this.Pools)
@@ -163,7 +176,6 @@ namespace CSharpMiner.DeviceManager
                 boundPools = true;
             }
 
-            // TODO: Make this throw an exception so that the system doesn't infinate loop
             Task.Factory.StartNew(() =>
             {
                 loadedDevices = new List<IMiningDevice>();
@@ -204,19 +216,27 @@ namespace CSharpMiner.DeviceManager
                 {
                     hotplugLoader.DeviceFound += this.AddNewDevice;
                     hotplugLoader.StartListening();
-                    hotplugLoaders.Add(hotplugLoader);
+
+                    lock (hotplugListLock)
+                    {
+                        hotplugLoaders.Add(hotplugLoader);
+                    }
                 }
                 else
                 {
-                    d.Id = deviceId;
-                    deviceId++;
+                    lock (deviceListLock)
+                    {
+                        d.Id = deviceId;
+                        deviceId++;
+
+                        loadedDevices.Add(d);
+                    }
 
                     d.ValidNonce += this.SubmitWork;
                     d.WorkRequested += this.RequestWork;
                     d.InvalidNonce += this.InvalidNonce;
 
                     d.Load();
-                    loadedDevices.Add(d);
 
                     this.SetUpDevice(d);
                 }
@@ -240,6 +260,8 @@ namespace CSharpMiner.DeviceManager
                     pool.Disconnected -= this.PoolDisconnected;
                     pool.NewWorkRecieved -= this.NewWork;
                 }
+
+                boundPools = false;
             }
 
             if (this.started)
@@ -248,27 +270,33 @@ namespace CSharpMiner.DeviceManager
 
                 if (this.hotplugLoaders != null)
                 {
-                    foreach (IHotplugLoader hotplugLoader in hotplugLoaders)
+                    lock (hotplugListLock)
                     {
-                        if (hotplugLoader != null)
+                        foreach (IHotplugLoader hotplugLoader in hotplugLoaders)
                         {
-                            hotplugLoader.StopListening();
-                            hotplugLoader.DeviceFound -= this.AddNewDevice;
+                            if (hotplugLoader != null)
+                            {
+                                hotplugLoader.StopListening();
+                                hotplugLoader.DeviceFound -= this.AddNewDevice;
+                            }
                         }
                     }
                 }
 
                 if (this.loadedDevices != null)
                 {
-                    foreach (IMiningDevice d in this.loadedDevices)
+                    lock (deviceListLock)
                     {
-                        if (d != null)
+                        foreach (IMiningDevice d in this.loadedDevices)
                         {
-                            d.WorkRequested -= this.RequestWork;
-                            d.ValidNonce -= this.SubmitWork;
-                            d.InvalidNonce -= this.InvalidNonce;
+                            if (d != null)
+                            {
+                                d.WorkRequested -= this.RequestWork;
+                                d.ValidNonce -= this.SubmitWork;
+                                d.InvalidNonce -= this.InvalidNonce;
 
-                            d.Unload();
+                                d.Unload();
+                            }
                         }
                     }
                 }

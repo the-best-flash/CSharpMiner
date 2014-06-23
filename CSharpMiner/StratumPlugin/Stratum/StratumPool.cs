@@ -112,6 +112,8 @@ namespace Stratum
 
         private bool _allowOldWork = true;
 
+        private string partialData = null;
+
         public StratumPool()
             : this("", "", "")
         {
@@ -129,17 +131,19 @@ namespace Stratum
 
         public void Start()
         {
-            submissionLock = new Object();
-            _writeLock = new Object();
-
-            this.Connecting = false;
-
-            if(this.Thread == null)
+            if (!this.Running && !this.Connecting)
             {
-                threadStopping = new CancellationTokenSource();
+                submissionLock = new Object();
+                _writeLock = new Object();
 
-                this.Thread = new Thread(new ThreadStart(this.Connect));
-                this.Thread.Start();
+                this.Connecting = false;
+
+                if (this.Thread == null)
+                {
+                    threadStopping = new CancellationTokenSource();
+
+                    Task.Factory.StartNew(this.Connect);
+                }
             }
         }
 
@@ -147,51 +151,63 @@ namespace Stratum
         {
             this.WorkSubmitQueue.Clear();
 
-            if (this.Running)
+            this.Running = false;
+
+            if (this.threadStopping != null)
             {
-                this.Running = false;
-
-                if (this.threadStopping != null)
-                {
-                    this.threadStopping.Cancel();
-                }
-
-                if (connection != null)
-                    connection.Close();
-
-                connection = null;
-
-                latestWork = null;
-
-                if (this.Thread != null)
-                    this.Thread.Join();
-
-                this.Thread = null;
+                this.threadStopping.Cancel();
             }
+
+            if (this.Thread != null)
+                this.Thread.Join();
+
+            if (connection != null)
+                connection.Close();
+
+            connection = null;
+
+            latestWork = null;
+
+            this.Thread = null;
+
+            this.Connecting = false;
+            this.Alive = false;
+
+            _allowOldWork = true;
+            latestWork = null;
+            pendingWork = null;
+
+            this.Diff = 0;
+            this.RequestId = 0;
+            this.Extranonce1 = null;
+            this.Extranonce2Size = 0;
+
+            this.partialData = null;
+
+            WorkSubmitQueue = null;
         }
 
         private void Connect()
         {
             try
             {
+                if (connection != null)
+                {
+                    this.Stop();
+                    connection = null;
+                }
+
                 this.Connecting = true;
 
                 try
                 {
                     WorkSubmitQueue = Queue.Synchronized(new Queue());
-                    this.NewBlocks = 0;
 
                     this.Running = true;
                     this.Alive = false;
 
                     this._allowOldWork = true;
                     this.latestWork = null;
-
-                    if (connection != null)
-                    {
-                        this.Stop();
-                        connection = null;
-                    }
 
                     string[] splitAddress = Url.Split(':');
 
@@ -259,10 +275,7 @@ namespace Stratum
                 // If we recieved work before we started the device manager, give the work to the device manager now
                 if (pendingWork != null)
                 {
-                    if(NewWorkRecieved != null)
-                    {
-                        NewWorkRecieved(this, pendingWork, true);
-                    }
+                    this.OnNewWorkRecieved(pendingWork, true);
                     pendingWork = null;
                 }
 
@@ -295,22 +308,79 @@ namespace Stratum
                     throw new StratumConnectionFailureException(string.Format("Pool Username or Password rejected with: {0}", successResponse.Error));
                 }
 
-                // Enter loop to monitor pool stratum
-                while (this.Running)
+                this.Thread = new Thread(new ThreadStart(() =>
                 {
-                    this.processCommands(this.listenForData());
-                }
+                    try
+                    {
+                        // Enter loop to monitor pool stratum
+                        while (this.Running)
+                        {
+                            this.processCommands(this.listenForData());
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        LogHelper.LogErrorSecondaryAsync(e);
+
+                        Task.Factory.StartNew(() =>
+                            {
+                                this.Stop();
+                                this.OnDisconnect();
+                            });
+                    }
+                }));
+                this.Thread.Start();
             }
             catch (Exception e)
             {
                 LogHelper.LogErrorSecondaryAsync(e);
 
                 this.Stop();
+                this.OnDisconnect();
+            }
+        }
 
-                if (this.Disconnected != null)
+        private void OnNewWorkRecieved(StratumWork work, bool forceRestart)
+        {
+            if (NewWorkRecieved != null)
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    NewWorkRecieved(this, work, forceRestart);
+                });
+            }
+        }
+
+        private void OnDisconnect()
+        {
+            if (this.Disconnected != null)
+            {
+                Task.Factory.StartNew(() =>
                 {
                     this.Disconnected(this);
-                }
+                });
+            }
+        }
+
+        private void OnWorkAccepted(StratumWork work, IMiningDevice device)
+        {
+            if (this.WorkAccepted != null)
+            {
+                Task.Factory.StartNew(() =>
+                    {
+                        this.WorkAccepted(this, work, device);
+                    });
+            }
+        }
+
+        private void OnWorkRejected(StratumWork work, IMiningDevice device)
+        {
+            if (this.WorkRejected != null)
+            {
+                Task.Factory.StartNew(() =>
+                    {
+                        this.WorkRejected(this, work, device);
+                    });
             }
         }
 
@@ -352,30 +422,11 @@ namespace Stratum
                         command = new StratumCommand(this.RequestId, StratumCommand.SubmitCommandString, param);
                         this.RequestId++;
 
-                        try
+                        if (this.connection != null && this.connection.Connected)
                         {
-                            if (this.connection != null && this.connection.Connected)
-                            {
-                                MemoryStream memStream = new MemoryStream();
-                                command.Serialize(memStream);
-                                this.SendData(memStream);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            LogHelper.LogErrorSecondaryAsync(e);
-                        }
-                        finally
-                        {
-                            if ((this.connection == null || !this.connection.Connected) && this.Running)
-                            {
-                                this.Stop();
-
-                                if (this.Disconnected != null)
-                                {
-                                    this.Disconnected(this);
-                                }
-                            }
+                            MemoryStream memStream = new MemoryStream();
+                            command.Serialize(memStream);
+                            this.SendData(memStream);
                         }
                     }
 
@@ -387,6 +438,16 @@ namespace Stratum
                 catch (Exception e)
                 {
                     LogHelper.LogErrorSecondaryAsync(e);
+
+                    if ((this.connection == null || !this.connection.Connected) && this.Running)
+                    {
+                        Task.Factory.StartNew(() =>
+                            {
+                                this.Stop();
+
+                                this.OnDisconnect();
+                            });
+                    }
                 }
             }
         }
@@ -403,6 +464,19 @@ namespace Stratum
 
             foreach (string s in commands)
             {
+                if (!s.Trim().EndsWith("}"))
+                {
+                    LogHelper.LogErrorSecondaryAsync(
+                        new Object[] { 
+                            string.Format("Partial command recieved from {0}", this.Url),
+                            s
+                        });
+
+                    partialData = s;
+
+                    continue;
+                }
+
                 LogHelper.DebugConsoleLog(new Object[] {
                     string.Format("Recieved data from {0}:", this.Url),
                     s
@@ -532,17 +606,11 @@ namespace Stratum
 
             if (accepted)
             {
-                if(this.WorkAccepted != null)
-                {
-                    this.WorkAccepted(this, work, device);
-                }
+                this.OnWorkAccepted(work, device);
             }
             else
             {
-                if(this.WorkRejected != null)
-                {
-                    this.WorkRejected(this, work, device);
-                }
+                this.OnWorkRejected(work, device);
             }
         }
 
@@ -593,7 +661,8 @@ namespace Stratum
                     if (this.Alive && this.NewWorkRecieved != null)
                     {
                         bool forceRestart = (command.Params != null && command.Params.Length >= 9 && command.Params[8] != null && command.Params[8] is string ? command.Params[8].Equals("true") : true);
-                        NewWorkRecieved(this, work, forceRestart);
+
+                        this.OnNewWorkRecieved(work, forceRestart);
                     }
                     else
                     {
@@ -615,7 +684,7 @@ namespace Stratum
 
         private string listenForData()
         {
-            if (this.threadStopping != null && this.connection != null && this.connection.Connected)
+            if (this.threadStopping != null && this.connection != null && this.connection.Connected && this.Running)
             {
                 // TODO: Handle null connection
                 byte[] arr = new byte[10000];
@@ -639,7 +708,17 @@ namespace Stratum
                 if (asyncTask != null && !asyncTask.IsCanceled)
                 {
                     int bytesRead = asyncTask.Result;
-                    return Encoding.ASCII.GetString(arr, 0, bytesRead);
+
+                    if (string.IsNullOrEmpty(partialData))
+                    {
+                        return Encoding.ASCII.GetString(arr, 0, bytesRead);
+                    }
+                    else
+                    {
+                        string result = partialData + Encoding.ASCII.GetString(arr, 0, bytesRead);
+                        partialData = null;
+                        return result;
+                    }
                 }
             }
 
@@ -656,17 +735,7 @@ namespace Stratum
             // TODO: Make this not an infinate loop
             while (response == null && connection != null && connection.Connected)
             {
-                if (connection.Available != 0)
-                {
-                    byte[] arr = new byte[connection.Available];
-
-                    netStream.Read(arr, 0, arr.Length);
-                    responseStr = Encoding.ASCII.GetString(arr, 0, arr.Length);
-                }
-                else
-                {
-                    responseStr = this.listenForData();
-                }
+                responseStr = this.listenForData();
 
                 string[] responses = responseStr.Split('\n');
                 response = this.processCommands(responses, this.RequestId);
