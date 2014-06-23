@@ -136,7 +136,7 @@ namespace Stratum
                 submissionLock = new Object();
                 _writeLock = new Object();
 
-                this.Connecting = false;
+                this.Connecting = true;
 
                 if (this.Thread == null)
                 {
@@ -197,54 +197,43 @@ namespace Stratum
                     connection = null;
                 }
 
-                this.Connecting = true;
+                WorkSubmitQueue = Queue.Synchronized(new Queue());
+
+                this.Running = true;
+                this.Alive = false;
+
+                this._allowOldWork = true;
+                this.latestWork = null;
+
+                string[] splitAddress = Url.Split(':');
+
+                if (splitAddress.Length != 3)
+                {
+                    Exception e = new StratumConnectionFailureException(string.Format("Incorrect pool address: {0}", Url));
+                    LogHelper.LogErrorSecondaryAsync(e);
+                    throw e;
+                }
+
+                string hostName = splitAddress[1].Replace("/", "").Trim();
+
+                int port;
+                if (!int.TryParse(splitAddress[2], out port))
+                {
+                    Exception e = new StratumConnectionFailureException(string.Format("Incorrect port format: {0}", splitAddress[1]));
+                    LogHelper.LogErrorSecondaryAsync(e);
+                    throw e;
+                }
 
                 try
                 {
-                    WorkSubmitQueue = Queue.Synchronized(new Queue());
-
-                    this.Running = true;
-                    this.Alive = false;
-
-                    this._allowOldWork = true;
-                    this.latestWork = null;
-
-                    string[] splitAddress = Url.Split(':');
-
-                    if (splitAddress.Length != 3)
-                    {
-                        Exception e = new StratumConnectionFailureException(string.Format("Incorrect pool address: {0}", Url));
-                        LogHelper.LogErrorSecondaryAsync(e);
-                        throw e;
-                    }
-
-                    string hostName = splitAddress[1].Replace("/", "").Trim();
-
-                    int port;
-                    if (!int.TryParse(splitAddress[2], out port))
-                    {
-                        Exception e = new StratumConnectionFailureException(string.Format("Incorrect port format: {0}", splitAddress[1]));
-                        LogHelper.LogErrorSecondaryAsync(e);
-                        throw e;
-                    }
-
-                    try
-                    {
-                        connection = new TcpClient(hostName, port);
-                    }
-                    catch (SocketException e)
-                    {
-                        throw new StratumConnectionFailureException(e);
-                    }
+                    connection = new TcpClient(hostName, port);
                 }
-                catch
+                catch (SocketException e)
                 {
-                    throw;
+                    throw new StratumConnectionFailureException(e);
                 }
-                finally
-                {
-                    this.Connecting = false;
-                }
+
+                this.Connecting = false;
 
                 if (!connection.Connected)
                 {
@@ -333,6 +322,8 @@ namespace Stratum
             }
             catch (Exception e)
             {
+                this.Connecting = false;
+
                 LogHelper.LogErrorSecondaryAsync(e);
 
                 this.Stop();
