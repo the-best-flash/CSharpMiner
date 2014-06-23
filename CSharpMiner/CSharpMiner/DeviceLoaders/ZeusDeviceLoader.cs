@@ -28,140 +28,21 @@ using System.Threading.Tasks;
 namespace DeviceLoader
 {
     [DataContract]
-    public class ZeusDeviceLoader : IDeviceLoader
+    public class ZeusDeviceLoader : USBDeviceLoader
     {
-        [DataMember(Name = "cores")]
-        public int Cores { get; set; }
-
-        [DataMember(Name = "ports")]
-        public string[] Ports { get; set; }
-
         [DataMember(Name = "clock")]
         public int LtcClk { get; set; }
 
-        [DataMember(Name = "timeout")]
-        public int WatchdogTimeout { get; set; }
-
-        [IgnoreDataMember]
-        public int Id { get; set; }
-
-        [IgnoreDataMember]
-        public System.Timers.Timer WorkRequestTimer
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        [IgnoreDataMember]
-        public int HashRate
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        [IgnoreDataMember]
-        public int HardwareErrors
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        [IgnoreDataMember]
-        public int Accepted
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        [IgnoreDataMember]
-        public int Rejected
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        [IgnoreDataMember]
-        public int AcceptedWorkUnits
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        [IgnoreDataMember]
-        public int RejectedWorkUnits
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        [IgnoreDataMember]
-        public int DiscardedWorkUnits
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
-        public event Action<IMiningDevice> WorkRequested;
-        public event Action<IMiningDevice, IPoolWork> InvalidNonce;
-
-        public IEnumerable<IMiningDevice> LoadDevices()
+        public override IEnumerable<IMiningDevice> LoadDevices()
         {
             List<IMiningDevice> devices = new List<IMiningDevice>();
 
-            foreach(string p in Ports)
+            foreach (string p in Ports)
             {
-                devices.Add(new ZeusDevice(p, LtcClk, Cores, WatchdogTimeout));
+                devices.Add(new ZeusDevice(p, LtcClk, Cores, WatchdogTimeout, PollFrequency));
             }
 
             return devices;
-        }
-
-        public void Unload()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void StartWork(IPoolWork work)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Dispose()
-        {
-            // Do Nothing
-        }
-
-        public void Load()
-        {
-            throw new NotImplementedException();
         }
     }
 }

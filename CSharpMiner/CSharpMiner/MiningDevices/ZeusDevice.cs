@@ -35,6 +35,9 @@ namespace MiningDevice
         { 
             get
             {
+                if (_clk == 0)
+                    _clk = 328;
+
                 return _clk;
             }
 
@@ -86,12 +89,13 @@ namespace MiningDevice
         private StratumWork currentWork = null;
         private int timesNonZero = 0;
 
-        public ZeusDevice(string port, int clk, int cores, int watchdogTimeout)
+        public ZeusDevice(string port, int clk, int cores, int watchdogTimeout, int pollFrequency = defaultPollTime)
         {
             UARTPort = port;
             LtcClk = clk;
             Cores = cores;
             WatchdogTimeout = watchdogTimeout;
+            PollFrequency = defaultPollTime;
         }
 
         public override void StartWork(IPoolWork poolWork)

@@ -51,6 +51,7 @@
     <Compile Include="DeviceLoaders\IDeviceLoader.cs" />
     <Compile Include="DeviceLoaders\IHotplugLoader.cs" />
     <Compile Include="DeviceLoaders\TestDeviceLoader.cs" />
+    <Compile Include="DeviceLoaders\USBDeviceLoader.cs" />
     <Compile Include="DeviceLoaders\ZeusDeviceLoader.cs" />
     <Compile Include="DeviceManagers\DistributedWorkManager.cs" />
     <Compile Include="Helpers\HashHelper.cs" />

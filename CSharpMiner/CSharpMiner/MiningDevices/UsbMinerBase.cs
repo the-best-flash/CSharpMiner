@@ -33,6 +33,8 @@ namespace MiningDevice
     [DataContract]
     public abstract class UsbMinerBase : IMiningDevice
     {
+        protected const int defaultPollTime = 10;
+
         [IgnoreDataMember]
         public int Id { get; set; }
 
@@ -57,6 +59,30 @@ namespace MiningDevice
 
         [DataMember(Name = "timeout")]
         public int WatchdogTimeout { get; set; }
+
+        private int _pollFrequency;
+        [DataMember(Name = "poll")]
+        public int PollFrequency
+        {
+            get
+            {
+                if (_pollFrequency == 0)
+                    _pollFrequency = defaultPollTime;
+
+                return _pollFrequency;
+            }
+            set
+            {
+                if (value <= 0)
+                {
+                    _pollFrequency = defaultPollTime;
+                }
+                else
+                {
+                    _pollFrequency = value;
+                }
+            }
+        }
 
         [IgnoreDataMember]
         public int HashRate { get; protected set; }
@@ -206,7 +232,7 @@ namespace MiningDevice
                         DataReceived(usbPort, null);
                     }
 
-                    Thread.Sleep(10);
+                    Thread.Sleep(PollFrequency);
                 }
             }
             catch (Exception e)
