@@ -639,7 +639,7 @@ namespace Stratum
 
         private double ComputeHashRate(int workUnits)
         {
-            return 65535 * workUnits / DateTime.Now.Subtract(start).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
+            return 65535.0 * workUnits / DateTime.Now.Subtract(start).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
         }
 
         private string MegaHashDisplayString(double hashesPerSec)

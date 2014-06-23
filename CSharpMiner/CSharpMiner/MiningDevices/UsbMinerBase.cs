@@ -148,11 +148,6 @@ namespace CSharpMiner.MiningDevice
             }
         }
 
-        private double ComputeHashRate(int workUnits)
-        {
-            return 65535 * workUnits / DateTime.Now.Subtract(start).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
-        }
-
         public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
         public event Action<IMiningDevice> WorkRequested;
         public event Action<IMiningDevice, IPoolWork> InvalidNonce;
@@ -193,6 +188,11 @@ namespace CSharpMiner.MiningDevice
             watchdogTimer.AutoReset = true;
 
             Task.Factory.StartNew(this.Connect);
+        }
+
+        private double ComputeHashRate(int workUnits)
+        {
+            return 65535.0 * workUnits / DateTime.Now.Subtract(start).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
         }
 
         protected void RestartWorkRequestTimer()
