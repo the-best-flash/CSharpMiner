@@ -15,12 +15,10 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.Helpers;
+using CSharpMiner.Interfaces;
 using System;
-using System.Security.Cryptography;
-using System.Linq;
-using CSharpMiner.Pools;
 
-namespace CSharpMiner.Stratum
+namespace Stratum
 {
     public class StratumWork : IPoolWork
     {

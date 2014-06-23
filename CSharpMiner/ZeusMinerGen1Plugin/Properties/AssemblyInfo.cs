@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("CSharpMiner")]
+[assembly: AssemblyTitle("ZeusMinerGen1Plugin")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("CSharpMiner")]
+[assembly: AssemblyProduct("ZeusMinerGen1Plugin")]
 [assembly: AssemblyCopyright("Copyright ©  2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("5aa9a200-0655-4d88-aeea-a91f67c8405e")]
+[assembly: Guid("2a877ac2-fffc-4029-95e2-930e34b2a719")]
 
 // Version information for an assembly consists of the following four values:
 //

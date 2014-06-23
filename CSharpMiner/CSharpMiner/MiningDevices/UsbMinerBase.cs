@@ -14,22 +14,17 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
-using CSharpMiner;
 using CSharpMiner.Helpers;
+using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
-using DeviceManager;
 using System;
-using System.Collections.Generic;
 using System.IO.Ports;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
-namespace MiningDevice
+namespace CSharpMiner.MiningDevice
 {
     [DataContract]
     public abstract class UsbMinerBase : IMiningDevice
@@ -129,7 +124,7 @@ namespace MiningDevice
 
         protected Thread listenerThread = null;
         protected SerialPort usbPort = null;
-        protected StratumWork pendingWork = null;
+        protected IPoolWork pendingWork = null;
 
         private System.Timers.Timer watchdogTimer = null;
 
@@ -253,7 +248,7 @@ namespace MiningDevice
             }
         }
 
-        protected void SubmitWork(StratumWork work, string nonce)
+        protected void SubmitWork(IPoolWork work, string nonce)
         {
             this.RestartWatchdogTimer();
 

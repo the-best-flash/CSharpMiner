@@ -14,16 +14,12 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace CSharpMiner.Stratum
+namespace Stratum
 {
     [DataContract]
     public abstract class SerializedJsonObjectBase

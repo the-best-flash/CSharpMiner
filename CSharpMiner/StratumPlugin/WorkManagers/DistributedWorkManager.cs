@@ -14,24 +14,33 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.DeviceManager;
+using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
-using MiningDevice;
+using Stratum;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DeviceManager
+namespace StratumManager
 {
     [DataContract]
     [MiningModule(Description="This has not been implemented.")]
     public class DistributedWorkManager : WorkManagerBase
     {
-        protected override void SetUpDevice(MiningDevice.IMiningDevice d)
+        [IgnoreDataMember]
+        public override IPool[] Pools
+        {
+            get
+            {
+                return StratumPools;
+            }
+        }
+
+        [DataMember(Name = "pools", IsRequired = true)]
+        [MiningSetting(Description = "A collection of pools to connect to. This connects to the first pool and only uses the other pools if the first one fails. It does not automatically go back to the first pool if it becomes available again.", Optional = false)]
+        public StratumPool[] StratumPools { get; set; }
+
+        protected override void SetUpDevice(IMiningDevice d)
         {
             throw new NotImplementedException();
         }

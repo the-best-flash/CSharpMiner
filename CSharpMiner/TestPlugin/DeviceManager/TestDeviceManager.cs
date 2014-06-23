@@ -14,18 +14,12 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
-using CSharpMiner;
 using CSharpMiner.Helpers;
+using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
-using MiningDevice;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DeviceManager
 {
@@ -34,7 +28,7 @@ namespace DeviceManager
     public class TestDeviceManager : IMiningDeviceManager
     {
         [DataMember(Name = "pools")]
-        public StratumPool[] Pools { get; set; }
+        public IPool[] Pools { get; set; }
 
         [IgnoreDataMember]
         public IMiningDevice[] MiningDevices { get; private set; }
@@ -56,22 +50,19 @@ namespace DeviceManager
 
         public void NewWork(object[] poolWorkData, int diff)
         {
-            StratumWork work = new StratumWork(poolWorkData, this.ExtraNonce1, "00000000", diff);
+            List<Object> list = new List<object>();
 
-            LogHelper.ConsoleLog(new Object[] {
-                string.Format("JobID: {0}", work.JobId),
-                string.Format("Prev: {0}", work.PreviousHash),
-                string.Format("coinb1: {0}", work.Coinbase1),
-                string.Format("coinb2: {0}", work.Coinbase2),
-                string.Format("merkle: {0}", work.MerkleRoot),
-                string.Format("version: {0}", work.Version),
-                string.Format("nbits: {0}", work.NetworkDiff),
-                string.Format("ntime: {0}", work.Timestamp),
-                string.Format("clean_jobs: {0}", poolWorkData[8])
-            });
+            foreach(object obj in poolWorkData)
+            {
+                list.Add(string.Format("Work Param: {0}", obj));
+            }
+
+            list.Add(string.Format("Work Diff: {0}", diff));
+
+            LogHelper.ConsoleLog(list.ToArray());
         }
 
-        public void SubmitWork(StratumWork work, string nonce, int startWork)
+        public void SubmitWork(IPoolWork work, string nonce, int startWork)
         {
             // Do nothing
         }
@@ -111,7 +102,7 @@ namespace DeviceManager
             // do nothing
         }
 
-        public void AddNewPool(StratumPool pool)
+        public void AddNewPool(IPool pool)
         {
             throw new NotImplementedException();
         }

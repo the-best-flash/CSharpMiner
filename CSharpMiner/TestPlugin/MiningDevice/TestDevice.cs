@@ -15,15 +15,9 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.Helpers;
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
-using DeviceManager;
+using CSharpMiner.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
 
 namespace MiningDevice
@@ -95,22 +89,19 @@ namespace MiningDevice
 
         public void StartWork(IPoolWork work)
         {
-            StratumWork stratumWork = work as StratumWork;
-
-            LogHelper.ConsoleLogAsync(string.Format("Miner {0} starting work {1} with:", Path, work.JobId), LogVerbosity.Verbose);
-
-            if (stratumWork != null)
-            {
-                LogHelper.ConsoleLogAsync(string.Format("\tExtranonce2: {0}", stratumWork.Extranonce2), LogVerbosity.Verbose);
-                LogHelper.ConsoleLogAsync(string.Format("\tStartNonce:  {0}", stratumWork.StartingNonce), LogVerbosity.Verbose);
-            }
+            LogHelper.ConsoleLogAsync(new object[]{
+                    string.Format("Miner {0} starting work {1} with:", Path, work.JobId),
+                    string.Format("\tStartNonce:  {0}", work.StartingNonce),
+                    string.Format("\tDiff: {0}", work.Diff),
+                    string.Format("\tHeader: {0}", work.Header)
+                }, 
+                LogVerbosity.Verbose);
         }
 
         public void Dispose()
         {
             this.Unload();
         }
-
 
         public void WorkRejected(IPoolWork work)
         {

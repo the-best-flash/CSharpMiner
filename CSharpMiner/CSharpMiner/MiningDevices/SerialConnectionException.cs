@@ -15,13 +15,9 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace MiningDevice
+namespace CSharpMiner.MiningDevice
 {
     class SerialConnectionException : Exception
     {

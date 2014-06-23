@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpMinerProgram", "CShar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestPlugin", "TestPlugin\TestPlugin.csproj", "{078B6704-3D5E-45A6-A58E-9AED51251A95}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeusMinerGen1Plugin", "ZeusMinerGen1Plugin\ZeusMinerGen1Plugin.csproj", "{A08F3076-FDF1-4A28-8D59-1A41710493AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StratumPlugin", "StratumPlugin\StratumPlugin.csproj", "{8FB60CBD-FD04-492A-BAF9-DCC6269ECB03}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{078B6704-3D5E-45A6-A58E-9AED51251A95}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{078B6704-3D5E-45A6-A58E-9AED51251A95}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{078B6704-3D5E-45A6-A58E-9AED51251A95}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A08F3076-FDF1-4A28-8D59-1A41710493AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A08F3076-FDF1-4A28-8D59-1A41710493AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A08F3076-FDF1-4A28-8D59-1A41710493AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A08F3076-FDF1-4A28-8D59-1A41710493AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FB60CBD-FD04-492A-BAF9-DCC6269ECB03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FB60CBD-FD04-492A-BAF9-DCC6269ECB03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FB60CBD-FD04-492A-BAF9-DCC6269ECB03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FB60CBD-FD04-492A-BAF9-DCC6269ECB03}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

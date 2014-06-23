@@ -15,15 +15,11 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace CSharpMiner.Stratum
+namespace Stratum
 {
     [DataContract]
     public class StratumResponse : SerializedJsonObjectBase

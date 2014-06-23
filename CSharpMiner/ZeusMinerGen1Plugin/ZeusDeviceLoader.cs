@@ -14,19 +14,13 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.DeviceLoader;
+using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
-using DeviceManager;
-using MiningDevice;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DeviceLoader
+namespace ZeusMiner
 {
     [DataContract]
     [MiningModule(Description = "Configures many ZeusMiner(Gen1) or GAWMiner(A1) devices at once.")]

@@ -14,15 +14,8 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using CSharpMiner.Interfaces;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Json;
-using CSharpMiner.Stratum;
-using DeviceManager;
 
 namespace CSharpMiner.Configuration
 {

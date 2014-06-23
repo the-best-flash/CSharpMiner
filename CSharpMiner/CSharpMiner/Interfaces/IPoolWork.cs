@@ -14,17 +14,13 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
-using MiningDevice;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DeviceLoader
+namespace CSharpMiner.Interfaces
 {
-    public interface IDeviceLoader : IMiningDevice
+    public interface IPoolWork
     {
-        IEnumerable<IMiningDevice> LoadDevices();
+        string JobId { get; }
+        int Diff { get; }
+        string Header { get; }
+        int StartingNonce { get; }
     }
 }

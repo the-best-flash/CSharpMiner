@@ -14,29 +14,21 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
-using CSharpMiner;
+
 using CSharpMiner.Helpers;
+using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
-using DeviceLoader;
-using MiningDevice;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace DeviceManager
+namespace CSharpMiner.DeviceManager
 {
     [DataContract]
     public abstract class WorkManagerBase : IMiningDeviceManager
     {
-        [DataMember(Name = "pools", IsRequired=true)]
-        [MiningSetting( Description = "A collection of pools to connect to. This connects to the first pool and only uses the other pools if the first one fails. It does not automatically go back to the first pool if it becomes available again.", Optional = false)]
-        public StratumPool[] Pools { get; set; }
+        public abstract IPool[] Pools { get; }
 
         [DataMember(Name = "devices")]
         [MiningSetting(Description="A collection of MiningDevice or DeviceLoader JSON objects.", Optional=false, 
@@ -162,7 +154,7 @@ namespace DeviceManager
         {
             if(!boundPools)
             {
-                foreach(StratumPool pool in this.Pools)
+                foreach(IPool pool in this.Pools)
                 {
                     pool.Disconnected += this.PoolDisconnected;
                     pool.NewWorkRecieved += this.NewWork;
@@ -210,7 +202,8 @@ namespace DeviceManager
 
                 if (hotplugLoader != null)
                 {
-                    hotplugLoader.StartListening(this.AddNewDevice);
+                    hotplugLoader.DeviceFound += this.AddNewDevice;
+                    hotplugLoader.StartListening();
                     hotplugLoaders.Add(hotplugLoader);
                 }
                 else
@@ -242,7 +235,7 @@ namespace DeviceManager
         {
             if(boundPools)
             {
-                foreach(StratumPool pool in this.Pools)
+                foreach(IPool pool in this.Pools)
                 {
                     pool.Disconnected -= this.PoolDisconnected;
                     pool.NewWorkRecieved -= this.NewWork;
@@ -260,6 +253,7 @@ namespace DeviceManager
                         if (hotplugLoader != null)
                         {
                             hotplugLoader.StopListening();
+                            hotplugLoader.DeviceFound -= this.AddNewDevice;
                         }
                     }
                 }
@@ -294,15 +288,13 @@ namespace DeviceManager
 
         public void PoolDisconnected(IPool pool)
         {
-            StratumPool stratumPool = pool as StratumPool;
-
-            if (stratumPool != null)
+            if (pool != null)
             {
-                LogHelper.ConsoleLogErrorAsync(string.Format("Disconnected from pool {0}", stratumPool.Url));
-                LogHelper.LogErrorAsync(string.Format("Disconnected from pool {0}", stratumPool.Url));
+                LogHelper.ConsoleLogErrorAsync(string.Format("Disconnected from pool {0}", pool.Url));
+                LogHelper.LogErrorAsync(string.Format("Disconnected from pool {0}", pool.Url));
             }
 
-            if(stratumPool == this.ActivePool)
+            if (pool == this.ActivePool)
                 AttemptPoolReconnect();
         }
 
@@ -329,7 +321,7 @@ namespace DeviceManager
             }
         }
 
-        public void AddNewPool(StratumPool pool)
+        public void AddNewPool(IPool pool)
         {
             throw new NotImplementedException();
         }

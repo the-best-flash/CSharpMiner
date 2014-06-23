@@ -15,12 +15,10 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.Helpers;
+using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
-using CSharpMiner.Pools;
-using MiningDevice;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
@@ -28,7 +26,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CSharpMiner.Stratum
+namespace Stratum
 {
     [DataContract]
     [MiningModule(Description="Manages a connection to a stratum mining pool.")]

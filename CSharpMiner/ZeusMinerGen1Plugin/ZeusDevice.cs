@@ -15,15 +15,15 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.Helpers;
+using CSharpMiner.Interfaces;
+using CSharpMiner.MiningDevice;
 using CSharpMiner.ModuleLoading;
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
 using System;
 using System.IO.Ports;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
-namespace MiningDevice
+namespace ZeusMiner
 {
     [DataContract]
     [MiningModule(Description = "Configures a ZeusMiner Gen1 or GAWMiner A1 device.")]
@@ -89,7 +89,7 @@ namespace MiningDevice
             }
         }
 
-        private StratumWork currentWork = null;
+        private IPoolWork currentWork = null;
         private int timesNonZero = 0;
 
         public ZeusDevice(string port, int clk, int cores, int watchdogTimeout, int pollFrequency = defaultPollTime)
@@ -101,10 +101,8 @@ namespace MiningDevice
             PollFrequency = defaultPollTime;
         }
 
-        public override void StartWork(IPoolWork poolWork)
+        public override void StartWork(IPoolWork work)
         {
-            StratumWork work = poolWork as StratumWork;
-
             if (work != null)
             {
                 timesNonZero = 0;

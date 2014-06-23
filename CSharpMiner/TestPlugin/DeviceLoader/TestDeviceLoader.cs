@@ -14,16 +14,12 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
 using MiningDevice;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
 
 namespace DeviceLoader
@@ -118,7 +114,7 @@ namespace DeviceLoader
         public event Action<IMiningDevice> WorkRequested;
         public event Action<IMiningDevice, IPoolWork> InvalidNonce;
 
-        public IEnumerable<MiningDevice.IMiningDevice> LoadDevices()
+        public IEnumerable<IMiningDevice> LoadDevices()
         {
             List<IMiningDevice> devices = new List<IMiningDevice>();
 

@@ -14,18 +14,14 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.DeviceManager;
+using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
-using MiningDevice;
+using Stratum;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DeviceManager
+namespace StratumManager
 {
     [DataContract]
     [MiningModule(Description = "Uses the stratum protocol to generate a unique work item for each device it manages. It will allow the device to continue working on its work item until one of the following occurs: the device requests a new work item, the server forces a work restart, or the device submits a stale share.")]
@@ -44,6 +40,19 @@ namespace DeviceManager
                 return _random;
             }
         }
+
+        [IgnoreDataMember]
+        public override IPool[] Pools
+        {
+            get
+            {
+                return StratumPools;
+            }
+        }
+
+        [DataMember(Name = "pools", IsRequired = true)]
+        [MiningSetting(Description = "A collection of pools to connect to. This connects to the first pool and only uses the other pools if the first one fails. It does not automatically go back to the first pool if it becomes available again.", Optional = false)]
+        public StratumPool[] StratumPools { get; set; }
 
         protected override void SetUpDevice(IMiningDevice d)
         {

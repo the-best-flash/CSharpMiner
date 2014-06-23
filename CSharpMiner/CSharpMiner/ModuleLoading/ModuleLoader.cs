@@ -15,10 +15,7 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.Helpers;
-using CSharpMiner.Pools;
-using DeviceLoader;
-using DeviceManager;
-using MiningDevice;
+using CSharpMiner.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,7 +23,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CSharpMiner.ModuleLoading
 {

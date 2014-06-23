@@ -14,22 +14,16 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
-using CSharpMiner.Stratum;
-using MiningDevice;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DeviceManager
+namespace CSharpMiner.Interfaces
 {
     public interface IMiningDeviceManager
     {
         IEnumerable<IMiningDevice> LoadedDevices { get; }
-        StratumPool[] Pools { get; }
+        IPool[] Pools { get; }
 
-        void AddNewPool(StratumPool pool);
+        void AddNewPool(IPool pool);
         void AddNewDevice(IMiningDevice device);
 
         void RemovePool(int poolIndex);

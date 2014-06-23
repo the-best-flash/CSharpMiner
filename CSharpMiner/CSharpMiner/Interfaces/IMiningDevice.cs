@@ -14,17 +14,10 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
-using DeviceManager;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
 
-namespace MiningDevice
+namespace CSharpMiner.Interfaces
 {
     public interface IMiningDevice : IDisposable
     {
