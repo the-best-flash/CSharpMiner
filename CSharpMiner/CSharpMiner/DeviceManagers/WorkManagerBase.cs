@@ -150,7 +150,7 @@ namespace CSharpMiner.DeviceManager
 
         public void RequestWork(IMiningDevice device)
         {
-            LogHelper.ConsoleLogAsync(string.Format("Device {0} requested new work.", device.Id));
+            LogHelper.DebugConsoleLogAsync(string.Format("Device {0} requested new work.", device.Name));
             StartWorkOnDevice(this.currentWork, device, true);
         }
 
