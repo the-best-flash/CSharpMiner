@@ -350,27 +350,30 @@ namespace CSharpMiner.DeviceManager
         {
             lock (reconnectLock)
             {
-                if (this.ActivePool != null && !this.ActivePool.Connecting)
+                if (this.ActivePool == null || (!this.ActivePool.Connected && !this.ActivePool.Connected))
                 {
-                    this.ActivePool.Stop();
-                    this.ActivePool = null;
-                }
-
-                // TODO: Handle when all pools are unable to be reached
-                if (this.started && (this.ActivePool == null || !this.ActivePool.Connecting))
-                {
-                    if (this.ActivePoolId + 1 < this.Pools.Length)
+                    if (this.ActivePool != null)
                     {
-                        this.ActivePoolId++;
-                    }
-                    else
-                    {
-                        this.ActivePoolId = 0;
+                        this.ActivePool.Stop();
+                        this.ActivePool = null;
                     }
 
-                    this.ActivePool = this.Pools[this.ActivePoolId];
-                    LogHelper.ConsoleLog(string.Format("Attempting to connect to pool {0}", this.ActivePool.Url));
-                    this.ActivePool.Start();
+                    // TODO: Handle when all pools are unable to be reached
+                    if (this.started)
+                    {
+                        if (this.ActivePoolId + 1 < this.Pools.Length)
+                        {
+                            this.ActivePoolId++;
+                        }
+                        else
+                        {
+                            this.ActivePoolId = 0;
+                        }
+
+                        this.ActivePool = this.Pools[this.ActivePoolId];
+                        LogHelper.ConsoleLog(string.Format("Attempting to connect to pool {0}", this.ActivePool.Url));
+                        this.ActivePool.Start();
+                    }
                 }
             }
         }
