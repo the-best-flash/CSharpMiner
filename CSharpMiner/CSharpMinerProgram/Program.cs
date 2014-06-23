@@ -130,6 +130,12 @@ namespace CSharpMinerProgram
                     WriteUsage();
                     return;
                 }
+                else
+                {
+                    LogHelper.ConsoleLogError(string.Format("Unrecognized command: {0}", arg));
+                    WriteUsage();
+                    return; // We cannot recover
+                }
             }
 
             bool loaded = false; // Make sure that we don't loop indefinately if we can't even get the miner started
