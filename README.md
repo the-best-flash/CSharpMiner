@@ -136,8 +136,6 @@ Untested Features:
     Pool Auto-failover
     Mining on pools other than Clevermining using Mono. (I have tested a few pools on .NET on windows, but since the default JSON parser works on .NET any pool that has a valid JSON format, which should be all, should work. The default JSON parser does not work on mono for generic objects so I made a temporary parser until I figure out if I want to use a JSON library or make the parser a bit more robust.)
     Disconnecting a miner while the system is running. 
-    Importing of 'plugins' or 'modules' that can be used to add support for new mining devices or work scheduling algorithms
-    Importing of 'plugins' or 'modules' that can be used to add supprot for new pool protocols and new pool management features
 
 Planned Features:
 
@@ -153,6 +151,7 @@ Planned Features:
 Known Issues:
 
     Possible strange, infinate loop of pool connection attempts after a pool failure.
+    It doesn't always exit right away when you quit. Some thread somewhere isn't noticing right away that its time to quit working.
 
 Why make this? 
 
