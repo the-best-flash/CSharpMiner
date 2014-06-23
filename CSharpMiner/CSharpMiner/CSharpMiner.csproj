@@ -66,6 +66,8 @@
     <Compile Include="MiningDevices\UsbMinerBase.cs" />
     <Compile Include="DeviceManagers\WorkManagerBase.cs" />
     <Compile Include="MiningDevices\ZeusDevice.cs" />
+    <Compile Include="ModuleLoading\MiningSettingAttribute.cs" />
+    <Compile Include="ModuleLoading\MiningModuleAttribute.cs" />
     <Compile Include="ModuleLoading\ModuleLoader.cs" />
     <Compile Include="Pools\IPool.cs" />
     <Compile Include="Pools\IPoolWork.cs" />

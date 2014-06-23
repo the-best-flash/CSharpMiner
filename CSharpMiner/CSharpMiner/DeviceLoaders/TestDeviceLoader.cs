@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.ModuleLoading;
 using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using MiningDevice;
@@ -28,12 +29,15 @@ using System.Timers;
 namespace DeviceLoader
 {
     [DataContract]
+    [MiningModule(Description = "This will be displayed as the description of the object when the user asks for help.")]
     public class TestDeviceLoader : IDeviceLoader
     {
         [DataMember(Name = "ports")]
+        [MiningSetting(ExampleValue="[A value that will be inserted into the example JSON section.]", Optional=false, Description="A value that will be displayed as the description of the setting.")]
         public string[] Ports { get; set; }
 
         [DataMember(Name = "cores")]
+        [MiningSetting(ExampleValue="42", Optional=true, Description="Because Optional=true this will have the word '(Optional)' appended before this description.")]
         public int Cores { get; set; }
 
         [IgnoreDataMember]
@@ -152,6 +156,12 @@ namespace DeviceLoader
         }
 
         public void Load()
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public void WorkRejected(IPoolWork work)
         {
             throw new NotImplementedException();
         }

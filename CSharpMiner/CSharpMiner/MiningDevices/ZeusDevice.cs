@@ -15,6 +15,7 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.Helpers;
+using CSharpMiner.ModuleLoading;
 using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using System;
@@ -25,12 +26,14 @@ using System.Threading.Tasks;
 namespace MiningDevice
 {
     [DataContract]
+    [MiningModule(Description = "Configures a ZeusMiner Gen1 or GAWMiner A1 device.")]
     class ZeusDevice : UsbMinerBase
     {
         private const int extraDataThreshold = 2; // Number of times through the main USB reading look that we will allow extra data to sit int he buffer
 
         private int _clk;
         [DataMember(Name = "clock")]
+        [MiningSetting(ExampleValue = "328", Description = "The clockspeed of the miner. Max = 382", Optional = true)]
         public int LtcClk 
         { 
             get
@@ -216,6 +219,11 @@ namespace MiningDevice
         protected override int GetTheoreticalHashrate()
         {
             return (int)(LtcClk * 87.5 * 8);
+        }
+
+        public override void WorkRejected(IPoolWork work)
+        {
+            this.RequestWork();
         }
     }
 }

@@ -16,6 +16,7 @@
 
 using CSharpMiner;
 using CSharpMiner.Helpers;
+using CSharpMiner.ModuleLoading;
 using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using MiningDevice;
@@ -29,6 +30,7 @@ using System.Threading.Tasks;
 namespace DeviceManager
 {
     [DataContract]
+    [MiningModule(Description = "Since there wasn't any data member information specified the program attempts to auto generate it without descriptions.")]
     public class TestDeviceManager : IMiningDeviceManager
     {
         [DataMember(Name = "pools")]

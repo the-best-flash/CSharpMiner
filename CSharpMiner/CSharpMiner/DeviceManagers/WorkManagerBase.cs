@@ -16,6 +16,7 @@
 
 using CSharpMiner;
 using CSharpMiner.Helpers;
+using CSharpMiner.ModuleLoading;
 using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using DeviceLoader;
@@ -33,7 +34,16 @@ namespace DeviceManager
     [DataContract]
     public abstract class WorkManagerBase : IMiningDeviceManager
     {
-        [DataMember(Name = "pools")]
+        [DataMember(Name = "pools", IsRequired=true)]
+        [MiningSetting(ExampleValue = @"[
+    {
+        'url' : 'stratum+tcp://SomePool.com:3333',
+        'user' : 'SomeUsername',
+        'pass' : 'SomePassword'
+    }
+]", 
+        Description = "A collection of pools to connect to. This connects to the first pool and only uses the other pools if the first one fails. It does not automatically go back to the first pool if it becomes available again.", 
+        Optional = false)]
         public StratumPool[] Pools { get; set; }
 
         [DataMember(Name = "devices")]

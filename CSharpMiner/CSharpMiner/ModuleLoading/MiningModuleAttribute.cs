@@ -14,36 +14,16 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
-using CSharpMiner.ModuleLoading;
-using CSharpMiner.Pools;
-using CSharpMiner.Stratum;
-using MiningDevice;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DeviceManager
+namespace CSharpMiner.ModuleLoading
 {
-    [DataContract]
-    [MiningModule(Description="This has not been implemented.")]
-    public class DistributedWorkManager : WorkManagerBase
+    public class MiningModuleAttribute : Attribute
     {
-        protected override void SetUpDevice(MiningDevice.IMiningDevice d)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override void StartWork(IPoolWork work, IMiningDevice device, bool restartAll, bool requested)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override void NoWork(IPoolWork oldWork, IMiningDevice device, bool requested)
-        {
-            throw new NotImplementedException();
-        }
+        public string Description { get; set; }
     }
 }

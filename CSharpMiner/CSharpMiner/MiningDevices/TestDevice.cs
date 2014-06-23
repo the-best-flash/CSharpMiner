@@ -110,5 +110,11 @@ namespace MiningDevice
         {
             this.Unload();
         }
+
+
+        public void WorkRejected(IPoolWork work)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -42,7 +42,7 @@ namespace CSharpMiner.ModuleLoading
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
                 Console.Write("{0}", t.Name);
                 Console.ResetColor();
-                Console.WriteLine("#{0}", t.Namespace);
+                Console.WriteLine(":#{0}", t.Namespace);
             }
         }
 
@@ -50,40 +50,152 @@ namespace CSharpMiner.ModuleLoading
         {
             foreach (Type t in GetKnownTypes().Where(t => t.Name.ToLowerInvariant() == typeName.ToLowerInvariant()))
             {
-                Console.WriteLine("{0}#{1}", t.Name, t.Namespace);
+                Console.WriteLine("{0}:#{1}", t.Name, t.Namespace);
                 Console.WriteLine();
-                PropertyInfo descriptionProperty = t.GetProperty("UsageDescription", BindingFlags.Static | BindingFlags.Public);
+                
+                if (Attribute.IsDefined(t, typeof(MiningModuleAttribute)))
+                {
+                    MiningModuleAttribute attrib = Attribute.GetCustomAttribute(t, typeof(MiningModuleAttribute)) as MiningModuleAttribute;
 
-                if (descriptionProperty != null && descriptionProperty.CanRead)
-                {
-                    Console.WriteLine(descriptionProperty.GetValue(null));
-                }
-                else
-                {
-                    foreach (PropertyInfo prop in t.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(prop => prop.CanRead && prop.CanWrite && !Attribute.IsDefined(prop, typeof(IgnoreDataMemberAttribute))))
+                    if(attrib != null)
                     {
-                        if (Attribute.IsDefined(prop, typeof(DataMemberAttribute)))
-                        {
-                            DataMemberAttribute dataMemberAttrib = Attribute.GetCustomAttribute(prop, typeof(DataMemberAttribute)) as DataMemberAttribute;
+                        Console.WriteLine(attrib.Description);
+                    }
+                }
 
-                            if (dataMemberAttrib != null)
-                            {
-                                Console.WriteLine("\t{0} : {1}", dataMemberAttrib.Name, prop.PropertyType.Name);
-                            }
+                IEnumerable<PropertyInfo> serializableProperties = t.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(prop => prop.CanRead && prop.CanWrite && !Attribute.IsDefined(prop, typeof(IgnoreDataMemberAttribute)));
+
+                foreach (PropertyInfo prop in serializableProperties)
+                {
+                    if (Attribute.IsDefined(prop, typeof(DataMemberAttribute)))
+                    {
+                        DataMemberAttribute dataMemberAttrib = Attribute.GetCustomAttribute(prop, typeof(DataMemberAttribute)) as DataMemberAttribute;
+
+                        if (dataMemberAttrib != null)
+                        {
+                            Console.WriteLine("\t{0} : {1}", dataMemberAttrib.Name, prop.PropertyType.Name);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("\t{0} : {1}", prop.Name, prop.PropertyType.Name);
+                    }
+
+                    if(Attribute.IsDefined(prop, typeof(MiningSettingAttribute)))
+                    {
+                        MiningSettingAttribute attrib = Attribute.GetCustomAttribute(prop, typeof(MiningSettingAttribute)) as MiningSettingAttribute;
+ 
+                        if(attrib != null)
+                        {
+                            Console.WriteLine("\t\t{1}{0}", (attrib.Optional ? "(Optional) " : ""), attrib.Description);
                         }
                     }
                 }
 
-                PropertyInfo formatProperty = t.GetProperty("ExampleJSONFormat", BindingFlags.Static | BindingFlags.Public);
-
-                if (formatProperty != null && formatProperty.CanRead)
-                {
-                    Console.WriteLine("Example JSON Format:");
-                    Console.WriteLine(formatProperty.GetValue(null));
-                }
+                Console.WriteLine("Example JSON Format:");
+                Console.WriteLine(GetJSONFormatExample(t, serializableProperties));
 
                 Console.WriteLine();
             }
+        }
+
+        private static string GetJSONFormatExample(Type t, IEnumerable<PropertyInfo> serializableProperties, string append = "")
+        {
+            if(!t.IsAbstract && Attribute.IsDefined(t, typeof(DataContractAttribute)))
+            {
+                StringBuilder sb = new StringBuilder();
+
+                sb.AppendLine(append + "{");
+
+                sb.AppendLine(string.Format("{0}    \"__type\" : \"{1}:#{2}\",", append, t.Name, t.Namespace));
+
+                foreach(PropertyInfo info in serializableProperties)
+                {
+                    string name = null;
+
+                    if (Attribute.IsDefined(info, typeof(DataMemberAttribute)))
+                    {
+                        DataMemberAttribute dataMemberAttrib = Attribute.GetCustomAttribute(info, typeof(DataMemberAttribute)) as DataMemberAttribute;
+
+                        if (dataMemberAttrib != null)
+                        {
+                            name = dataMemberAttrib.Name;
+                        }
+                    }
+                    
+                    if(string.IsNullOrEmpty(name))
+                    {
+                        name = info.Name;
+                    }
+
+                    sb.AppendLine(string.Format("{0}    \"{1}\" : {2},", append, info.Name, GetExampleValue(info)));
+                }
+
+                sb.AppendLine(append + "}");
+                return sb.ToString();
+            }
+
+            return string.Empty;
+        }
+
+        private static string GetExampleValue(PropertyInfo prop)
+        {
+            Type propertyType = prop.PropertyType;
+
+            string exampleValue = null;
+
+            if(Attribute.IsDefined(prop, typeof(MiningSettingAttribute)))
+            {
+                MiningSettingAttribute attrib = Attribute.GetCustomAttribute(prop, typeof(MiningSettingAttribute)) as MiningSettingAttribute;
+
+                if(attrib != null)
+                {
+                    exampleValue = attrib.ExampleValue;
+                }
+            }
+
+            if(string.IsNullOrEmpty(exampleValue))
+            {
+                if (propertyType == typeof(string))
+                {
+                    if (string.IsNullOrEmpty(exampleValue))
+                    {
+                        exampleValue = "A string";
+                    }
+                }
+                else if (propertyType.IsArray)
+                {
+                    if (string.IsNullOrEmpty(exampleValue))
+                    {
+                        exampleValue = "[]";
+                    }
+                }
+                else if (Attribute.IsDefined(propertyType, typeof(DataContractAttribute)) && !propertyType.IsAbstract)
+                {
+                    if (string.IsNullOrEmpty(exampleValue))
+                    {
+                        exampleValue = GetJSONFormatExample(propertyType);
+                    }
+                }
+                else
+                {
+                    exampleValue = "\"Unknown type. Disregard this example.\"";
+                }
+            }
+
+            if(propertyType == typeof(string))
+            {
+                return string.Format("\"{0}\"", exampleValue);
+            }
+            else
+            {
+                return exampleValue;
+            }
+        }
+
+        public static string GetJSONFormatExample(Type t)
+        {
+            return GetJSONFormatExample(t, t.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(prop => prop.CanRead && prop.CanWrite && !Attribute.IsDefined(prop, typeof(IgnoreDataMemberAttribute))));
         }
     }
 }

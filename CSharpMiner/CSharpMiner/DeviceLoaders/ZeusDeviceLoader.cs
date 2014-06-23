@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.ModuleLoading;
 using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using DeviceManager;
@@ -28,9 +29,11 @@ using System.Threading.Tasks;
 namespace DeviceLoader
 {
     [DataContract]
+    [MiningModule(Description = "Configures a collection ZeusMiner Gen1 or GAWMiner A1 devices using the same settings.")]
     public class ZeusDeviceLoader : USBDeviceLoader
     {
         [DataMember(Name = "clock")]
+        [MiningSetting(ExampleValue="328", Description="The clockspeed of the miner. Max = 382", Optional=true)]
         public int LtcClk { get; set; }
 
         public override IEnumerable<IMiningDevice> LoadDevices()

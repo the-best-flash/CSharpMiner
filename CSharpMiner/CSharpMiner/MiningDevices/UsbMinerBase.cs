@@ -16,6 +16,7 @@
 
 using CSharpMiner;
 using CSharpMiner.Helpers;
+using CSharpMiner.ModuleLoading;
 using CSharpMiner.Pools;
 using CSharpMiner.Stratum;
 using DeviceManager;
@@ -39,10 +40,12 @@ namespace MiningDevice
         public int Id { get; set; }
 
         [DataMember(Name = "port")]
+        [MiningSetting(ExampleValue = "dev/ttyUSB0", Optional = false, Description = "The USB port that the device is connected to. On Linux /dev/tty* should be used and on Windows COM* should be used.")]
         public string UARTPort { get; set; }
 
         private int _cores = 1;
         [DataMember(Name = "cores")]
+        [MiningSetting(ExampleValue = "6", Optional = false, Description = "The number of cores the device has. The meaning of this setting is manufacturer specific.")]
         public int Cores 
         {
             get
@@ -58,10 +61,12 @@ namespace MiningDevice
         }
 
         [DataMember(Name = "timeout")]
+        [MiningSetting(ExampleValue = "60", Optional = true, Description = "Number of seconds to wait since the last data was recieved before restarting the mining device.")]
         public int WatchdogTimeout { get; set; }
 
         private int _pollFrequency;
         [DataMember(Name = "poll")]
+        [MiningSetting(ExampleValue = "50", Optional = true, Description = "Number of milliseconds the thread waits before for incoming data. A larger value will decrease the processor usage but shares won't be submitted right away.")]
         public int PollFrequency
         {
             get
@@ -160,10 +165,7 @@ namespace MiningDevice
 
         private void WorkRequestTimerExpired(object sender, System.Timers.ElapsedEventArgs e)
         {
-            if(this.WorkRequested != null)
-            {
-                this.WorkRequested(this);
-            }
+            RequestWork();
         }
 
         private void WatchdogExpired(object sender, System.Timers.ElapsedEventArgs e)
@@ -171,10 +173,18 @@ namespace MiningDevice
             if(this.WorkRequested != null)
             {
                 LogHelper.ConsoleLogErrorAsync(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.UARTPort, (double)WatchdogTimeout / 1000));
-                this.WorkRequested(this);
+                RequestWork();
             }
         }
         
+        protected void RequestWork()
+        {
+            if (this.WorkRequested != null)
+            {
+                this.WorkRequested(this);
+            }
+        }
+
         protected void RestartWatchdogTimer()
         {
             if(watchdogTimer != null)
@@ -288,5 +298,6 @@ namespace MiningDevice
         public abstract int GetBaud();
         protected abstract void DataReceived(object sender, SerialDataReceivedEventArgs e);
         protected abstract int GetTheoreticalHashrate();
+        public abstract void WorkRejected(IPoolWork work);
     }
 }

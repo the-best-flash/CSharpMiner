@@ -50,5 +50,6 @@ namespace MiningDevice
         void Load();
         void Unload();
         void StartWork(IPoolWork work);
+        void WorkRejected(IPoolWork work);
     }
 }
