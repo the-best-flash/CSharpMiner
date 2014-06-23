@@ -87,6 +87,8 @@ namespace StratumManager
 
         protected override void OnWorkRejected(IPool pool, IPoolWork work, IMiningDevice device, string reason)
         {
+            base.OnWorkRejected(pool, work, device, reason);
+
             if(reason.Contains("job not found"))
             {
                 LogHelper.ConsoleLog(string.Format("Device {0} submitted stale share. Restarting with new work.", device.Name), LogVerbosity.Verbose);

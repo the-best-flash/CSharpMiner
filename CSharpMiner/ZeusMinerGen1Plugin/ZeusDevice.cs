@@ -204,7 +204,16 @@ namespace ZeusMiner
             {
                 Task.Factory.StartNew(() =>
                     {
-                        LogHelper.ConsoleLogAsync(string.Format("Device {0} submitting {1} for job {2}.", this.Name, HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan);
+                        LogHelper.ConsoleLogAsync(new Object[] {
+                            new Object[] {string.Format("Device {0} submitting {1} for job {2}.", this.Name, HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan, false},
+                            new Object[] {" ( ", false },
+                            new Object[] {this.Accepted, ConsoleColor.Green, false},
+                            new Object[] {" : ", false},
+                            new Object[] {this.Rejected, ConsoleColor.Red, false},
+                            new Object[] {" : ", false},
+                            new Object[] {this.HardwareErrors, ConsoleColor.Magenta, false},
+                            new Object[] {" ) ", true}
+                        });
 
                         string nonce = HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet));
 

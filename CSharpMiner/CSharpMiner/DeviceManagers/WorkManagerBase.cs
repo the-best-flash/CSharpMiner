@@ -259,12 +259,14 @@ namespace CSharpMiner.DeviceManager
 
         protected virtual void OnWorkRejected(IPool pool, IPoolWork work, IMiningDevice device, string reason)
         {
-            // Do nothing
+            device.Rejected++;
+            device.RejectedWorkUnits += work.Diff;
         }
 
         protected virtual void OnWorkAccepted(IPool pool, IPoolWork work, IMiningDevice device)
         {
-            // Do nothing
+            device.Accepted++;
+            device.AcceptedWorkUnits += work.Diff;
         }
 
         public virtual void Stop()
