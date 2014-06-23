@@ -305,50 +305,94 @@ namespace CSharpMiner.Helpers
 
         public static void LogError(Object error)
         {
+            LogErrorToFile(error, _errorLogPath, true);
+        }
+
+        private static void LogErrorToFile(Object error, string filePath, bool displayToScreen)
+        {
             lock (errorLogLock)
             {
-                using (StreamWriter errLog = new StreamWriter(File.Open(_errorLogPath, FileMode.Append)))
+                using (StreamWriter errLog = new StreamWriter(File.Open(filePath, FileMode.Append)))
                 {
                     errLog.WriteLine("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now);
                     errLog.WriteLine(error);
                     errLog.WriteLine();
                 }
 
-                ConsoleLog(string.Format("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now));
-                ConsoleLog(error);
-                ConsoleLog();
+                if (displayToScreen)
+                {
+                    ConsoleLog(string.Format("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now));
+                    ConsoleLog(error);
+                    ConsoleLog();
+                }
+            }
+        }
+
+        private static void LogErrorsToFile(Object[] errors, string filePath, bool displayToScreen)
+        {
+            if (errors.Length > 0)
+            {
+                lock (errorLogLock)
+                {
+                    using (StreamWriter errLog = new StreamWriter(File.Open(filePath, FileMode.Append)))
+                    {
+                        errLog.WriteLine("{0} at {1}.", (errors[0] is Exception ? "Exception caught" : "Error Occured"), DateTime.Now);
+
+                        foreach (object error in errors)
+                        {
+                            errLog.WriteLine(error);
+                        }
+
+                        errLog.WriteLine();
+                    }
+
+                    if (displayToScreen)
+                    {
+                        ConsoleLog(string.Format("{0} at {1}.", (errors[0] is Exception ? "Exception caught" : "Error Occured"), DateTime.Now));
+
+                        foreach (object error in errors)
+                        {
+                            ConsoleLog(error);
+                        }
+
+                        ConsoleLog();
+                    }
+                }
             }
         }
 
         [Conditional("DEBUG")]
         public static void DebugLogErrorSecondary(Object error)
         {
-            LogErrorSecondary(error);
+            LogErrorSecondary(error, true);
         }
 
-        public static void LogErrorSecondary(Object error)
+        [Conditional("DEBUG")]
+        public static void DebugLogErrorSecondary(Object[] errors)
         {
-            lock (errorLogLock)
-            {
-                using (StreamWriter errLog = new StreamWriter(File.Open(_secondaryErrorLogPath, FileMode.Append)))
-                {
-                    errLog.WriteLine("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now);
-                    errLog.WriteLine(error);
-                    errLog.WriteLine();
-                }
+            LogErrorSecondary(errors, true);
+        }
 
-                #if DEBUG
-                ConsoleLog(string.Format("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now));
-                ConsoleLog(error);
-                ConsoleLog();
-                #endif
-            }
+        public static void LogErrorSecondary(Object error, bool displayToScreen = false)
+        {
+            LogErrorToFile(error, _secondaryErrorLogPath, false);
+        }
+
+        public static void LogErrorSecondary(Object[] errors, bool displayToScreen = false)
+        {
+            LogErrorsToFile(errors, _secondaryErrorLogPath, false);
         }
 
         [Conditional("DEBUG")]
         public static void DebugLogErrorAsync(Object error)
         {
             LogErrorAsync(error);
+        }
+
+        [Conditional("DEBUG")]
+        public static void DebugLogErrorAsync(Object[] errors)
+        {
+            LogErrorAsync(errors);
         }
 
         public static void LogErrorAsync(Object error)
@@ -359,10 +403,24 @@ namespace CSharpMiner.Helpers
             });
         }
 
+        public static void LogErrorAsync(Object[] errors)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                LogError(errors);
+            });
+        }
+
         [Conditional("DEBUG")]
         public static void DebugLogErrorSecondaryAsync(Object error)
         {
             LogErrorSecondaryAsync(error);
+        }
+
+        [Conditional("DEBUG")]
+        public static void DebugLogErrorSecondaryAsync(Object[] errors)
+        {
+            LogErrorSecondaryAsync(errors);
         }
 
         public static void LogErrorSecondaryAsync(Object error)
@@ -371,6 +429,14 @@ namespace CSharpMiner.Helpers
                 {
                     LogErrorSecondary(error);
                 });
+        }
+
+        public static void LogErrorSecondaryAsync(Object[] errors)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                LogErrorSecondary(errors);
+            });
         }
     }
 }
