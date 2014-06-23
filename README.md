@@ -148,6 +148,7 @@ Planned Features:
     An ASP.NET wrapper that will expose an HTTP interface for queying mining stats using HTTP requests
     An ASP.NET wrapper that will expose an HTTP interface for changing settings
     Ability to connect both SHA265 and Scrypt ASICs at once.
+    Add a way for modules to specify dependencies so that the program can avoid loading them if they won't run. This will also allow users to be notified of any missing dependencies.
     
 Known Issues:
 
