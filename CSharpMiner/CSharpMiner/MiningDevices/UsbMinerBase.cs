@@ -210,7 +210,7 @@ namespace CSharpMiner.MiningDevice
         {
             if(this.WorkRequested != null)
             {
-                LogHelper.ConsoleLogErrorAsync(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.Name, (double)WatchdogTimeout / 1000));
+                LogHelper.ConsoleLogErrorAsync(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.Name, (double)WatchdogTimeout));
                 RequestWork();
             }
         }
