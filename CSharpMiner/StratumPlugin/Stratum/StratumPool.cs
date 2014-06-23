@@ -455,118 +455,121 @@ namespace Stratum
 
             foreach (string s in commands)
             {
-                if (!s.Trim().EndsWith("}"))
+                if (!string.IsNullOrWhiteSpace(s))
                 {
-                    LogHelper.LogErrorSecondaryAsync(
-                        new Object[] { 
+                    if (!s.Trim().EndsWith("}"))
+                    {
+                        LogHelper.LogErrorSecondaryAsync(
+                            new Object[] { 
                             string.Format("Partial command recieved from {0}", this.Url),
                             s
                         });
 
-                    partialData = s;
+                        partialData = s;
 
-                    continue;
-                }
+                        continue;
+                    }
 
-                LogHelper.DebugConsoleLog(new Object[] {
-                    string.Format("Recieved data from {0}:", this.Url),
-                    s
-                }, LogVerbosity.Verbose);
+                    LogHelper.DebugConsoleLog(new Object[] {
+                            string.Format("Recieved data from {0}:", this.Url),
+                            s
+                        }, LogVerbosity.Verbose);
 
-                if (!string.IsNullOrEmpty(s.Trim()))
-                {
-                    string str = s.Replace("false", "\"false\"").Replace("true", "\"true\""); // Attempt to convert this to a friendly format for Mono
-
-                    MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
-
-                    if (str.Contains("\"result\""))
+                    if (!string.IsNullOrEmpty(s.Trim()))
                     {
-                        StratumResponse response = null;
+                        string str = s.Replace("false", "\"false\"").Replace("true", "\"true\""); // Attempt to convert this to a friendly format for Mono
 
-                        try
+                        MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
+
+                        if (str.Contains("\"result\""))
                         {
+                            StratumResponse response = null;
+
                             try
                             {
-                                response = StratumResponse.Deserialize(memStream);
-                            }
-                            catch
-                            {
-                                LogHelper.DebugLogErrorSecondaryAsync(string.Format("Failing over to manual parsing. Could not deserialize:\n\r {0}", str));
-                                response = new StratumResponse(str);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Exception exception = new InvalidDataException(string.Format("Error parsing response {0}", str), e);
-                            LogHelper.LogErrorSecondaryAsync(exception);
-                            throw exception;
-                        }
-
-                        // This is the response we're looking for
-                        if (response.Id == id)
-                        {
-                            result = response;
-                        }
-                        else // This should be a work submit response. We expect these to come back in order
-                        {
-                            if (WorkSubmitQueue != null)
-                            {
-                                if (WorkSubmitQueue.Count > 0)
+                                try
                                 {
-                                    Tuple<StratumCommand, StratumWork, IMiningDevice> workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+                                    response = StratumResponse.Deserialize(memStream);
+                                }
+                                catch
+                                {
+                                    LogHelper.DebugLogErrorSecondaryAsync(string.Format("Failing over to manual parsing. Could not deserialize:\n\r {0}", str));
+                                    response = new StratumResponse(str);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Exception exception = new InvalidDataException(string.Format("Error parsing response {0}", str), e);
+                                LogHelper.LogErrorSecondaryAsync(exception);
+                                throw exception;
+                            }
 
-                                    if (response.Id == workItem.Item1.Id)
+                            // This is the response we're looking for
+                            if (response.Id == id)
+                            {
+                                result = response;
+                            }
+                            else // This should be a work submit response. We expect these to come back in order
+                            {
+                                if (WorkSubmitQueue != null)
+                                {
+                                    if (WorkSubmitQueue.Count > 0)
                                     {
-                                        processWorkAcceptCommand(workItem.Item2, workItem.Item3, response);
-                                        WorkSubmitQueue.Dequeue();
-                                    }
-                                    else if (response.Id >  workItem.Item1.Id) // Something odd happened, we probably missed some responses or the server decided not to send them
-                                    {
-                                        workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+                                        Tuple<StratumCommand, StratumWork, IMiningDevice> workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
 
-                                        while (WorkSubmitQueue.Count > 0 && response.Id > workItem.Item1.Id)
+                                        if (response.Id == workItem.Item1.Id)
                                         {
-                                            // Get rid of the old stuff
+                                            processWorkAcceptCommand(workItem.Item2, workItem.Item3, response);
                                             WorkSubmitQueue.Dequeue();
-
-                                            workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
                                         }
-
-                                        if (WorkSubmitQueue.Count > 0 && response.Id == ((Tuple<StratumCommand, StratumWork, IMiningDevice>)WorkSubmitQueue.Peek()).Item1.Id)
+                                        else if (response.Id > workItem.Item1.Id) // Something odd happened, we probably missed some responses or the server decided not to send them
                                         {
-                                            workItem = WorkSubmitQueue.Dequeue() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+                                            workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
 
-                                            processWorkAcceptCommand( workItem.Item2, workItem.Item3, response);
+                                            while (WorkSubmitQueue.Count > 0 && response.Id > workItem.Item1.Id)
+                                            {
+                                                // Get rid of the old stuff
+                                                WorkSubmitQueue.Dequeue();
+
+                                                workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+                                            }
+
+                                            if (WorkSubmitQueue.Count > 0 && response.Id == ((Tuple<StratumCommand, StratumWork, IMiningDevice>)WorkSubmitQueue.Peek()).Item1.Id)
+                                            {
+                                                workItem = WorkSubmitQueue.Dequeue() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+
+                                                processWorkAcceptCommand(workItem.Item2, workItem.Item3, response);
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                    else // This is a command from the server
-                    {
-                        StratumCommand command = null;
-
-                        try
+                        else // This is a command from the server
                         {
+                            StratumCommand command = null;
+
                             try
                             {
-                                command = StratumCommand.Deserialize(memStream);
+                                try
+                                {
+                                    command = StratumCommand.Deserialize(memStream);
+                                }
+                                catch
+                                {
+                                    LogHelper.DebugLogErrorSecondary(string.Format("Failed to parse command. Falling back to manual parsing. Command\r\n {0}", str));
+                                    command = new StratumCommand(str);
+                                }
                             }
-                            catch
+                            catch (Exception e)
                             {
-                                LogHelper.DebugLogErrorSecondary(string.Format("Failed to parse command. Falling back to manual parsing. Command\r\n {0}", str));
-                                command = new StratumCommand(str);
+                                Exception exception = new InvalidDataException(string.Format("Error parsing command {0}", str), e);
+                                LogHelper.LogErrorSecondaryAsync(exception);
+                                throw exception;
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            Exception exception = new InvalidDataException(string.Format("Error parsing command {0}", str), e);
-                            LogHelper.LogErrorSecondaryAsync(exception);
-                            throw exception;
-                        }
 
-                        processCommand(command);
+                            processCommand(command);
+                        }
                     }
                 }
             }
