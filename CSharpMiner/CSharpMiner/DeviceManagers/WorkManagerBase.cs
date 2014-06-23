@@ -39,7 +39,22 @@ namespace DeviceManager
         public StratumPool[] Pools { get; set; }
 
         [DataMember(Name = "devices")]
-        public IMiningDevice[] MiningDevices { get; private set; }
+        [MiningSetting(Description="A collection of MiningDevice or DeviceManager JSON objects.", Optional=false, 
+           ExampleValue=@"[
+    {
+		    '__type' : 'ZeusDeviceLoader:#DeviceLoader',
+		    'ports' : ['/dev/ttyUSB0', '/dev/ttyUSB1', '/dev/ttyUSB2', '/dev/ttyUSB3', '/dev/ttyUSB4', '/dev/ttyUSB5', 'COM1' ],
+		    'cores' : 6,
+		    'clock' : 328
+    },
+    {
+		    '__type' : 'ZeusDevice:#MiningDevice',
+		    'port' : '/dev/ttyUSB9',
+		    'cores' : 6,
+		    'clock' : 382
+    }
+]")]
+        public IMiningDevice[] MiningDevices { get; set; }
 
         [IgnoreDataMember]
         public IPool ActivePool { get; private set; }
