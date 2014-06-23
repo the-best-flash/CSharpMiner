@@ -50,10 +50,10 @@ namespace Stratum
         public bool Alive { get; private set; }
 
         [IgnoreDataMember]
-        public int Accepted { get; private set; }
+        public int Accepted { get; set; }
 
         [IgnoreDataMember]
-        public int Rejected { get; private set; }
+        public int Rejected { get; set; }
 
         [IgnoreDataMember]
         public int AcceptedWorkUnits { get; private set; }

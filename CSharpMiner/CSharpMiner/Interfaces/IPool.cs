@@ -24,8 +24,8 @@ namespace CSharpMiner.Interfaces
         string Username { get; set; }
         string Password { get; set; }
 
-        int Accepted { get; }
-        int Rejected { get; }
+        int Accepted { get; set; }
+        int Rejected { get; set; }
         int HardwareErrors { get; set; }
 
         int AcceptedWorkUnits { get; }
