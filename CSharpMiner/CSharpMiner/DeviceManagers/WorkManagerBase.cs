@@ -286,7 +286,7 @@ namespace CSharpMiner.DeviceManager
         private void DisplayDeviceStats(IMiningDevice d)
         {
             LogHelper.ConsoleLogAsync(new Object[] {
-                    new Object[] {string.Format("Device {0} ", d.Name), ConsoleColor.DarkCyan, false},
+                    new Object[] {string.Format("Device {0} ", d.Name), false},
                     new Object[] {" ( ", false },
                     new Object[] {d.Accepted, ConsoleColor.Green, false},
                     new Object[] {" : ", false},
