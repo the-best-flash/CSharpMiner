@@ -61,7 +61,10 @@ namespace CSharpMiner
                 {
                     foreach (Type t in GetKnownTypes())
                     {
-                        Console.WriteLine("{0}#{1}", t.Name, t.Namespace);
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                        Console.WriteLine("{0}", t.Name);
+                        Console.ResetColor();
+                        Console.WriteLine("#{0}", t.Namespace);
                     }
                 }
                 else
@@ -86,7 +89,7 @@ namespace CSharpMiner
                                     
                                     if(dataMemberAttrib != null)
                                     {
-                                        Console.WriteLine("\t{0} : {1}", dataMemberAttrib.Name, prop.PropertyType);
+                                        Console.WriteLine("\t{0} : {1}", dataMemberAttrib.Name, prop.PropertyType.Name);
                                     }
                                 }
                             }
