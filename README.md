@@ -151,7 +151,7 @@ Planned Features:
     
 Known Issues:
 
-    None Currently
+    Possible strange, infinate loop of pool connection attempts after a pool failure.
 
 Why make this? 
 
