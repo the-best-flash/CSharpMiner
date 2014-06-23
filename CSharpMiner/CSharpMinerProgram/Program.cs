@@ -158,7 +158,7 @@ namespace CSharpMinerProgram
                     {
                         pressedKey = Console.ReadKey().Key;
 
-                        if (pressedKey == ConsoleKey.OemPlus || pressedKey == ConsoleKey.Add)
+                        if (pressedKey == ConsoleKey.OemPlus || pressedKey == ConsoleKey.Add || pressedKey.ToString() == "=")
                         {
                             if (LogHelper.Verbosity != LogVerbosity.Verbose)
                             {
