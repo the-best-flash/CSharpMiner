@@ -42,7 +42,7 @@ namespace CSharpMiner
 
             // TODO: Get types from module assemblies
 
-            return thisAssembly.GetTypes().Where(t => Attribute.IsDefined(t, typeof(DataContractAttribute)));
+            return thisAssembly.GetTypes().Where(t => Attribute.IsDefined(t, typeof(DataContractAttribute)) && !t.IsAbstract);
         }
 
         static void Main(string[] args)
@@ -66,7 +66,7 @@ namespace CSharpMiner
                 }
                 else
                 {
-                    foreach(Type t in GetKnownTypes().Where(t => t.Name.ToLowerInvariant() == args[1]))
+                    foreach(Type t in GetKnownTypes().Where(t => t.Name.ToLowerInvariant() == args[1].ToLowerInvariant()))
                     {
                         Console.WriteLine("{0}#{1}", t.Name, t.Namespace);
                         Console.WriteLine();
