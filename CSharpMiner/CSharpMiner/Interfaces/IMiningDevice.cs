@@ -28,7 +28,7 @@ namespace CSharpMiner.Interfaces
 
         int Accepted { get; set; }
         int Rejected { get; set; }
-        int HardwareErrors { get; }
+        int HardwareErrors { get; set; }
 
         int AcceptedWorkUnits { get; set; }
         int RejectedWorkUnits { get; set; }

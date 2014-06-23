@@ -41,10 +41,7 @@ namespace MiningDevice
         }
 
         [IgnoreDataMember]
-        public int HardwareErrors
-        {
-            get { return 0; }
-        }
+        public int HardwareErrors { get; set; }
 
         [IgnoreDataMember]
         public Timer WorkRequestTimer

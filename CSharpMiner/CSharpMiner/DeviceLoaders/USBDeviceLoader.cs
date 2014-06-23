@@ -62,7 +62,14 @@ namespace CSharpMiner.DeviceLoader
         [IgnoreDataMember]
         public int HardwareErrors
         {
-            get { throw new NotImplementedException(); }
+            get
+            {
+                throw new NotImplementedException();
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
         }
 
         [IgnoreDataMember]

@@ -88,7 +88,7 @@ namespace CSharpMiner.MiningDevice
         public int HashRate { get; protected set; }
 
         [IgnoreDataMember]
-        public int HardwareErrors { get; protected set; }
+        public int HardwareErrors { get; set; }
 
         private System.Timers.Timer _timer = null;
         [IgnoreDataMember]

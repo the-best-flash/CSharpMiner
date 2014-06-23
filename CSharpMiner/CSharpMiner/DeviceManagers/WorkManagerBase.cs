@@ -261,14 +261,37 @@ namespace CSharpMiner.DeviceManager
 
         protected virtual void OnWorkRejected(IPool pool, IPoolWork work, IMiningDevice device, string reason)
         {
-            device.Rejected++;
-            device.RejectedWorkUnits += work.Diff;
+            if (!reason.Contains("low difficulty"))
+            {
+                device.Rejected++;
+                device.RejectedWorkUnits += work.Diff;
+            }
+            else
+            {
+                device.HardwareErrors++;
+                device.DiscardedWorkUnits += work.Diff;
+            }
         }
 
         protected virtual void OnWorkAccepted(IPool pool, IPoolWork work, IMiningDevice device)
         {
             device.Accepted++;
             device.AcceptedWorkUnits += work.Diff;
+        }
+
+        private void DisplayDeviceStats(IMiningDevice d)
+        {
+            LogHelper.ConsoleLogAsync(new Object[] {
+                    new Object[] {string.Format("Device {0} ", d.Name), ConsoleColor.DarkCyan, false},
+                    new Object[] {" ( ", false },
+                    new Object[] {d.Accepted, ConsoleColor.Green, false},
+                    new Object[] {" : ", false},
+                    new Object[] {d.Rejected, ConsoleColor.Red, false},
+                    new Object[] {" : ", false},
+                    new Object[] {d.HardwareErrors, ConsoleColor.Magenta, false},
+                    new Object[] {" ) ", true}
+                },
+                LogVerbosity.Verbose);
         }
 
         public virtual void Stop()
