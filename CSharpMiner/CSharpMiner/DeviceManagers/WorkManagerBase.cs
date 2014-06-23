@@ -177,6 +177,8 @@ namespace CSharpMiner.DeviceManager
                 {
                     pool.Disconnected += this.PoolDisconnected;
                     pool.NewWorkRecieved += this.NewWork;
+                    pool.WorkAccepted += this.OnWorkAccepted;
+                    pool.WorkRejected += this.OnWorkRejected;
                 }
 
                 boundPools = true;
