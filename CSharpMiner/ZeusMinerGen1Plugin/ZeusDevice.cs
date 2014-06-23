@@ -213,7 +213,8 @@ namespace ZeusMiner
                             new Object[] {" : ", false},
                             new Object[] {this.HardwareErrors, ConsoleColor.Magenta, false},
                             new Object[] {" ) ", true}
-                        });
+                        },
+                        LogVerbosity.Verbose);
 
                         string nonce = HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet));
 
