@@ -41,7 +41,7 @@ namespace CSharpMinerProgram
 
             string configFilePath = "config.conf";
             LogHelper.ErrorLogFilePath = "err.log";
-            LogHelper.Verbosity = LogVerbosity.Verbose;
+            LogHelper.Verbosity = LogVerbosity.Normal;
 
             foreach(string arg in args)
             {
@@ -247,7 +247,7 @@ namespace CSharpMinerProgram
                 "      Displays help information about the specified class.",
                 "",
                 "  -verbosity:Setting [-v]", 
-                "      (q)uiet, (n)ormal, (verb)ose, (very)quiet (Default: Verbose)",
+                "      (q)uiet, (n)ormal, (verb)ose, (very)quiet (Default: n)",
                 "",
                 "  -log:FilePath",
                 "      File to write critical errors to. (Default: err.log)",

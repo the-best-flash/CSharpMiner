@@ -279,8 +279,10 @@ namespace CSharpMiner.DeviceManager
                 if(this.ActivePool != null)
                 {
                     this.ActivePool.Rejected--;
+                    this.ActivePool.RejectedWorkUnits -= work.Diff;
+
                     this.ActivePool.HardwareErrors++;
-                    this.ActivePool.DiscardedWorkUnits++;
+                    this.ActivePool.DiscardedWorkUnits += work.Diff;
                 }
             }
 

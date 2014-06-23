@@ -59,7 +59,7 @@ namespace Stratum
         public int AcceptedWorkUnits { get; private set; }
 
         [IgnoreDataMember]
-        public int RejectedWorkUnits { get; private set; }
+        public int RejectedWorkUnits { get; set; }
 
         [IgnoreDataMember]
         public int DiscardedWorkUnits { get; set; }
