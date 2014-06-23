@@ -270,6 +270,12 @@ namespace CSharpMiner.DeviceManager
             {
                 device.HardwareErrors++;
                 device.DiscardedWorkUnits += work.Diff;
+
+                if(this.ActivePool != null)
+                {
+                    this.ActivePool.HardwareErrors++;
+                    this.ActivePool.DiscardedWorkUnits++;
+                }
             }
 
             DisplayDeviceStats(device);
@@ -360,6 +366,12 @@ namespace CSharpMiner.DeviceManager
 
         public virtual void InvalidNonce(IMiningDevice device, IPoolWork work)
         {
+            if(this.ActivePool != null)
+            {
+                this.ActivePool.HardwareErrors++;
+                this.ActivePool.DiscardedWorkUnits += work.Diff;
+            }
+
             throw new NotImplementedException();
         }
 

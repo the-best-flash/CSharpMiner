@@ -56,6 +56,15 @@ namespace Stratum
         public int Rejected { get; private set; }
 
         [IgnoreDataMember]
+        public int AcceptedWorkUnits { get; private set; }
+
+        [IgnoreDataMember]
+        public int RejectedWorkUnits { get; private set; }
+
+        [IgnoreDataMember]
+        public int DiscardedWorkUnits { get; set; }
+
+        [IgnoreDataMember]
         public int NewBlocks { get; private set; }
 
         [IgnoreDataMember]
@@ -94,6 +103,9 @@ namespace Stratum
 
         [IgnoreDataMember]
         public bool Connecting { get; private set; }
+
+        [IgnoreDataMember]
+        public int HardwareErrors { get; set; }
 
         public event Action<IPool, IPoolWork, bool> NewWorkRecieved;
         public event Action<IPool> Disconnected;
@@ -590,10 +602,12 @@ namespace Stratum
             if (accepted)
             {
                 Accepted++;
+                AcceptedWorkUnits += work.Diff;
             }
             else
             {
                 Rejected++;
+                RejectedWorkUnits += work.Diff;
             }
 
             DisplaySubmissionResponse(accepted, response);
@@ -623,6 +637,8 @@ namespace Stratum
                     new Object[] { this.Accepted, ConsoleColor.Green, false },
                     new Object[] { " : ", false},
                     new Object[] { this.Rejected, ConsoleColor.Red, false },
+                    new Object[] { " : ", false},
+                    new Object[] { this.HardwareErrors, ConsoleColor.Magenta, false },
                     new Object[] { " )", true }
                 });
             }
@@ -635,6 +651,8 @@ namespace Stratum
                     new Object[] { this.Accepted, ConsoleColor.Green, false },
                     new Object[] { " : ", false},
                     new Object[] { this.Rejected, ConsoleColor.Red, false },
+                    new Object[] { " : ", false},
+                    new Object[] { this.HardwareErrors, ConsoleColor.Magenta, false },
                     new Object[] { " )", true }
                 });
             }
