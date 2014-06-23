@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0EE026B7-8A64-4D56-985F-AC200D577784}</ProjectGuid>
+    <ProjectGuid>{078B6704-3D5E-45A6-A58E-9AED51251A95}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CSharpMiner</RootNamespace>
-    <AssemblyName>CSharpMiner</AssemblyName>
+    <RootNamespace>TestPlugin</RootNamespace>
+    <AssemblyName>TestPlugin</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -31,14 +29,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Security" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -46,40 +40,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration\JsonConfiguration.cs" />
-    <Compile Include="CSharpMiner.cs" />
-    <Compile Include="DeviceLoaders\IDeviceLoader.cs" />
-    <Compile Include="DeviceLoaders\IHotplugLoader.cs" />
-    <Compile Include="DeviceLoaders\USBDeviceLoader.cs" />
-    <Compile Include="DeviceLoaders\ZeusDeviceLoader.cs" />
-    <Compile Include="DeviceManagers\DistributedWorkManager.cs" />
-    <Compile Include="Helpers\HashHelper.cs" />
-    <Compile Include="Helpers\HexConversionHelper.cs" />
-    <Compile Include="Helpers\LogHelper.cs" />
-    <Compile Include="MiningDevices\IMiningDevice.cs" />
-    <Compile Include="DeviceManagers\IMiningDeviceManager.cs" />
-    <Compile Include="DeviceManagers\IndividualWorkManager.cs" />
-    <Compile Include="MiningDevices\SerialConnectionException.cs" />
-    <Compile Include="MiningDevices\UsbMinerBase.cs" />
-    <Compile Include="DeviceManagers\WorkManagerBase.cs" />
-    <Compile Include="MiningDevices\ZeusDevice.cs" />
-    <Compile Include="ModuleLoading\MiningSettingAttribute.cs" />
-    <Compile Include="ModuleLoading\MiningModuleAttribute.cs" />
-    <Compile Include="ModuleLoading\ModuleLoader.cs" />
-    <Compile Include="Pools\IPool.cs" />
-    <Compile Include="Pools\IPoolWork.cs" />
-    <Compile Include="Stratum\StratumCommand.cs" />
-    <Compile Include="Stratum\StratumPool.cs" />
+    <Compile Include="MiningDevice\TestDevice.cs" />
+    <Compile Include="DeviceLoader\TestDeviceLoader.cs" />
+    <Compile Include="DeviceManager\TestDeviceManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Stratum\StratumWork.cs" />
-    <Compile Include="Stratum\StratumResponse.cs" />
-    <Compile Include="Stratum\SerializedJsonObjectBase.cs" />
-    <Compile Include="Stratum\StratumConnectionFailureException.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-    <None Include="example.conf" />
-    <None Include="MonoComplie.sh" />
+    <ProjectReference Include="..\CSharpMiner\CSharpMiner.csproj">
+      <Project>{0ee026b7-8a64-4d56-985f-ac200d577784}</Project>
+      <Name>CSharpMiner</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
