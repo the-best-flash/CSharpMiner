@@ -423,7 +423,7 @@ namespace CSharpMiner.Stratum
                             }
                             catch
                             {
-                                LogHelper.LogErrorSecondaryAsync(string.Format("Failing over to manual parsing. Could not deserialize:\n\r {0}", str));
+                                LogHelper.DebugLogErrorSecondaryAsync(string.Format("Failing over to manual parsing. Could not deserialize:\n\r {0}", str));
                                 response = new StratumResponse(str);
                             }
                         }
@@ -487,7 +487,7 @@ namespace CSharpMiner.Stratum
                             }
                             catch
                             {
-                                LogHelper.LogErrorSecondary(string.Format("Failed to parse command. Falling back to manual parsing. Command\r\n {0}", str));
+                                LogHelper.DebugLogErrorSecondary(string.Format("Failed to parse command. Falling back to manual parsing. Command\r\n {0}", str));
                                 command = new StratumCommand(str);
                             }
                         }

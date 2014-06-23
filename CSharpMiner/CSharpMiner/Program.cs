@@ -55,6 +55,57 @@ namespace CSharpMiner
 
             bool loop = true;
 
+            if (args.Length >= 1 && args[0] == "-ls")
+            {
+                if (args.Length == 1)
+                {
+                    foreach (Type t in GetKnownTypes())
+                    {
+                        Console.WriteLine("{0}#{1}", t.Name, t.Namespace);
+                    }
+                }
+                else
+                {
+                    foreach(Type t in GetKnownTypes().Where(t => t.Name.ToLowerInvariant() == args[1]))
+                    {
+                        Console.WriteLine("{0}#{1}", t.Name, t.Namespace);
+                        Console.WriteLine();
+                        PropertyInfo descriptionProperty = t.GetProperty("UsageDescription", BindingFlags.Static | BindingFlags.Public);
+
+                        if(descriptionProperty != null && descriptionProperty.CanRead)
+                        {
+                            Console.WriteLine(descriptionProperty.GetValue(null));
+                        }
+                        else
+                        {
+                            foreach (PropertyInfo prop in t.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(prop => prop.CanRead && prop.CanWrite && !Attribute.IsDefined(prop, typeof(IgnoreDataMemberAttribute))))
+                            {
+                                if(Attribute.IsDefined(prop, typeof(DataMemberAttribute)))
+                                {
+                                    DataMemberAttribute dataMemberAttrib = Attribute.GetCustomAttribute(prop, typeof(DataMemberAttribute)) as DataMemberAttribute;
+                                    
+                                    if(dataMemberAttrib != null)
+                                    {
+                                        Console.WriteLine("\t{0} : {1}", dataMemberAttrib.Name, prop.PropertyType);
+                                    }
+                                }
+                            }
+                        }
+
+                        PropertyInfo formatProperty = t.GetProperty("ExampleJSONFormat", BindingFlags.Static | BindingFlags.Public);
+
+                        if (formatProperty != null && formatProperty.CanRead)
+                        {
+                            Console.WriteLine("Example JSON Format:");
+                            Console.WriteLine(formatProperty.GetValue(null));
+                        }
+
+                        Console.WriteLine();
+                    }
+                }
+                return;
+            }
+
             if (args.Length == 2)
             {
                 loop = (args[1].ToLower().Trim() != "false");
