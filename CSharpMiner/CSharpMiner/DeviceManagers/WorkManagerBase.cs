@@ -271,12 +271,16 @@ namespace CSharpMiner.DeviceManager
                 device.HardwareErrors++;
                 device.DiscardedWorkUnits += work.Diff;
             }
+
+            DisplayDeviceStats(device);
         }
 
         protected virtual void OnWorkAccepted(IPool pool, IPoolWork work, IMiningDevice device)
         {
             device.Accepted++;
             device.AcceptedWorkUnits += work.Diff;
+
+            DisplayDeviceStats(device);
         }
 
         private void DisplayDeviceStats(IMiningDevice d)
