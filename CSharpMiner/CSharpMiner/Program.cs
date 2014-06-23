@@ -62,7 +62,7 @@ namespace CSharpMiner
                     foreach (Type t in GetKnownTypes())
                     {
                         Console.ForegroundColor = ConsoleColor.DarkGreen;
-                        Console.WriteLine("{0}", t.Name);
+                        Console.Write("{0}", t.Name);
                         Console.ResetColor();
                         Console.WriteLine("#{0}", t.Namespace);
                     }
