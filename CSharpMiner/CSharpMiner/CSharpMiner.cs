@@ -62,7 +62,7 @@ namespace CSharpMiner
             {
                 lock (syncLock)
                 {
-                    DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(JsonConfiguration), ModuleLoader.GetKnownTypes());
+                    DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(JsonConfiguration), ModuleLoader.KnownTypes);
 
                     try
                     {

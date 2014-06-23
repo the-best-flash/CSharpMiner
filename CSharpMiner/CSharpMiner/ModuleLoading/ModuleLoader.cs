@@ -14,12 +14,14 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.Helpers;
 using CSharpMiner.Pools;
 using DeviceLoader;
 using DeviceManager;
 using MiningDevice;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -30,18 +32,68 @@ namespace CSharpMiner.ModuleLoading
 {
     public static class ModuleLoader
     {
-        public static IEnumerable<Type> GetKnownTypes()
+        private static IEnumerable<Type> _knownTypes = null;
+        public static IEnumerable<Type> KnownTypes
         {
-            Assembly thisAssembly = Assembly.GetAssembly(typeof(ModuleLoader));
+            get
+            {
+                if (_knownTypes == null)
+                {
+                    if (Directory.Exists("bin"))
+                    {
+                        LogHelper.DebugConsoleLog("Loading modules from /bin...");
+                        foreach (string filename in Directory.EnumerateFiles("bin"))
+                        {
+                            LogHelper.DebugConsoleLog(string.Format("Attempting to load assembly {0}", filename));
 
-            // TODO: Get types from module assemblies
+                            Assembly assembly = null;
 
-            return thisAssembly.GetTypes().Where(t => Attribute.IsDefined(t, typeof(DataContractAttribute)) && !t.IsAbstract);
+                            try
+                            {
+                                assembly = Assembly.LoadFrom(filename);
+                                LogHelper.DebugConsoleLog(string.Format("Successfully loaded assembly {0}", filename));
+                            }
+                            catch (BadImageFormatException)
+                            {
+                                LogHelper.DebugConsoleLog(string.Format("{0} is not an assembly...", filename));
+                            }
+
+                            if(assembly != null)
+                            {
+                                if(_knownTypes == null)
+                                {
+                                    _knownTypes = GetKnownTypesFromAssembly(assembly);
+                                }
+                                else
+                                {
+                                    _knownTypes = _knownTypes.Concat(GetKnownTypesFromAssembly(assembly));
+                                }
+                            }
+                        }
+                    }
+
+                    if (_knownTypes == null)
+                    {
+                        _knownTypes = GetKnownTypesFromAssembly(Assembly.GetAssembly(typeof(ModuleLoader)));
+                    }
+                    else
+                    {
+                        _knownTypes = _knownTypes.Concat(GetKnownTypesFromAssembly(Assembly.GetAssembly(typeof(ModuleLoader))));
+                    }
+                }
+
+                return _knownTypes;
+            }
+        }
+
+        private static IEnumerable<Type> GetKnownTypesFromAssembly(Assembly assembly)
+        {
+            return assembly.GetTypes().Where(t => Attribute.IsDefined(t, typeof(DataContractAttribute)) && !t.IsAbstract);
         }
 
         public static void DisplayKnownTypes()
         {
-            IEnumerable<Type> knownTypes = GetKnownTypes();
+            IEnumerable<Type> knownTypes = KnownTypes;
 
             IEnumerable<Type> hotplugLoaders = knownTypes.Where(t => t.GetInterfaces().Contains(typeof(IHotplugLoader)));
             IEnumerable<Type> deviceLoaders = knownTypes.Except(hotplugLoaders).Where(t => t.GetInterfaces().Contains(typeof(IDeviceLoader)));
@@ -113,7 +165,7 @@ namespace CSharpMiner.ModuleLoading
 
         public static void DisplayKnownTypeInfo(string typeName)
         {
-            foreach (Type t in GetKnownTypes().Where(t => t.Name.ToLowerInvariant() == typeName.ToLowerInvariant()))
+            foreach (Type t in KnownTypes.Where(t => t.Name.ToLowerInvariant() == typeName.ToLowerInvariant()))
             {
                 Console.WriteLine();
                 Console.WriteLine();
