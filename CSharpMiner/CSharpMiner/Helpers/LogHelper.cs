@@ -337,9 +337,11 @@ namespace CSharpMiner.Helpers
                     errLog.WriteLine();
                 }
 
+                #if DEBUG
                 ConsoleLog(string.Format("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now));
                 ConsoleLog(error);
                 ConsoleLog();
+                #endif
             }
         }
 

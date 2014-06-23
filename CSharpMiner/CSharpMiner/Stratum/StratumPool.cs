@@ -283,7 +283,7 @@ namespace CSharpMiner.Stratum
 
                 StratumResponse successResponse = this.waitForResponse();
 
-                if (successResponse.Data == null || !successResponse.Data.Equals(true))
+                if (successResponse.Data == null || !successResponse.Data.Equals("true"))
                 {
                     this.Alive = false;
 
@@ -398,15 +398,17 @@ namespace CSharpMiner.Stratum
         {
             StratumResponse result = null;
 
-            foreach (string str in commands)
+            foreach (string s in commands)
             {
                 LogHelper.DebugConsoleLog(new Object[] {
                     string.Format("Recieved data from {0}:", this.Url),
-                    str
+                    s
                 }, LogVerbosity.Verbose);
 
-                if (!string.IsNullOrEmpty(str.Trim()))
+                if (!string.IsNullOrEmpty(s.Trim()))
                 {
+                    string str = s.Replace("false", "\"false\"").Replace("true", "\"true\""); // Attempt to convert this to a friendly format for Mono
+
                     MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
 
                     if (str.Contains("\"result\""))
@@ -485,6 +487,7 @@ namespace CSharpMiner.Stratum
                             }
                             catch
                             {
+                                LogHelper.LogErrorSecondary(string.Format("Failed to parse command. Falling back to manual parsing. Command\r\n {0}", str));
                                 command = new StratumCommand(str);
                             }
                         }
@@ -511,8 +514,7 @@ namespace CSharpMiner.Stratum
                 return;
             }
 
-            string reason = "";
-            bool accepted = response.Data != null && response.Data.Equals(true);
+            bool accepted = response.Data != null && response.Data.Equals("true");
 
             if (accepted)
             {
@@ -520,23 +522,10 @@ namespace CSharpMiner.Stratum
             }
             else
             {
-                reason = (response.Error != null && response.Error.Length >= 2 ? response.Error[1] : "null").ToString();
-
-                LogHelper.ConsoleLogAsync(string.Format("Rejected with {0}", reason), ConsoleColor.Magenta, LogVerbosity.Verbose);
                 Rejected++;
             }
 
-            ConsoleColor color = (response.Data != null && response.Data.Equals(true) ? ConsoleColor.Green : ConsoleColor.Red);
-            string resultStr = (response.Data != null && response.Data.Equals(true) ? "ACCEPTED" : "REJECTED");
-
-            LogHelper.ConsoleLogAsync(new Object[] {
-                new Object[] { resultStr, color, false },
-                new Object[] { " ( ", false },
-                new Object[] { this.Accepted, ConsoleColor.Green, false },
-                new Object[] { " : ", false},
-                new Object[] { this.Rejected, ConsoleColor.Red, false },
-                new Object[] { " )", true }
-            });
+            DisplaySubmissionResponse(accepted, response);
 
             if (accepted)
             {
@@ -554,6 +543,33 @@ namespace CSharpMiner.Stratum
             }
         }
 
+        private void DisplaySubmissionResponse(bool accepted, StratumResponse response)
+        {
+            if (accepted)
+            {
+                LogHelper.ConsoleLogAsync(new Object[] {
+                    new Object[] { (accepted ? "ACCEPTED" : "REJECTED"), (accepted ? ConsoleColor.Green : ConsoleColor.Red), false },
+                    new Object[] { " ( ", false },
+                    new Object[] { this.Accepted, ConsoleColor.Green, false },
+                    new Object[] { " : ", false},
+                    new Object[] { this.Rejected, ConsoleColor.Red, false },
+                    new Object[] { " )", true }
+                });
+            }
+            else
+            {
+                LogHelper.ConsoleLogAsync(new Object[] {
+                    new Object[] {string.Format("Rejected with {0}", (response.Error != null && response.Error.Length >= 2 ? response.Error[1].ToString() : "null")), ConsoleColor.Magenta, true},
+                    new Object[] { (accepted ? "ACCEPTED" : "REJECTED"), (accepted ? ConsoleColor.Green : ConsoleColor.Red), false },
+                    new Object[] { " ( ", false },
+                    new Object[] { this.Accepted, ConsoleColor.Green, false },
+                    new Object[] { " : ", false},
+                    new Object[] { this.Rejected, ConsoleColor.Red, false },
+                    new Object[] { " )", true }
+                });
+            }
+        }
+
         private void processCommand(StratumCommand command)
         {
             LogHelper.DebugConsoleLogAsync(string.Format("Command: {0}", command.Method), LogVerbosity.Verbose);
@@ -563,7 +579,7 @@ namespace CSharpMiner.Stratum
                 case StratumCommand.NotifyCommandString:
                     LogHelper.ConsoleLogAsync(string.Format("Got Work from {0}!", this.Url), LogVerbosity.Verbose);
 
-                    if (command.Params.Length >= 9 && command.Params[8] != null && command.Params[8].Equals(true))
+                    if (command.Params.Length >= 9 && command.Params[8] != null && command.Params[8].Equals("true"))
                     {
                         this.NewBlocks++;
                         LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow, LogVerbosity.Verbose);
@@ -573,7 +589,7 @@ namespace CSharpMiner.Stratum
 
                     if (this.Alive && this.NewWorkRecieved != null)
                     {
-                        bool forceRestart = (command.Params != null && command.Params.Length >= 9 && command.Params[8] is bool ? (bool)command.Params[8] : true);
+                        bool forceRestart = (command.Params != null && command.Params.Length >= 9 && command.Params[8] != null && command.Params[8] is string ? command.Params[8].Equals("true") : true);
                         NewWorkRecieved(this, work, forceRestart);
                     }
                     else
