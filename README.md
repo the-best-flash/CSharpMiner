@@ -141,7 +141,6 @@ Planned Features:
     Gridseed support
     Avalon BTC support
     Local work verification (right now it submits shares even if they are incorrect)
-    Exposing device stats through properties (Right now they may be difficlut to get from the mining manager class)
     An ASP.NET wrapper that will expose an HTTP interface for queying mining stats using HTTP requests
     An ASP.NET wrapper that will expose an HTTP interface for changing settings
     Ability to connect both SHA265 and Scrypt ASICs at once.
