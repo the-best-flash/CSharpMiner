@@ -213,7 +213,7 @@ namespace CSharpMiner.MiningDevice
 
         private double ComputeHashRate(int workUnits)
         {
-            return 65535 * workUnits / start.Subtract(DateTime.Now).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
+            return 65535 * workUnits / DateTime.Now.Subtract(start).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
         }
 
         public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
