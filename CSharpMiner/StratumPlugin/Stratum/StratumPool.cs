@@ -126,6 +126,8 @@ namespace Stratum
 
         private string partialData = null;
 
+        private DateTime start;
+
         public StratumPool()
             : this("", "", "")
         {
@@ -145,6 +147,14 @@ namespace Stratum
         {
             if (!this.Running && !this.Connecting)
             {
+                start = DateTime.Now;
+                Accepted = 0;
+                Rejected = 0;
+                HardwareErrors = 0;
+                AcceptedWorkUnits = 0;
+                RejectedWorkUnits = 0;
+                DiscardedWorkUnits = 0;
+
                 submissionLock = new Object();
                 _writeLock = new Object();
 
@@ -627,35 +637,38 @@ namespace Stratum
             return (response.Error != null && response.Error.Length >= 2 ? response.Error[1].ToString() : string.Empty);
         }
 
+        private double ComputeHashRate(int workUnits)
+        {
+            return 65535 * workUnits / DateTime.Now.Subtract(start).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
+        }
+
+        private string MegaHashDisplayString(double hashesPerSec)
+        {
+            double mHash = hashesPerSec / 1000000;
+
+            return string.Format("{0:N2}Mh", mHash);
+        }
+
         private void DisplaySubmissionResponse(bool accepted, StratumResponse response)
         {
-            if (accepted)
-            {
-                LogHelper.ConsoleLogAsync(new Object[] {
-                    new Object[] { (accepted ? "ACCEPTED" : "REJECTED"), (accepted ? ConsoleColor.Green : ConsoleColor.Red), false },
-                    new Object[] { " ( ", false },
-                    new Object[] { this.Accepted, ConsoleColor.Green, false },
-                    new Object[] { " : ", false},
-                    new Object[] { this.Rejected, ConsoleColor.Red, false },
-                    new Object[] { " : ", false},
-                    new Object[] { this.HardwareErrors, ConsoleColor.Magenta, false },
-                    new Object[] { " )", true }
-                });
-            }
-            else
-            {
-                LogHelper.ConsoleLogAsync(new Object[] {
-                    new Object[] {string.Format("Rejected with {0}", GetRejectReason(response)), ConsoleColor.Magenta, true},
-                    new Object[] { (accepted ? "ACCEPTED" : "REJECTED"), (accepted ? ConsoleColor.Green : ConsoleColor.Red), false },
-                    new Object[] { " ( ", false },
-                    new Object[] { this.Accepted, ConsoleColor.Green, false },
-                    new Object[] { " : ", false},
-                    new Object[] { this.Rejected, ConsoleColor.Red, false },
-                    new Object[] { " : ", false},
-                    new Object[] { this.HardwareErrors, ConsoleColor.Magenta, false },
-                    new Object[] { " )", true }
-                });
-            }
+            LogHelper.ConsoleLogAsync(new Object[] {
+                new Object[] {(accepted? "" : string.Format("Rejected with {0}", GetRejectReason(response))), ConsoleColor.Magenta, !accepted},
+                new Object[] { (accepted ? "ACCEPTED" : "REJECTED"), (accepted ? ConsoleColor.Green : ConsoleColor.Red), false },
+                new Object[] { " ( ", false },
+                new Object[] { this.Accepted, ConsoleColor.Green, false },
+                new Object[] { " : ", false},
+                new Object[] { this.Rejected, ConsoleColor.Red, false },
+                new Object[] { " : ", false},
+                new Object[] { this.HardwareErrors, ConsoleColor.Magenta, false },
+                new Object[] {" ) ", false},
+                new Object[] {" ( ", false},
+                new Object[] {MegaHashDisplayString(ComputeHashRate(this.AcceptedWorkUnits)), ConsoleColor.Green, false},
+                new Object[] {" : ", false},
+                new Object[] {MegaHashDisplayString(ComputeHashRate(this.RejectedWorkUnits)), ConsoleColor.Red, false},
+                new Object[] {" : ", false},
+                new Object[] {MegaHashDisplayString(ComputeHashRate(this.DiscardedWorkUnits)), ConsoleColor.Magenta, false},
+                new Object[] {" )", true}
+            });
         }
 
         private void processCommand(StratumCommand command)
