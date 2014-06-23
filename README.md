@@ -23,6 +23,8 @@ A full description of why I made this and what benefits I hope it will have are 
 
 This is in an Alpha, working state. I am using it to mine with some Blizzards on a Raspberry Pi right now, however I have not run it for over 24 hours without stop yet.
 
+Note: Most of this is out of date. I've modified the program to be almost completely modular and have implemented the module loading code. I'm in the process of testing it overnight and may not get to updating the readme for a bit.
+
 You can run this on .NET or <a href="http://www.mono-project.com/Main_Page">Mono</a>. Mono can run binaries compiled for .NET, but it is recommended that you use a binary compiled for Mono.
 
 If you wish to donate you can donate to the following addresses:
@@ -122,6 +124,9 @@ Current Support:
     Stratum Pool Mining
     Pool Auto-failover
     Pool Auto-reconnect
+    A commandline switch to display a list of all of the supported mining devices and mining managers to aid in config file creation
+    Importing of 'plugins' or 'modules' that can be used to add support for new mining devices or work scheduling algorithms
+    Importing of 'plugins' or 'modules' that can be used to add supprot for new pool protocols and new pool management features
    
 Untested Features:
 
@@ -131,12 +136,11 @@ Untested Features:
     Pool Auto-failover
     Mining on pools other than Clevermining using Mono. (I have tested a few pools on .NET on windows, but since the default JSON parser works on .NET any pool that has a valid JSON format, which should be all, should work. The default JSON parser does not work on mono for generic objects so I made a temporary parser until I figure out if I want to use a JSON library or make the parser a bit more robust.)
     Disconnecting a miner while the system is running. 
+    Importing of 'plugins' or 'modules' that can be used to add support for new mining devices or work scheduling algorithms
+    Importing of 'plugins' or 'modules' that can be used to add supprot for new pool protocols and new pool management features
 
 Planned Features:
 
-    A commandline switch to display a list of all of the supported mining devices and mining managers to aid in config file creation
-    Importing of 'plugins' or 'modules' that can be used to add support for new mining devices or work scheduling algorithms
-    Importing of 'plugins' or 'modules' that can be used to add supprot for new pool protocols and new pool management features
     Support for hotplugging ASICs
     Gridseed support
     Avalon BTC support
@@ -147,8 +151,7 @@ Planned Features:
     
 Known Issues:
 
-    With Zeus/GAW miners On very low difficluties it becomes likely that all four bytes won't be written and the underlying USB stream will get out of sync if a hardware error occurs. This will cause all the next shares to be invalid until the bytestream can be synchronized again. Hopefully I will be able to fix this by detecting consecutive invalid shares and resetting the bytestream once I implement nonce checking.
-    Random pool disconnects. I'm not sure if this is my Raspberry Pi or the null object reference in the Pool.Connect() function.
+    None Currently
 
 Why make this? 
 
