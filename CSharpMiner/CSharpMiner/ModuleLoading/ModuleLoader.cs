@@ -28,6 +28,20 @@ namespace CSharpMiner.ModuleLoading
 {
     public static class ModuleLoader
     {
+        private static string _moduleFolder = "bin";
+        public static string ModuleFolder
+        {
+            get
+            {
+                return _moduleFolder;
+            }
+            
+            set
+            {
+                _moduleFolder = value;
+            }
+        }
+
         private static IEnumerable<Type> _knownTypes = null;
         public static IEnumerable<Type> KnownTypes
         {
@@ -35,10 +49,10 @@ namespace CSharpMiner.ModuleLoading
             {
                 if (_knownTypes == null)
                 {
-                    if (Directory.Exists("bin"))
+                    if (Directory.Exists(ModuleFolder))
                     {
-                        LogHelper.DebugConsoleLog("Loading modules from /bin...");
-                        foreach (string filename in Directory.EnumerateFiles("bin"))
+                        LogHelper.DebugConsoleLog(string.Format("Loading modules from {0}...", ModuleFolder));
+                        foreach (string filename in Directory.EnumerateFiles(ModuleFolder))
                         {
                             LogHelper.DebugConsoleLog(string.Format("Attempting to load assembly {0}", filename));
 
@@ -66,6 +80,10 @@ namespace CSharpMiner.ModuleLoading
                                 }
                             }
                         }
+                    }
+                    else
+                    {
+                        LogHelper.LogError(string.Format("Could not find module directory {0}", ModuleFolder));
                     }
 
                     if (_knownTypes == null)

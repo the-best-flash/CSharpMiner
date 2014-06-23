@@ -19,11 +19,18 @@ using CSharpMiner.Helpers;
 using CSharpMiner.ModuleLoading;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace CSharpMinerProgram
 {
     class Program
     {
+        static void LogCompositeParamError(string param)
+        {
+            LogHelper.ConsoleLogError(string.Format("Incorrect param format for {0}", param));
+            WriteUsage();
+        }
+
         static void Main(string[] args)
         {
             if (args.Length < 1 || args.Length > 3)
@@ -32,41 +39,102 @@ namespace CSharpMinerProgram
                 return;
             }
 
-            bool loop = true;
-
-            if (args.Length >= 1 && args[0] == "-ls")
-            {
-                if (args.Length == 1)
-                {
-                    ModuleLoader.DisplayKnownTypes();
-                }
-                else
-                {
-                    ModuleLoader.DisplayKnownTypeInfo(args[1]);
-                }
-                return;
-            }
-
-            if (args.Length == 2)
-            {
-                loop = (args[1].ToLower().Trim() != "false");
-
-                if (args[1].ToLower().Trim() != "false" && args[1].ToLower().Trim() != "true")
-                {
-                    LogHelper.ErrorLogFilePath = args[1];
-                }
-            }
-            else
-            {
-                loop = (args[2].ToLower().Trim() != "false");
-
-                LogHelper.ErrorLogFilePath = args[1];
-            }
-
+            string configFilePath = "config.conf";
+            LogHelper.ErrorLogFilePath = "err.log";
             LogHelper.Verbosity = LogVerbosity.Verbose;
+
+            foreach(string arg in args)
+            {
+                if(arg.StartsWith("-c", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if(!arg.Contains(':'))
+                    {
+                        LogCompositeParamError("-c");
+                        return; // We cannot recover
+                    }
+
+                    string[] split = arg.Split(':');
+                    configFilePath = split[1];
+                }
+                else if(arg.StartsWith("-log", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (!arg.Contains(':'))
+                    {
+                        LogCompositeParamError("-log");
+                        return; // We cannot recover
+                    }
+
+                    string[] split = arg.Split(':');
+                    LogHelper.ErrorLogFilePath = split[1];
+                }
+                else if(arg.StartsWith("-m", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (!arg.Contains(':'))
+                    {
+                        LogCompositeParamError("-modules");
+                        return; // We cannot recover
+                    }
+
+                    string[] split = arg.Split(':');
+                    ModuleLoader.ModuleFolder = split[1];
+                }
+                else if(arg.StartsWith("-ls", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if(!arg.Contains(':'))
+                    {
+                        ModuleLoader.DisplayKnownTypes();
+                    }
+                    else
+                    {
+                        string[] split = arg.Split(':');
+                        ModuleLoader.DisplayKnownTypeInfo(split[1]);
+                    }
+
+                    return;
+                }
+                else if (arg.StartsWith("-v", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (!arg.Contains(':'))
+                    {
+                        LogCompositeParamError("-verbosity");
+                        return; // We cannot recover
+                    }
+
+                    string[] split = arg.Split(':');
+                    
+                    if(split[1].StartsWith("n", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        LogHelper.Verbosity = LogVerbosity.Normal;
+                    }
+                    else if(split[1].StartsWith("q", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        LogHelper.Verbosity = LogVerbosity.Quiet;
+                    }
+                    else if(split[1].StartsWith("verb", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        LogHelper.Verbosity = LogVerbosity.Verbose;
+                    }
+                    else if (split[1].StartsWith("very", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        LogHelper.Verbosity = LogVerbosity.VeryQuiet;
+                    }
+                    else
+                    {
+                        LogHelper.ConsoleLogError(string.Format("Unrecognized verbosity option: {0}", split[1]));
+                        WriteUsage();
+                        return;
+                    }
+                }
+                else if (arg.StartsWith("-h", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    WriteUsage();
+                    return;
+                }
+            }
 
             bool loaded = false; // Make sure that we don't loop indefinately if we can't even get the miner started
             Miner miner = null;
+            bool loop = true;
 
             do
             {
@@ -74,7 +142,7 @@ namespace CSharpMinerProgram
                 {
                     miner = new Miner();
 
-                    miner.Start(args[0]);
+                    miner.Start(configFilePath);
 
                     loaded = true;
 
@@ -157,7 +225,30 @@ namespace CSharpMinerProgram
 
         static void WriteUsage()
         {
-            LogHelper.ConsoleLog("CSharpMiner.exe <Configuration File Path> [LogFilePath] [true|false]", LogVerbosity.VeryQuiet);
+            LogHelper.ConsoleLog(new Object[] { 
+                "CSharpMiner.exe [Options]",
+                "",
+                "  -config:FilePath [-c]",
+                "      Config file to load (Default: config.conf)",
+                "",
+                "  -modules:DirectoryPath [-m]", 
+                "      Directory containing the modules to load. (Default: /bin)",
+                "",
+                "  -ls", 
+                "      Displays a list of all loaded classes in JSON __type property format.",
+                "",
+                "  -ls:ClassName",
+                "      Displays help information about the specified class.",
+                "",
+                "  -verbosity:Setting [-v]", 
+                "      (q)uiet, (n)ormal, (verb)ose, (very)quiet (Default: Verbose)",
+                "",
+                "  -log:FilePath",
+                "      File to write critical errors to. (Default: err.log)",
+                "",
+                "  -help [-h]",
+                "      Display this text"
+            }, LogVerbosity.VeryQuiet);
         }
     }
 }
