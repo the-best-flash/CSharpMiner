@@ -28,7 +28,7 @@ using System.Threading.Tasks;
 namespace DeviceManager
 {
     [DataContract]
-    [MiningModule(Description = "Uses the stratum protocol to generate a unique work item for each device it manages. It will allow the device to continue working on its work item until the device requests a new one, the server forces a work restart, or the device submits a stale share.")]
+    [MiningModule(Description = "Uses the stratum protocol to generate a unique work item for each device it manages. It will allow the device to continue working on its work item until one of the following occurs: the device requests a new work item, the server forces a work restart, or the device submits a stale share.")]
     public class IndividualWorkManager : WorkManagerBase
     {
         private static Random _random = null;

@@ -14,6 +14,10 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.Pools;
+using DeviceLoader;
+using DeviceManager;
+using MiningDevice;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,20 +41,83 @@ namespace CSharpMiner.ModuleLoading
 
         public static void DisplayKnownTypes()
         {
-            foreach (Type t in GetKnownTypes())
+            IEnumerable<Type> knownTypes = GetKnownTypes();
+
+            IEnumerable<Type> hotplugLoaders = knownTypes.Where(t => t.GetInterfaces().Contains(typeof(IHotplugLoader)));
+            IEnumerable<Type> deviceLoaders = knownTypes.Except(hotplugLoaders).Where(t => t.GetInterfaces().Contains(typeof(IDeviceLoader)));
+            IEnumerable<Type> devices = knownTypes.Except(deviceLoaders).Where(t => t.GetInterfaces().Contains(typeof(IMiningDevice)));
+            IEnumerable<Type> deviceManagers = knownTypes.Where(t => t.GetInterfaces().Contains(typeof(IMiningDeviceManager)));
+            IEnumerable<Type> pools = knownTypes.Where(t => t.GetInterfaces().Contains(typeof(IPool)));
+            IEnumerable<Type> others = knownTypes.Except(deviceLoaders).Except(deviceManagers).Except(devices).Except(pools);
+
+            if (devices.Count() > 0)
             {
-                Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.Write("{0}", t.Name);
-                Console.ResetColor();
-                Console.WriteLine(":#{0}", t.Namespace);
+                Console.WriteLine("Devices:");
+                Console.WriteLine();
+                OutputTypeInfoList(devices, "\t");
             }
+
+            if (deviceLoaders.Count() > 0)
+            {
+                Console.WriteLine("Device Loaders:");
+                Console.WriteLine();
+                OutputTypeInfoList(deviceLoaders, "\t");
+            }
+
+            if(hotplugLoaders.Count() > 0)
+            {
+                Console.WriteLine("Hotplug Loaders:");
+                Console.WriteLine();
+                OutputTypeInfoList(hotplugLoaders, "\t");
+            }
+
+            if (deviceManagers.Count() > 0)
+            {
+                Console.WriteLine("Device Managers:");
+                Console.WriteLine();
+                OutputTypeInfoList(deviceManagers, "\t");
+            }
+
+            if (pools.Count() > 0)
+            {
+                Console.WriteLine("Pool Managers:");
+                Console.WriteLine();
+                OutputTypeInfoList(pools, "\t");
+            }
+
+            if (others.Count() > 0)
+            {
+                Console.WriteLine("Others:");
+                Console.WriteLine();
+                OutputTypeInfoList(others, "\t");
+            }
+        }
+
+        private static void OutputTypeInfoList(IEnumerable<Type> types, string append = "")
+        {
+            foreach (Type t in types)
+            {
+                OuputJSONTypeString(t, append);
+            }
+
+            Console.WriteLine();
+        }
+
+        private static void OuputJSONTypeString(Type t, string append = "")
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.Write("{0}{1}", append, t.Name);
+            Console.ResetColor();
+            Console.WriteLine(":#{0}", t.Namespace);
         }
 
         public static void DisplayKnownTypeInfo(string typeName)
         {
             foreach (Type t in GetKnownTypes().Where(t => t.Name.ToLowerInvariant() == typeName.ToLowerInvariant()))
             {
-                Console.WriteLine("{0}:#{1}", t.Name, t.Namespace);
+                Console.WriteLine();
+                Console.WriteLine();
+                OuputJSONTypeString(t);
                 Console.WriteLine();
                 
                 if (Attribute.IsDefined(t, typeof(MiningModuleAttribute)))
@@ -59,7 +126,9 @@ namespace CSharpMiner.ModuleLoading
 
                     if(attrib != null)
                     {
-                        Console.WriteLine(attrib.Description);
+                        Console.WriteLine("    Description: ");
+                        Console.WriteLine();
+                        Console.WriteLine("        {0}", attrib.Description);
                     }
                 }
 
@@ -67,19 +136,31 @@ namespace CSharpMiner.ModuleLoading
 
                 foreach (PropertyInfo prop in serializableProperties)
                 {
+                    Console.WriteLine();
+
+                    string name = "";
+
                     if (Attribute.IsDefined(prop, typeof(DataMemberAttribute)))
                     {
                         DataMemberAttribute dataMemberAttrib = Attribute.GetCustomAttribute(prop, typeof(DataMemberAttribute)) as DataMemberAttribute;
 
                         if (dataMemberAttrib != null)
                         {
-                            Console.WriteLine("\t{0} : {1}", dataMemberAttrib.Name, prop.PropertyType.Name);
+                            name = dataMemberAttrib.Name;
                         }
                     }
                     else
                     {
-                        Console.WriteLine("\t{0} : {1}", prop.Name, prop.PropertyType.Name);
+                        name = prop.Name;
                     }
+
+                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    Console.Write("    {0}", name);
+                    Console.ResetColor();
+                    Console.Write(" : ");
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                    Console.Write(prop.PropertyType.Name);
+                    Console.ResetColor();
 
                     if(Attribute.IsDefined(prop, typeof(MiningSettingAttribute)))
                     {
@@ -87,30 +168,58 @@ namespace CSharpMiner.ModuleLoading
  
                         if(attrib != null)
                         {
-                            Console.WriteLine("\t\t{1}{0}", (attrib.Optional ? "(Optional) " : ""), attrib.Description);
+                            Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                            Console.WriteLine((attrib.Optional ? " (Optional)" : ""));
+                            Console.ResetColor();
+                            Console.WriteLine();
+                            Console.WriteLine("        {0}", attrib.Description);
                         }
+                    }
+                    else
+                    {
+                        Console.WriteLine();
                     }
                 }
 
+                Console.WriteLine();
+                Console.WriteLine();
                 Console.WriteLine("Example JSON Format:");
-                Console.WriteLine(GetJSONFormatExample(t, serializableProperties));
+                Console.WriteLine();
+                Console.WriteLine(GetJSONFormatExample(t, serializableProperties, "    "));
 
                 Console.WriteLine();
             }
         }
 
-        private static string GetJSONFormatExample(Type t, IEnumerable<PropertyInfo> serializableProperties, string append = "")
+        private static string GetJSONFormatExample(Type t, IEnumerable<PropertyInfo> serializableProperties, string append = "", bool showType = true, int recursion = 0)
         {
+            if(recursion > 20) // We're probably infinate looping on a type that contains a type that contains the first type. Or this is an extremely complex JSON object. Either way we can be done now.
+            {
+                return string.Empty;
+            }
+
             if(!t.IsAbstract && Attribute.IsDefined(t, typeof(DataContractAttribute)))
             {
                 StringBuilder sb = new StringBuilder();
 
                 sb.AppendLine(append + "{");
 
-                sb.AppendLine(string.Format("{0}    \"__type\" : \"{1}:#{2}\",", append, t.Name, t.Namespace));
+                if (showType)
+                {
+                    sb.Append(string.Format("{0}    \"__type\" : \"{1}:#{2}\"", append, t.Name, t.Namespace));
+                }
+
+                bool first = true;
 
                 foreach(PropertyInfo info in serializableProperties)
                 {
+                    if (showType || !first)
+                    {
+                        sb.AppendLine(",");
+                    }
+
+                    first = false;
+
                     string name = null;
 
                     if (Attribute.IsDefined(info, typeof(DataMemberAttribute)))
@@ -128,8 +237,10 @@ namespace CSharpMiner.ModuleLoading
                         name = info.Name;
                     }
 
-                    sb.AppendLine(string.Format("{0}    \"{1}\" : {2},", append, info.Name, GetExampleValue(info)));
+                    sb.Append(string.Format("{0}    \"{1}\" : {2}", append, name, GetExampleValue(info, append, recursion)));
                 }
+
+                sb.AppendLine();
 
                 sb.AppendLine(append + "}");
                 return sb.ToString();
@@ -138,7 +249,7 @@ namespace CSharpMiner.ModuleLoading
             return string.Empty;
         }
 
-        private static string GetExampleValue(PropertyInfo prop)
+        private static string GetExampleValue(PropertyInfo prop, string append, int recursion)
         {
             Type propertyType = prop.PropertyType;
 
@@ -163,18 +274,27 @@ namespace CSharpMiner.ModuleLoading
                         exampleValue = "A string";
                     }
                 }
+                else if ((Attribute.IsDefined(propertyType, typeof(DataContractAttribute)) && !propertyType.IsAbstract) ||
+                    (propertyType.IsArray && Attribute.IsDefined(propertyType.GetElementType(), typeof(DataContractAttribute)) && !propertyType.GetElementType().IsAbstract))
+                {
+                    Type propType = (propertyType.IsArray ? propertyType.GetElementType() : propertyType);
+
+                    if (string.IsNullOrEmpty(exampleValue))
+                    {
+                        IEnumerable<PropertyInfo> serializableProperties = propType.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(propertyInfo => propertyInfo.CanRead && propertyInfo.CanWrite && !Attribute.IsDefined(propertyInfo, typeof(IgnoreDataMemberAttribute)));
+                        exampleValue = GetJSONFormatExample(propType, serializableProperties, append + "    ", false, recursion + 1);
+                    }
+
+                    if(propertyType.IsArray)
+                    {
+                        exampleValue = string.Format("[{0}]", exampleValue);
+                    }
+                }
                 else if (propertyType.IsArray)
                 {
                     if (string.IsNullOrEmpty(exampleValue))
                     {
                         exampleValue = "[]";
-                    }
-                }
-                else if (Attribute.IsDefined(propertyType, typeof(DataContractAttribute)) && !propertyType.IsAbstract)
-                {
-                    if (string.IsNullOrEmpty(exampleValue))
-                    {
-                        exampleValue = GetJSONFormatExample(propertyType);
                     }
                 }
                 else

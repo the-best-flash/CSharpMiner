@@ -37,7 +37,7 @@ namespace DeviceLoader
         public string[] Ports { get; set; }
 
         [DataMember(Name = "cores")]
-        [MiningSetting(ExampleValue="42", Optional=true, Description="Because Optional=true this will have the word '(Optional)' appended before this description.")]
+        [MiningSetting(ExampleValue="42", Optional=true, Description="Because Optional=true this will have the word '(Optional)' appended after the property type.")]
         public int Cores { get; set; }
 
         [IgnoreDataMember]

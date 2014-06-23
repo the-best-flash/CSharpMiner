@@ -15,6 +15,7 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.Helpers;
+using CSharpMiner.ModuleLoading;
 using CSharpMiner.Pools;
 using MiningDevice;
 using System;
@@ -30,17 +31,21 @@ using System.Threading.Tasks;
 namespace CSharpMiner.Stratum
 {
     [DataContract]
+    [MiningModule(Description="Manages a connection to a stratum mining pool.")]
     public class StratumPool : IPool
     {
         public const string StratumPrefix = "stratum+tcp";
 
-        [DataMember(Name = "url")]
+        [DataMember(Name = "url", IsRequired=true)]
+        [MiningSetting(ExampleValue = "stratum+tcp://www.somewhere.com:4444", Optional=false, Description="The URL and port of the mining server.")]
         public string Url { get; set; }
 
-        [DataMember(Name = "user")]
+        [DataMember(Name = "user", IsRequired=true)]
+        [MiningSetting(ExampleValue="SomeUser", Optional=false, Description="The username to connect with. Could be a wallet address.")]
         public string Username { get; set; }
 
         [DataMember(Name = "pass")]
+        [MiningSetting(ExampleValue="pass", Optional=true, Description="Password. If none is specified 'x' is used.")]
         public string Password { get; set; }
 
         [IgnoreDataMember]
@@ -274,7 +279,7 @@ namespace CSharpMiner.Stratum
                     },
                     LogVerbosity.Verbose);
 
-                string[] param = { this.Username, this.Password };
+                string[] param = { this.Username, (!string.IsNullOrEmpty(this.Password) ? this.Password : "x") };
 
                 StratumCommand command = new StratumCommand(this.RequestId, StratumCommand.AuthorizationCommandString, param);
                 memStream = new MemoryStream();

@@ -29,7 +29,7 @@ using System.Threading.Tasks;
 namespace DeviceLoader
 {
     [DataContract]
-    [MiningModule(Description = "Configures a collection ZeusMiner Gen1 or GAWMiner A1 devices using the same settings.")]
+    [MiningModule(Description = "Configures many ZeusMiner(Gen1) or GAWMiner(A1) devices at once.")]
     public class ZeusDeviceLoader : USBDeviceLoader
     {
         [DataMember(Name = "clock")]

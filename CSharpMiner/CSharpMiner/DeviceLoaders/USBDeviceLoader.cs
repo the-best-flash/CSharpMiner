@@ -30,20 +30,19 @@ namespace DeviceLoader
     public abstract class USBDeviceLoader : IDeviceLoader
     {
         [DataMember(Name = "cores")]
-        [MiningSetting(ExampleValue="6", Optional=false, Description="The number of cores the device has. The meaning of this setting is manufacturer specific.")]
+        [MiningSetting(ExampleValue = "6", Optional = false, Description = "Core count. The meaning of this setting is manufacturer specific.")]
         public int Cores { get; set; }
 
         [DataMember(Name = "ports", IsRequired=true)]
-        [MiningSetting(ExampleValue="[\"/dev/ttyUSB0\", \"/dev/ttyUSB1\", \"COM1\"]", Optional=false, Description="A list of all the different USB ports that devices are connected to. On Linux /dev/tty* should be used and on Windows COM* should be used.")]
+        [MiningSetting(ExampleValue = "[\"/dev/ttyUSB0\", \"/dev/ttyUSB1\", \"COM1\"]", Optional = false, Description = "List of ports devices are connected to. Linux /dev/tty* and Windows COM*")]
         public string[] Ports { get; set; }
 
         [DataMember(Name = "timeout")]
-        [MiningSetting(ExampleValue="60", Optional=true, Description="Number of seconds to wait since the last data was recieved before restarting the mining device.")]
+        [MiningSetting(ExampleValue = "60", Optional = true, Description = "Number of seconds to wait without response before restarting the device.")]
         public int WatchdogTimeout { get; set; }
 
-        private int _pollFrequency;
         [DataMember(Name = "poll")]
-        [MiningSetting(ExampleValue="50", Optional=true, Description="Number of milliseconds the thread waits before for incoming data. A larger value will decrease the processor usage but shares won't be submitted right away.")]
+        [MiningSetting(ExampleValue = "50", Optional = true, Description = "Milliseconds the thread waits before looking for incoming data. A larger value will decrease the processor usage but shares won't be submitted right away.")]
         public int PollFrequency { get; set; }
 
         [IgnoreDataMember]
