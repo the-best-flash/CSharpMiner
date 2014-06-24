@@ -536,15 +536,15 @@ namespace Stratum
 
                             try
                             {
-                                //try
-                                //{
-                                //    response = StratumResponse.Deserialize(memStream);
-                                //}
-                                //catch
-                                //{
-                                //    LogHelper.DebugLogErrorSecondaryAsync(string.Format("Failing over to manual parsing. Could not deserialize:\n\r {0}", str));
+                                try
+                                {
+                                    response = StratumResponse.Deserialize(memStream);
+                                }
+                                catch
+                                {
+                                    LogHelper.DebugLogErrorSecondaryAsync(string.Format("Failing over to manual parsing. Could not deserialize:\n\r {0}", str));
                                     response = new StratumResponse(str);
-                                //}
+                                }
                             }
                             catch (Exception e)
                             {
@@ -600,15 +600,15 @@ namespace Stratum
 
                             try
                             {
-                                //try
-                                //{
-                                //    command = StratumCommand.Deserialize(memStream);
-                                //}
-                                //catch
-                                //{
-                                //    LogHelper.DebugLogErrorSecondary(string.Format("Failed to parse command. Falling back to manual parsing. Command\r\n {0}", str));
+                                try
+                                {
+                                    command = StratumCommand.Deserialize(memStream);
+                                }
+                                catch
+                                {
+                                    LogHelper.DebugLogErrorSecondary(string.Format("Failed to parse command. Falling back to manual parsing. Command\r\n {0}", str));
                                     command = new StratumCommand(str);
-                                //}
+                                }
                             }
                             catch (Exception e)
                             {
