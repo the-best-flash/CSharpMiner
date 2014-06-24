@@ -111,7 +111,7 @@ namespace Stratum
         public event Action<IPool, IPoolWork, bool> NewWorkRecieved;
         public event Action<IPool> Disconnected;
         public event Action<IPool, IPoolWork, IMiningDevice> WorkAccepted;
-        public event Action<IPool, IPoolWork, IMiningDevice, string> WorkRejected;
+        public event Action<IPool, IPoolWork, IMiningDevice, IShareResponse> WorkRejected;
 
         private Queue WorkSubmitQueue = null;
         private TcpClient connection = null;
@@ -407,7 +407,7 @@ namespace Stratum
             }
         }
 
-        private void OnWorkRejected(StratumWork work, IMiningDevice device, string reason, bool async = true)
+        private void OnWorkRejected(StratumWork work, IMiningDevice device, IShareResponse response, bool async = true)
         {
             if (this.WorkRejected != null)
             {
@@ -415,12 +415,12 @@ namespace Stratum
                 {
                     Task.Factory.StartNew(() =>
                         {
-                            this.WorkRejected(this, work, device, reason);
+                            this.WorkRejected(this, work, device, response);
                         });
                 }
                 else
                 {
-                    this.WorkRejected(this, work, device, reason);
+                    this.WorkRejected(this, work, device, response);
                 }
             }
         }
@@ -672,16 +672,11 @@ namespace Stratum
                     }
                     else
                     {
-                        this.OnWorkRejected(work, device, GetRejectReason(response), false);
+                        this.OnWorkRejected(work, device, response, false);
                     }
 
                     DisplaySubmissionResponse(accepted, response);
                 });
-        }
-
-        private string GetRejectReason(StratumResponse response)
-        {
-            return (response.Error != null && response.Error.Length >= 2 ? response.Error[1].ToString() : string.Empty);
         }
 
         private double ComputeHashRate(int workUnits)
@@ -699,7 +694,7 @@ namespace Stratum
         private void DisplaySubmissionResponse(bool accepted, StratumResponse response)
         {
             LogHelper.ConsoleLogAsync(new Object[] {
-                new Object[] {(accepted? "" : string.Format("Rejected with {0}", GetRejectReason(response))), ConsoleColor.Magenta, !accepted},
+                new Object[] {(accepted? "" : string.Format("Rejected with {0}", response.RejectReason)), ConsoleColor.Magenta, !accepted},
                 new Object[] { (accepted ? "ACCEPTED" : "REJECTED"), (accepted ? ConsoleColor.Green : ConsoleColor.Red), false },
                 new Object[] { " ( ", false },
                 new Object[] { this.Accepted, ConsoleColor.Green, false },

@@ -62,20 +62,27 @@ namespace Stratum
             }
             set
             {
-                if (value is string)
+                if (value != null)
                 {
-                    string str = value as string;
+                    if (value is string)
+                    {
+                        string str = value as string;
 
-                    str = str.Replace("\\\"", "\"");
-                    Params = JsonParsingHelper.ParseObjectArray(str).Item1;
-                }
-                else if (!value.GetType().IsArray)
-                {
-                    Params = new Object[] { value };
+                        str = str.Replace("\\\"", "\"");
+                        Params = JsonParsingHelper.ParseObjectArray(str).Item1;
+                    }
+                    else if (!value.GetType().IsArray)
+                    {
+                        Params = new Object[] { value };
+                    }
+                    else
+                    {
+                        Params = value as Object[];
+                    }
                 }
                 else
                 {
-                    Params = value as Object[];
+                    Params = null;
                 }
 
                 _paramValue = value;

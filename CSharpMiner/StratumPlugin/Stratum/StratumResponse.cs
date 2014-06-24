@@ -19,11 +19,12 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Linq;
+using CSharpMiner.Interfaces;
 
 namespace Stratum
 {
     [DataContract]
-    public class StratumResponse : SerializedJsonObjectBase
+    public class StratumResponse : SerializedJsonObjectBase, IShareResponse
     {
         public static DataContractJsonSerializer _serializer = null;
 
@@ -64,14 +65,21 @@ namespace Stratum
             }
             set
             {
-                if (value is string)
+                if (value != null)
                 {
-                    string str = value as string;
-
-                    if (str.Contains('['))
+                    if (value is string)
                     {
-                        str = str.Replace("\\\"", "\"");
-                        _data = JsonParsingHelper.ParseObjectArray(str).Item1;
+                        string str = value as string;
+
+                        if (str.Contains('['))
+                        {
+                            str = str.Replace("\\\"", "\"");
+                            _data = JsonParsingHelper.ParseObjectArray(str).Item1;
+                        }
+                        else
+                        {
+                            _data = value;
+                        }
                     }
                     else
                     {
@@ -80,7 +88,7 @@ namespace Stratum
                 }
                 else
                 {
-                    _data = value;
+                    _data = null;
                 }
             }
         }
@@ -98,32 +106,77 @@ namespace Stratum
             {
                 _errorData = value;
 
-                if(value is string)
+                if (value != null)
                 {
-                    string str = value as string;
-
-                    if(str.Contains('['))
+                    if (value is string)
                     {
-                        Error = JsonParsingHelper.ParseObjectArray(str).Item1;
+                        string str = value as string;
+
+                        if (str.Contains('['))
+                        {
+                            Error = JsonParsingHelper.ParseObjectArray(str).Item1;
+                        }
+                        else
+                        {
+                            Error = new Object[] { value };
+                        }
                     }
-                    else
+                    else if (!value.GetType().IsArray)
                     {
                         Error = new Object[] { value };
                     }
-                }
-                else if(!value.GetType().IsArray)
-                {
-                    Error = new Object[] { value };
+                    else
+                    {
+                        Error = value as Object[];
+                    }
                 }
                 else
                 {
-                    Error = value as Object[];
+                    Error = null;
                 }
             }
         }
 
-
+        [IgnoreDataMember]
         public Object[] Error { get; set; }
+
+        [IgnoreDataMember]
+        public int RejectErrorId
+        {
+            get
+            {
+                return (this.Error != null && this.Error.Length >= 1 && this.Error[0] is int ? (int)this.Error[0] : 0);
+            }
+        }
+
+        [IgnoreDataMember]
+        public string RejectReason
+        {
+            get
+            {
+                return (this.Error != null && this.Error.Length >= 2 ? this.Error[1].ToString() : string.Empty);
+            }
+        }
+
+        [IgnoreDataMember]
+        public bool IsLowDifficlutyShare
+        {
+            get
+            {
+                int rejectId = RejectErrorId;
+                return (rejectId == -2 || rejectId == 23);
+            }
+        }
+
+        [IgnoreDataMember]
+        public bool JobNotFound
+        {
+            get
+            {
+                int rejectId = RejectErrorId;
+                return (rejectId == 21);
+            }
+        }
 
         public StratumResponse()
         {

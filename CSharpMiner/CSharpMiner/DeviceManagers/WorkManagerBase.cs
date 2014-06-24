@@ -287,9 +287,9 @@ namespace CSharpMiner.DeviceManager
                 });
         }
 
-        protected virtual void OnWorkRejected(IPool pool, IPoolWork work, IMiningDevice device, string reason)
+        protected virtual void OnWorkRejected(IPool pool, IPoolWork work, IMiningDevice device, IShareResponse response)
         {
-            if (!reason.Contains("low difficulty"))
+            if (!response.IsLowDifficlutyShare && !response.RejectReason.Contains("low difficulty"))
             {
                 device.Rejected++;
                 device.RejectedWorkUnits += work.Diff;
