@@ -129,8 +129,6 @@ namespace Stratum
 
         private DateTime start;
 
-        private long _diffSwitches = 0; // Some pools like to change the diff on us while we're working on the 1st share we recieve. 
-
         public StratumPool()
             : this("", "", "")
         {
@@ -157,7 +155,6 @@ namespace Stratum
                 AcceptedWorkUnits = 0;
                 RejectedWorkUnits = 0;
                 DiscardedWorkUnits = 0;
-                _diffSwitches = 0;
 
                 submissionLock = new Object();
                 _writeLock = new Object();
