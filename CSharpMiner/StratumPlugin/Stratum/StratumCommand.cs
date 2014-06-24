@@ -37,10 +37,39 @@ namespace Stratum
         public const string ClientShowMessageCommandString = "client.show_message";
 
         [DataMember(Name = "id")]
-        public Nullable<int> Id { get; set; }
+        public Object Identifier { get; set; }
 
         [DataMember(Name = "method")]
         public string Method { get; set; }
+
+        /// <summary>
+        /// Fix for Mono JsonSerializer that doesn't support deserializing nullable objects. (Mono Fails if the object is null)
+        /// So the object that mono is going to parse is Identifier, which works since it is an object, and the actual value will be exposed here
+        /// </summary>
+        [IgnoreDataMember]
+        public Nullable<int> Id
+        {
+            get
+            {
+                if(Identifier != null)
+                {
+                    if(Identifier is int)
+                    {
+                        return (int)Identifier;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+
+                return null;
+            }
+            set
+            {
+                Identifier = value;
+            }
+        }
 
 /*        /// <summary>
         /// Fall back to manually parsing if the JSON parser fails in mono
@@ -88,13 +117,13 @@ namespace Stratum
 
         public StratumCommand()
         {
-            Id = 0;
+            Identifier = null;
             Method = string.Empty;
         }
 
         public StratumCommand(int id, string method)
         {
-            Id = id;
+            Identifier = id;
             Method = method;
         }
     }
