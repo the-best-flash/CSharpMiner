@@ -323,6 +323,7 @@ namespace Stratum
                 // If we recieved work before we started the device manager, give the work to the device manager now
                 if (pendingWork != null)
                 {
+                    pendingWork.Extranonce1 = this.Extranonce1;
                     this.OnNewWorkRecieved(pendingWork, true);
                     pendingWork = null;
                 }
@@ -770,26 +771,9 @@ namespace Stratum
                     }
 
                     LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", _params[0], this.Url), LogVerbosity.Verbose);
-
-                    _diffSwitches++;
-
-                    int oldDiff = this.Diff;
+                    LogHelper.DebugConsoleLog(string.Format("Diff Change {0} => {1}", this.Diff, _params[0]), ConsoleColor.Magenta);
 
                     this.Diff = (int)_params[0];
-
-                    LogHelper.DebugConsoleLog(string.Format("Diff Change {0} => {1}", oldDiff, this.Diff), ConsoleColor.Magenta);
-
-                    // Diff switched on our first block we may need to restart our work
-                    if(_diffSwitches == 2 && NewBlocks <= 1)
-                    {
-                        // It will only temporarily hurt our hash rate if we switch to a higher diff when we didn't need to, howver we won't get any rejected shares
-                        // Computing things at a lower diff when we needed to go higher will result in a lot of rejected shares
-                        if (this.Diff > oldDiff)
-                        {
-                            LogHelper.DebugConsoleLog(string.Format("Restarting work since diff changed {0} => {1} on first block.", oldDiff, this.Diff));
-                            this.OnNewWorkRecieved(new StratumWork(this.latestWork.CommandArray, this.latestWork.Extranonce1, this.latestWork.Extranonce2, this.Diff), true);
-                        }
-                    }
                     break;
 
                 default:

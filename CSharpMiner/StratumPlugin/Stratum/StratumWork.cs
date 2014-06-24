@@ -35,8 +35,22 @@ namespace Stratum
         public string NetworkDiff { get; private set; } // nbits
         public int Diff { get; private set; }
         public string Timestamp { get; private set; }
-        public string Extranonce1 { get; private set; }
         public int StartingNonce { get; private set; }
+
+        private string _extranonce1;
+        public string Extranonce1
+        {
+            get
+            {
+                return _extranonce1;
+            }
+
+            set
+            {
+                this.ClearHeaderData();
+                _extranonce1 = value;
+            }
+        }
 
         private string _extranonce2 = null;
         public string Extranonce2 
@@ -48,8 +62,8 @@ namespace Stratum
 
             set
             {
-                _merkleRoot = null; // Clear out the old value since it is invalid
-                _header = null; // Clear out the old value since it is invalid
+                // Clear out the old value since it is invalid
+                this.ClearHeaderData();
                 _extranonce2 = value;
             }
         }
@@ -86,6 +100,12 @@ namespace Stratum
 
                 return _header;
             }
+        }
+
+        private void ClearHeaderData()
+        {
+            _merkleRoot = null;
+            _header = null;
         }
 
         public StratumWork(Object[] serverCommandArray, string extranonce1, string extranonce2, int diff, int startingNonce = 0)
