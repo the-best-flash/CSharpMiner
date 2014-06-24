@@ -743,7 +743,7 @@ namespace Stratum
 
                     if (this.Alive && this.NewWorkRecieved != null && !string.IsNullOrEmpty(this.Extranonce1))
                     {
-                        bool forceRestart = (_params != null && _params.Length >= 9 && _params[8] != null && _params[8] is string ? _params[8].Equals(true) : true);
+                        bool forceRestart = (_params != null && _params.Length >= 9 && _params[8] != null && _params[8] is bool ? _params[8].Equals(true) : true);
 
                         this.OnNewWorkRecieved(work, forceRestart);
                     }
