@@ -265,7 +265,7 @@ namespace CSharpMiner.MiningDevice
                     throw new SerialConnectionException(string.Format("Error connecting to {0}: {1}", Port, e), e);
                 }
 
-                LogHelper.ConsoleLogAsync(string.Format("Successfully connected to {0}.", Port), LogVerbosity.Verbose);
+                LogHelper.ConsoleLogAsync(string.Format("Successfully connected to {0}.", Port), LogVerbosity.Normal);
 
                 if (this.pendingWork != null)
                 {

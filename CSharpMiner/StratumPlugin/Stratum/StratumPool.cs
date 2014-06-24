@@ -303,6 +303,8 @@ namespace Stratum
                     this.Alive = true;
                 }
 
+                LogHelper.ConsoleLog(string.Format("Successfully connected to pool {0}", this.Url));
+
                 LogHelper.DebugConsoleLogAsync(new Object[] {
                         string.Format("Extranonce1: {0}", data[1]),
                         string.Format("Extranonce2_size: {0}", data[2])

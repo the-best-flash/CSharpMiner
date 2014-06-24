@@ -33,7 +33,7 @@ namespace CSharpMinerProgram
 
         static void Main(string[] args)
         {
-            if (args.Length < 1 || args.Length > 3)
+            if (args.Length > 3)
             {
                 WriteUsage();
                 return;
