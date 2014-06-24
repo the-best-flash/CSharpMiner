@@ -21,7 +21,7 @@ C# (Mono/.NET) crypto-currency mining stratum client for use with various kinds 
 
 A full description of why I made this and what benefits I hope it will have are at the end of this file. In short: it supports mining with different kind of ASICs at the same time and can support mining with ASICs for SHA256 (BTC) or Scrypt (LTC) at the same time, and support for more ASICs can be added by copying a 'plugin' to a folder.
 
-This is in an Alpha, working state. I am using it to mine with some Blizzards on a Raspberry Pi right now, however I have not run it for over 24 hours without stop yet.
+This is in an Alpha, working state. I have tried it breifly on a few of the most popular LTC mining sites and it worked. I am using it to mine with some Blizzards on a Raspberry Pi right now to test it during a longer session. If everything checks out I might be ready for the first beta release before too long.
 
 Note: Most of this is out of date. I've modified the program to be almost completely modular and have implemented the module loading code. I'm in the process of testing it overnight and may not get to updating the readme for a bit.
 
