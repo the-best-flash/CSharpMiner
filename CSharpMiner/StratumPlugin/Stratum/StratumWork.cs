@@ -132,17 +132,17 @@ namespace Stratum
             }
 
             LogHelper.DebugConsoleLogAsync(new Object[] {
-                new Object[] { "Work:"},
-                new Object[] { string.Format("nonce1: {0}", Extranonce1)},
-                new Object[] { string.Format("nonce2: {0}", Extranonce2)},
-                new Object[] { string.Format("diff: {0}", Diff)},
-                new Object[] { string.Format("id: {0}", JobId)},
-                new Object[] { string.Format("prevHash: {0}", PreviousHash)},
-                new Object[] { string.Format("coinb1: {0}", Coinbase1)},
-                new Object[] { string.Format("coinb2: {0}", Coinbase2)},
-                new Object[] { string.Format("version: {0}", Version)},
-                new Object[] { string.Format("nbits: {0}", NetworkDiff)},
-                new Object[] { string.Format("ntime: {0}", Timestamp)}
+                "Work:",
+                string.Format("  nonce1: {0}", Extranonce1),
+                string.Format("  nonce2: {0}", Extranonce2),
+                string.Format("  diff: {0}", Diff),
+                string.Format("  id: {0}", JobId),
+                string.Format("  prevHash: {0}", PreviousHash),
+                string.Format("  coinb1: {0}", Coinbase1),
+                string.Format("  coinb2: {0}", Coinbase2),
+                string.Format("  version: {0}", Version),
+                string.Format("  nbits: {0}", NetworkDiff),
+                string.Format("  ntime: {0}", Timestamp)
             });
         }
 

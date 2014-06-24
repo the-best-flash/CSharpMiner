@@ -131,48 +131,7 @@ namespace CSharpMiner.Helpers
             {
                 lock (consoleLock)
                 {
-                    foreach (Object thing in things)
-                    {
-                        Object[] thingArray = thing as Object[];
-
-                        if (thingArray != null)
-                        {
-                            if (thingArray.Length == 3)
-                            {
-                                if (thingArray[1] is ConsoleColor && thingArray[2] is bool)
-                                {
-                                    WriteToConsoleLog(thingArray[0], (ConsoleColor)thingArray[1], verbosity, (bool)thingArray[2]);
-                                }
-                                else
-                                {
-                                    WriteToConsoleLog(thing, verbosity);
-                                }
-                            }
-                            else if (thingArray.Length == 2)
-                            {
-                                if (thingArray[1] is bool)
-                                {
-                                    WriteToConsoleLog(thingArray[0], verbosity, (bool)thingArray[1]);
-                                }
-                                else if (thingArray[1] is ConsoleColor)
-                                {
-                                    WriteToConsoleLog(thingArray[0], (ConsoleColor)thingArray[1], verbosity);
-                                }
-                                else
-                                {
-                                    WriteToConsoleLog(thing, verbosity);
-                                }
-                            }
-                            else
-                            {
-                                WriteToConsoleLog(thing, verbosity);
-                            }
-                        }
-                        else
-                        {
-                            WriteToConsoleLog(thing, verbosity);
-                        }
-                    }
+                    WriteToConsoleLog(things, verbosity);
                 }
             }
         }
@@ -266,7 +225,10 @@ namespace CSharpMiner.Helpers
         {
             lock(consoleLock)
             {
-                Console.WriteLine(verbosity);
+                if ((int)Verbosity >= (int)verbosity)
+                {
+                    Console.WriteLine();
+                }
             }
         }
 
@@ -281,6 +243,52 @@ namespace CSharpMiner.Helpers
                 else
                 {
                     Console.Write(thing);
+                }
+            }
+        }
+
+        public static void WriteToConsoleLog(Object[] things, LogVerbosity verbosity = LogVerbosity.Normal)
+        {
+            foreach (Object thing in things)
+            {
+                Object[] thingArray = thing as Object[];
+
+                if (thingArray != null)
+                {
+                    if (thingArray.Length == 3)
+                    {
+                        if (thingArray[1] is ConsoleColor && thingArray[2] is bool)
+                        {
+                            WriteToConsoleLog(thingArray[0], (ConsoleColor)thingArray[1], verbosity, (bool)thingArray[2]);
+                        }
+                        else
+                        {
+                            WriteToConsoleLog(thingArray, verbosity);
+                        }
+                    }
+                    else if (thingArray.Length == 2)
+                    {
+                        if (thingArray[1] is bool)
+                        {
+                            WriteToConsoleLog(thingArray[0], verbosity, (bool)thingArray[1]);
+                        }
+                        else if (thingArray[1] is ConsoleColor)
+                        {
+                            WriteToConsoleLog(thingArray[0], (ConsoleColor)thingArray[1], verbosity);
+                        }
+                        else
+                        {
+                            WriteToConsoleLog(thingArray, verbosity);
+                        }
+                    }
+                    else
+                    {
+                        WriteToConsoleLog(thingArray, verbosity);
+                    }
+                }
+                else
+                {
+                    WriteToConsoleLog(thing, verbosity);
                 }
             }
         }
@@ -318,14 +326,17 @@ namespace CSharpMiner.Helpers
                     errLog.WriteLine(error);
                     errLog.WriteLine();
                 }
-
-                if (displayToScreen)
-                {
-                    ConsoleLog(string.Format("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now));
-                    ConsoleLog(error);
-                    ConsoleLog();
-                }
             }
+
+            if (displayToScreen)
+            {
+                ConsoleLog(new Object[] {
+                    string.Format("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now),
+                    error,
+                    ""
+                });
+            }
+            
         }
 
         private static void LogErrorsToFile(Object[] errors, string filePath, bool displayToScreen)
@@ -345,18 +356,22 @@ namespace CSharpMiner.Helpers
 
                         errLog.WriteLine();
                     }
+                }
 
-                    if (displayToScreen)
+                if (displayToScreen)
+                {
+                    List<Object> obj = new List<object>();
+
+                    obj.Add(string.Format("{0} at {1}.", (errors[0] is Exception ? "Exception caught" : "Error Occured"), DateTime.Now));
+
+                    foreach (object error in errors)
                     {
-                        ConsoleLog(string.Format("{0} at {1}.", (errors[0] is Exception ? "Exception caught" : "Error Occured"), DateTime.Now));
-
-                        foreach (object error in errors)
-                        {
-                            ConsoleLog(error);
-                        }
-
-                        ConsoleLog();
+                        obj.Add(error);
                     }
+
+                    obj.Add("");
+
+                    ConsoleLog(obj.ToArray());
                 }
             }
         }
