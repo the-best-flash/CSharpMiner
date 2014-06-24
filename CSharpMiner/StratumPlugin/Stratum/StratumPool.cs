@@ -770,6 +770,8 @@ namespace Stratum
 
                     this.Diff = (int)_params[0];
 
+                    LogHelper.DebugConsoleLog(string.Format("Diff Change {0} => {1}", oldDiff, this.Diff), ConsoleColor.Magenta);
+
                     // Diff switched on our first block we may need to restart our work
                     if(_diffSwitches == 2 && NewBlocks <= 1)
                     {
@@ -777,6 +779,7 @@ namespace Stratum
                         // Computing things at a lower diff when we needed to go higher will result in a lot of rejected shares
                         if (this.Diff > oldDiff)
                         {
+                            LogHelper.DebugConsoleLog(string.Format("Restarting work since diff changed {0} => {1} on first block.", oldDiff, this.Diff));
                             this.OnNewWorkRecieved(new StratumWork(this.latestWork.CommandArray, this.latestWork.Extranonce1, this.latestWork.Extranonce2, this.Diff), true);
                         }
                     }
