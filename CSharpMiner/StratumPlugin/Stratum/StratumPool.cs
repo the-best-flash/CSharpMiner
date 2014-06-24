@@ -129,6 +129,8 @@ namespace Stratum
 
         private DateTime start;
 
+        private long _diffSwitches = 0; // Some pools like to change the diff on us while we're working on the 1st share we recieve. 
+
         public StratumPool()
             : this("", "", "")
         {
@@ -155,6 +157,7 @@ namespace Stratum
                 AcceptedWorkUnits = 0;
                 RejectedWorkUnits = 0;
                 DiscardedWorkUnits = 0;
+                _diffSwitches = 0;
 
                 submissionLock = new Object();
                 _writeLock = new Object();
@@ -759,7 +762,22 @@ namespace Stratum
 
                     LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", _params[0], this.Url), LogVerbosity.Verbose);
 
+                    _diffSwitches++;
+
+                    int oldDiff = this.Diff;
+
                     this.Diff = (int)_params[0];
+
+                    // Diff switched on our first block we may need to restart our work
+                    if(_diffSwitches == 2 && NewBlocks == 1)
+                    {
+                        // It will only temporarily hurt our hash rate if we switch to a higher diff when we didn't need to, howver we won't get any rejected shares
+                        // Computing things at a lower diff when we needed to go higher will result in a lot of rejected shares
+                        if (this.Diff > oldDiff)
+                        {
+                            this.OnNewWorkRecieved(new StratumWork(this.latestWork.CommandArray, this.latestWork.Extranonce1, this.latestWork.Extranonce2, this.Diff), true);
+                        }
+                    }
                     break;
 
                 default:
