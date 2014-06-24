@@ -318,16 +318,6 @@ namespace CSharpMiner.Helpers
 
         private static void LogErrorToFile(Object error, string filePath, bool displayToScreen)
         {
-            lock (errorLogLock)
-            {
-                using (StreamWriter errLog = new StreamWriter(File.Open(filePath, FileMode.Append)))
-                {
-                    errLog.WriteLine("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now);
-                    errLog.WriteLine(error);
-                    errLog.WriteLine();
-                }
-            }
-
             if (displayToScreen)
             {
                 ConsoleLog(new Object[] {
@@ -336,7 +326,16 @@ namespace CSharpMiner.Helpers
                     ""
                 });
             }
-            
+
+            lock (errorLogLock)
+            {
+                using (StreamWriter errLog = new StreamWriter(File.Open(filePath, FileMode.Append)))
+                {
+                    errLog.WriteLine("{0} at {1}.", (error is Exception ? "Exception caught" : "Error Occured"), DateTime.Now);
+                    errLog.WriteLine(error);
+                    errLog.WriteLine();
+                }
+            }           
         }
 
         private static void LogErrorsToFile(Object[] errors, string filePath, bool displayToScreen)

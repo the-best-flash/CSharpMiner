@@ -21,6 +21,7 @@ using CSharpMiner.ModuleLoading;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CSharpMiner.DeviceManager
@@ -28,6 +29,12 @@ namespace CSharpMiner.DeviceManager
     [DataContract]
     public abstract class WorkManagerBase : IMiningDeviceManager
     {
+        private const int longWaitTime = 600000;
+        private const int shortWaitTime = 30000;
+        private const int longWaitDisplayTime = 10;
+        private const int shortWaitDisplayTime = 30;
+        private const int longWaitThreshold = 10;
+
         public abstract IPool[] Pools { get; }
 
         [DataMember(Name = "devices")]
@@ -80,8 +87,17 @@ namespace CSharpMiner.DeviceManager
         Object hotplugListLock = new Object();
         private Object reconnectLock = new Object();
 
+        private int reconnectionAttempts = 0;
+        private int waitAttempts = 0;
+        private bool longWait = false;
+        private bool waitingToReconnect = false;
+        private IPool poolReconnectingTo = null;       
+
         public void NewWork(IPool pool, IPoolWork newWork, bool forceStart)
         {
+            reconnectionAttempts = 0; // We know that we've connected to something now
+            poolReconnectingTo = null;
+
             if (started && ActivePool != null)
             {
                 if (newWork != null)
@@ -156,6 +172,12 @@ namespace CSharpMiner.DeviceManager
 
         public virtual void Start()
         {
+            reconnectionAttempts = 0;
+            waitAttempts = 0;
+            longWait = false;
+            waitingToReconnect = false;
+            poolReconnectingTo = null;
+
             if (deviceListLock == null)
             {
                 deviceListLock = new Object();
@@ -405,39 +427,74 @@ namespace CSharpMiner.DeviceManager
                 LogHelper.LogErrorAsync(string.Format("Disconnected from pool {0}", pool.Url));
             }
 
-            if (pool == this.ActivePool)
-                AttemptPoolReconnect();
+            if (poolReconnectingTo == null || pool == poolReconnectingTo)
+            {
+                poolReconnectingTo = null;
+
+                if (pool == this.ActivePool)
+                    AttemptPoolReconnect();
+            }
         }
 
         public void AttemptPoolReconnect()
         {
-            lock (reconnectLock)
+            if (!waitingToReconnect && poolReconnectingTo == null)
             {
-                if (this.ActivePool == null || (!this.ActivePool.Connected && !this.ActivePool.Connected))
-                {
-                    if (this.ActivePool != null)
+                Task.Factory.StartNew(() =>
                     {
-                        this.ActivePool.Stop();
-                        this.ActivePool = null;
-                    }
-
-                    // TODO: Handle when all pools are unable to be reached
-                    if (this.started)
-                    {
-                        if (this.ActivePoolId + 1 < this.Pools.Length)
+                        lock (reconnectLock)
                         {
-                            this.ActivePoolId++;
-                        }
-                        else
-                        {
-                            this.ActivePoolId = 0;
-                        }
+                            if (poolReconnectingTo == null && (this.ActivePool == null || (!this.ActivePool.Connected && !this.ActivePool.Connected)))
+                            {
+                                // TODO: Handle when all pools are unable to be reached
+                                if (this.started)
+                                {
+                                    if (this.ActivePoolId + 1 < this.Pools.Length)
+                                    {
+                                        this.ActivePoolId++;
+                                    }
+                                    else
+                                    {
+                                        this.ActivePoolId = 0;
+                                    }
 
-                        this.ActivePool = this.Pools[this.ActivePoolId];
-                        LogHelper.ConsoleLog(string.Format("Attempting to connect to pool {0}", this.ActivePool.Url));
-                        this.ActivePool.Start();
-                    }
-                }
+                                    poolReconnectingTo = this.Pools[this.ActivePoolId];
+
+                                    if (reconnectionAttempts == this.Pools.Length)
+                                    {
+                                        if (waitAttempts > longWaitThreshold)
+                                            longWait = true;
+
+                                        LogHelper.ConsoleLogErrorAsync(string.Format("Could not connect to any pools. Waiting {0} {1} before trying again.", (longWait ? longWaitDisplayTime : shortWaitDisplayTime), (longWait ? "minutes" : "sec")));
+
+                                        waitAttempts++;
+
+                                        waitingToReconnect = true;
+
+                                        Thread.Sleep((longWait ? longWaitTime : shortWaitTime));
+
+                                        reconnectionAttempts = 0;
+                                    }
+                                    else
+                                    {
+                                        reconnectionAttempts++;
+                                    }
+
+                                    if (this.ActivePool != null)
+                                    {
+                                        this.ActivePool.Stop();
+                                        this.ActivePool = null;
+                                    }
+
+                                    this.ActivePool = poolReconnectingTo;
+                                    LogHelper.ConsoleLogAsync(string.Format("Attempting to connect to pool {0}", this.ActivePool.Url));
+                                    this.ActivePool.Start();
+
+                                    waitingToReconnect = false;
+                                }
+                            }
+                        }
+                    });
             }
         }
 

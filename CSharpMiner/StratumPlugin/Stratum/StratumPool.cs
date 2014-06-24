@@ -171,7 +171,10 @@ namespace Stratum
 
         public void Stop()
         {
-            this.WorkSubmitQueue.Clear();
+            if (this.WorkSubmitQueue != null)
+            {
+                this.WorkSubmitQueue.Clear();
+            }
 
             this.Running = false;
 
@@ -320,7 +323,7 @@ namespace Stratum
 
                 StratumResponse successResponse = this.waitForResponse();
 
-                if (successResponse.Data == null || !successResponse.Data.Equals("true"))
+                if (successResponse.Data == null || !successResponse.Data.Equals(true))
                 {
                     this.Alive = false;
 
@@ -523,7 +526,7 @@ namespace Stratum
 
                     if (!string.IsNullOrEmpty(s.Trim()))
                     {
-                        string str = s.Replace("false", "\"false\"").Replace("true", "\"true\""); // Attempt to convert this to a friendly format for Mono
+                        string str = s; // Attempt to convert this to a friendly format for Mono
 
                         MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
 
@@ -533,15 +536,15 @@ namespace Stratum
 
                             try
                             {
-                                try
-                                {
-                                    response = StratumResponse.Deserialize(memStream);
-                                }
-                                catch
-                                {
-                                    LogHelper.DebugLogErrorSecondaryAsync(string.Format("Failing over to manual parsing. Could not deserialize:\n\r {0}", str));
+                                //try
+                                //{
+                                //    response = StratumResponse.Deserialize(memStream);
+                                //}
+                                //catch
+                                //{
+                                //    LogHelper.DebugLogErrorSecondaryAsync(string.Format("Failing over to manual parsing. Could not deserialize:\n\r {0}", str));
                                     response = new StratumResponse(str);
-                                }
+                                //}
                             }
                             catch (Exception e)
                             {
@@ -597,15 +600,15 @@ namespace Stratum
 
                             try
                             {
-                                try
-                                {
-                                    command = StratumCommand.Deserialize(memStream);
-                                }
-                                catch
-                                {
-                                    LogHelper.DebugLogErrorSecondary(string.Format("Failed to parse command. Falling back to manual parsing. Command\r\n {0}", str));
+                                //try
+                                //{
+                                //    command = StratumCommand.Deserialize(memStream);
+                                //}
+                                //catch
+                                //{
+                                //    LogHelper.DebugLogErrorSecondary(string.Format("Failed to parse command. Falling back to manual parsing. Command\r\n {0}", str));
                                     command = new StratumCommand(str);
-                                }
+                                //}
                             }
                             catch (Exception e)
                             {
@@ -631,7 +634,7 @@ namespace Stratum
                 return;
             }
 
-            bool accepted = response.Data != null && response.Data.Equals("true");
+            bool accepted = response.Data != null && response.Data.Equals(true);
 
             if (accepted)
             {
@@ -707,7 +710,7 @@ namespace Stratum
                 case StratumCommand.NotifyCommandString:
                     LogHelper.ConsoleLogAsync(string.Format("Got Work from {0}!", this.Url), LogVerbosity.Verbose);
 
-                    if (command.Params.Length >= 9 && command.Params[8] != null && command.Params[8].Equals("true"))
+                    if (command.Params.Length >= 9 && command.Params[8] != null && command.Params[8].Equals(true))
                     {
                         this.NewBlocks++;
                         LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow, LogVerbosity.Verbose);
@@ -717,7 +720,7 @@ namespace Stratum
 
                     if (this.Alive && this.NewWorkRecieved != null)
                     {
-                        bool forceRestart = (command.Params != null && command.Params.Length >= 9 && command.Params[8] != null && command.Params[8] is string ? command.Params[8].Equals("true") : true);
+                        bool forceRestart = (command.Params != null && command.Params.Length >= 9 && command.Params[8] != null && command.Params[8] is string ? command.Params[8].Equals(true) : true);
 
                         this.OnNewWorkRecieved(work, forceRestart);
                     }
