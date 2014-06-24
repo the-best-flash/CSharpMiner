@@ -20,6 +20,7 @@ using CSharpMiner.ModuleLoading;
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Text;
@@ -275,7 +276,7 @@ namespace Stratum
                     throw e;
                 }
 
-                StratumCommand subscribeCommand = StratumCommand.SubscribeCommand;
+                StratumSendCommand subscribeCommand = StratumSendCommand.SubscribeCommand;
                 subscribeCommand.Id = this.RequestId;
 
                 MemoryStream memStream = new MemoryStream();
@@ -316,7 +317,7 @@ namespace Stratum
 
                 string[] param = { this.Username, (!string.IsNullOrEmpty(this.Password) ? this.Password : "x") };
 
-                StratumCommand command = new StratumCommand(this.RequestId, StratumCommand.AuthorizationCommandString, param);
+                StratumSendCommand command = new StratumSendCommand(this.RequestId, StratumSendCommand.AuthorizationCommandString, param);
                 memStream = new MemoryStream();
                 command.Serialize(memStream);
                 this.SendData(memStream);
@@ -455,11 +456,11 @@ namespace Stratum
                 try
                 {
                     string[] param = { this.Username, work.JobId, work.Extranonce2, work.Timestamp, nonce };
-                    StratumCommand command = null;
+                    StratumSendCommand command = null;
 
                     lock (submissionLock)
                     {
-                        command = new StratumCommand(this.RequestId, StratumCommand.SubmitCommandString, param);
+                        command = new StratumSendCommand(this.RequestId, StratumSendCommand.SubmitCommandString, param);
                         this.RequestId++;
 
                         if (this.connection != null && this.connection.Connected)
@@ -472,7 +473,7 @@ namespace Stratum
 
                     if (command != null)
                     {
-                        WorkSubmitQueue.Enqueue(new Tuple<StratumCommand, StratumWork, IMiningDevice>(command, work, device));
+                        WorkSubmitQueue.Enqueue(new Tuple<StratumSendCommand, StratumWork, IMiningDevice>(command, work, device));
                     }
                 }
                 catch (Exception e)
@@ -496,6 +497,19 @@ namespace Stratum
         {
             string[] responses = allCommands.Split('\n');
             this.processCommands(responses, this.RequestId);
+        }
+
+        private string ConvertToMonoFriendlyJSON(string str)
+        {
+            // Convert arrays to strings so that we can parse them manually to support deserialization of server commands in Mono
+            int idxStart = str.IndexOf('[');
+            int idxEnd = str.LastIndexOf(']');
+
+            string first = str.Substring(0, idxStart);
+            string middle = str.Substring(idxStart, idxEnd + 1 - idxStart).Replace("\"", "\\\"");
+            string end = str.Substring(idxEnd + 1);
+
+            return string.Format("{0}\"{1}\"{2}", first, middle, end);
         }
 
         private StratumResponse processCommands(string[] commands, int id = -1)
@@ -526,7 +540,7 @@ namespace Stratum
 
                     if (!string.IsNullOrEmpty(s.Trim()))
                     {
-                        string str = s; // Attempt to convert this to a friendly format for Mono
+                        string str = s;
 
                         MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
 
@@ -542,8 +556,16 @@ namespace Stratum
                                 }
                                 catch
                                 {
-                                    LogHelper.DebugLogErrorSecondaryAsync(string.Format("Failing over to manual parsing. Could not deserialize:\n\r {0}", str));
-                                    response = new StratumResponse(str);
+                                    if (str.Contains('['))
+                                    {
+                                        str = ConvertToMonoFriendlyJSON(str);
+                                        memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
+                                        response = StratumResponse.Deserialize(memStream);
+                                    }
+                                    else
+                                    {
+                                        throw;
+                                    }
                                 }
                             }
                             catch (Exception e)
@@ -564,7 +586,7 @@ namespace Stratum
                                 {
                                     if (WorkSubmitQueue.Count > 0)
                                     {
-                                        Tuple<StratumCommand, StratumWork, IMiningDevice> workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+                                        Tuple<StratumSendCommand, StratumWork, IMiningDevice> workItem = WorkSubmitQueue.Peek() as Tuple<StratumSendCommand, StratumWork, IMiningDevice>;
 
                                         if (response.Id == workItem.Item1.Id)
                                         {
@@ -573,19 +595,19 @@ namespace Stratum
                                         }
                                         else if (response.Id > workItem.Item1.Id) // Something odd happened, we probably missed some responses or the server decided not to send them
                                         {
-                                            workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+                                            workItem = WorkSubmitQueue.Peek() as Tuple<StratumSendCommand, StratumWork, IMiningDevice>;
 
                                             while (WorkSubmitQueue.Count > 0 && response.Id > workItem.Item1.Id)
                                             {
                                                 // Get rid of the old stuff
                                                 WorkSubmitQueue.Dequeue();
 
-                                                workItem = WorkSubmitQueue.Peek() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+                                                workItem = WorkSubmitQueue.Peek() as Tuple<StratumSendCommand, StratumWork, IMiningDevice>;
                                             }
 
-                                            if (WorkSubmitQueue.Count > 0 && response.Id == ((Tuple<StratumCommand, StratumWork, IMiningDevice>)WorkSubmitQueue.Peek()).Item1.Id)
+                                            if (WorkSubmitQueue.Count > 0 && response.Id == ((Tuple<StratumSendCommand, StratumWork, IMiningDevice>)WorkSubmitQueue.Peek()).Item1.Id)
                                             {
-                                                workItem = WorkSubmitQueue.Dequeue() as Tuple<StratumCommand, StratumWork, IMiningDevice>;
+                                                workItem = WorkSubmitQueue.Dequeue() as Tuple<StratumSendCommand, StratumWork, IMiningDevice>;
 
                                                 processWorkAcceptCommand(workItem.Item2, workItem.Item3, response);
                                             }
@@ -596,18 +618,26 @@ namespace Stratum
                         }
                         else // This is a command from the server
                         {
-                            StratumCommand command = null;
+                            StratumRecieveCommand command = null;
 
                             try
                             {
                                 try
                                 {
-                                    command = StratumCommand.Deserialize(memStream);
+                                    command = StratumRecieveCommand.Deserialize(memStream);
                                 }
                                 catch
                                 {
-                                    LogHelper.DebugLogErrorSecondary(string.Format("Failed to parse command. Falling back to manual parsing. Command\r\n {0}", str));
-                                    command = new StratumCommand(str);
+                                    if (str.Contains('['))
+                                    {
+                                        str = ConvertToMonoFriendlyJSON(str);
+                                        memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
+                                        command = StratumRecieveCommand.Deserialize(memStream);
+                                    }
+                                    else
+                                    {
+                                        throw;
+                                    }
                                 }
                             }
                             catch (Exception e)
@@ -701,26 +731,34 @@ namespace Stratum
             });
         }
 
-        private void processCommand(StratumCommand command)
+        private void processCommand(StratumRecieveCommand command)
         {
             LogHelper.DebugConsoleLogAsync(string.Format("Command: {0}", command.Method), LogVerbosity.Verbose);
+
+            object[] _params = command.Params;
 
             switch(command.Method.Trim())
             {
                 case StratumCommand.NotifyCommandString:
+                    if(_params == null || _params.Length < 9)
+                    {
+                        LogHelper.LogErrorSecondaryAsync(string.Format("Recieved invalid notification command from {0}", this.Url));
+                        throw new InvalidDataException(string.Format("Recieved invalid notification command from {0}", this.Url));
+                    }
+
                     LogHelper.ConsoleLogAsync(string.Format("Got Work from {0}!", this.Url), LogVerbosity.Verbose);
 
-                    if (command.Params.Length >= 9 && command.Params[8] != null && command.Params[8].Equals(true))
+                    if (_params != null && _params.Length >= 9 && _params[8] != null && _params[8].Equals(true))
                     {
                         this.NewBlocks++;
                         LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow, LogVerbosity.Verbose);
                     }
 
-                    StratumWork work = new StratumWork(command.Params, this.Extranonce1, "00000000", this.Diff);
+                    StratumWork work = new StratumWork(_params, this.Extranonce1, "00000000", this.Diff);
 
                     if (this.Alive && this.NewWorkRecieved != null)
                     {
-                        bool forceRestart = (command.Params != null && command.Params.Length >= 9 && command.Params[8] != null && command.Params[8] is string ? command.Params[8].Equals(true) : true);
+                        bool forceRestart = (_params != null && _params.Length >= 9 && _params[8] != null && _params[8] is string ? _params[8].Equals(true) : true);
 
                         this.OnNewWorkRecieved(work, forceRestart);
                     }
@@ -731,9 +769,15 @@ namespace Stratum
                     break;
 
                 case StratumCommand.SetDifficlutyCommandString:
-                    LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", command.Params[0], this.Url), LogVerbosity.Verbose);
+                    if (_params == null || _params.Length < 1)
+                    {
+                        LogHelper.LogErrorSecondaryAsync(string.Format("Recieved invalid difficulty command from {0}", this.Url));
+                        throw new InvalidDataException(string.Format("Recieved invalid difficulty command from {0}", this.Url));
+                    }
 
-                    this.Diff = (int)command.Params[0];
+                    LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", _params[0], this.Url), LogVerbosity.Verbose);
+
+                    this.Diff = (int)_params[0];
                     break;
 
                 default:

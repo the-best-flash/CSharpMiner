@@ -41,11 +41,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Stratum\JsonParsingHelper.cs" />
     <Compile Include="Stratum\SerializedJsonObjectBase.cs" />
     <Compile Include="Stratum\StratumCommand.cs" />
     <Compile Include="Stratum\StratumConnectionFailureException.cs" />
     <Compile Include="Stratum\StratumPool.cs" />
+    <Compile Include="Stratum\StratumRecieveCommand.cs" />
     <Compile Include="Stratum\StratumResponse.cs" />
+    <Compile Include="Stratum\StratumSendCommand.cs" />
     <Compile Include="Stratum\StratumWork.cs" />
     <Compile Include="WorkManagers\DistributedWorkManager.cs" />
     <Compile Include="WorkManagers\IndividualWorkManager.cs" />

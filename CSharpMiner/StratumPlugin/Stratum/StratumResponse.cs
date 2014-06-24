@@ -18,6 +18,7 @@ using System;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
+using System.Linq;
 
 namespace Stratum
 {
@@ -53,8 +54,36 @@ namespace Stratum
         [DataMember(Name = "id")]
         public int Id { get; set; }
 
+        private Object _data = null;
         [DataMember(Name = "result")]
-        public Object Data { get; set; }
+        public Object Data
+        {
+            get
+            {
+                return _data;
+            }
+            set
+            {
+                if (value is string)
+                {
+                    string str = value as string;
+
+                    if (str.Contains('['))
+                    {
+                        str = str.Replace("\\\"", "\"");
+                        _data = JsonParsingHelper.ParseObjectArray(str).Item1;
+                    }
+                    else
+                    {
+                        _data = value;
+                    }
+                }
+                else
+                {
+                    _data = value;
+                }
+            }
+        }
 
         [DataMember(Name = "error")]
         public Object[] Error { get; set; }
