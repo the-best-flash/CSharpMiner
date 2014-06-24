@@ -95,6 +95,7 @@ namespace CSharpMiner.DeviceManager
 
         public void NewWork(IPool pool, IPoolWork newWork, bool forceStart)
         {
+            longWait = false;
             reconnectionAttempts = 0; // We know that we've connected to something now
             poolReconnectingTo = null;
 
