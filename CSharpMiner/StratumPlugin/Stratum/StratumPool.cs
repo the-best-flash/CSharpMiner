@@ -741,6 +741,8 @@ namespace Stratum
 
                     StratumWork work = new StratumWork(_params, this.Extranonce1, "00000000", this.Diff);
 
+                    latestWork = work;
+
                     if (this.Alive && this.NewWorkRecieved != null)
                     {
                         bool forceRestart = (_params != null && _params.Length >= 9 && _params[8] != null && _params[8] is string ? _params[8].Equals(true) : true);
@@ -769,7 +771,7 @@ namespace Stratum
                     this.Diff = (int)_params[0];
 
                     // Diff switched on our first block we may need to restart our work
-                    if(_diffSwitches == 2 && NewBlocks == 0)
+                    if(_diffSwitches == 2 && NewBlocks <= 1)
                     {
                         // It will only temporarily hurt our hash rate if we switch to a higher diff when we didn't need to, howver we won't get any rejected shares
                         // Computing things at a lower diff when we needed to go higher will result in a lot of rejected shares
