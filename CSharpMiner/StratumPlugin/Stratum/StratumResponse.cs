@@ -85,7 +85,44 @@ namespace Stratum
             }
         }
 
+        private Object _errorData = null;
         [DataMember(Name = "error")]
+        public Object ErrorData 
+        {
+            get
+            {
+                return _errorData;
+            }
+
+            set
+            {
+                _errorData = value;
+
+                if(value is string)
+                {
+                    string str = value as string;
+
+                    if(str.Contains('['))
+                    {
+                        Error = JsonParsingHelper.ParseObjectArray(str).Item1;
+                    }
+                    else
+                    {
+                        Error = new Object[] { value };
+                    }
+                }
+                else if(!value.GetType().IsArray)
+                {
+                    Error = new Object[] { value };
+                }
+                else
+                {
+                    Error = value as Object[];
+                }
+            }
+        }
+
+
         public Object[] Error { get; set; }
 
         public StratumResponse()
