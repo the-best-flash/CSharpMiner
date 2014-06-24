@@ -295,20 +295,8 @@ namespace Stratum
                     throw new StratumConnectionFailureException("Recieved null response from server subscription command.");
                 }
 
-                this.Extranonce1 = data[1] as String;
+                this.Extranonce1 = data[1] as string;
                 this.Extranonce2Size = (int)data[2];
-
-                // If we recieved work before we started the device manager, give the work to the device manager now
-                if (pendingWork != null)
-                {
-                    this.OnNewWorkRecieved(pendingWork, true);
-                    pendingWork = null;
-                }
-
-                if (connection.Connected)
-                {
-                    this.Alive = true;
-                }
 
                 LogHelper.ConsoleLog(string.Format("Successfully connected to pool {0}", this.Url));
 
@@ -326,6 +314,18 @@ namespace Stratum
                 this.SendData(memStream);
 
                 StratumResponse successResponse = this.waitForResponse();
+
+                if (connection.Connected)
+                {
+                    this.Alive = true;
+                }
+
+                // If we recieved work before we started the device manager, give the work to the device manager now
+                if (pendingWork != null)
+                {
+                    this.OnNewWorkRecieved(pendingWork, true);
+                    pendingWork = null;
+                }
 
                 if (successResponse.Data == null || !successResponse.Data.Equals(true))
                 {
@@ -743,7 +743,7 @@ namespace Stratum
 
                     latestWork = work;
 
-                    if (this.Alive && this.NewWorkRecieved != null)
+                    if (this.Alive && this.NewWorkRecieved != null && !string.IsNullOrEmpty(this.Extranonce1))
                     {
                         bool forceRestart = (_params != null && _params.Length >= 9 && _params[8] != null && _params[8] is string ? _params[8].Equals(true) : true);
 
@@ -751,6 +751,13 @@ namespace Stratum
                     }
                     else
                     {
+                        #if DEBUG
+                            if(string.IsNullOrEmpty(this.Extranonce1))
+                            {
+                                LogHelper.LogError("Got work with while Extranonce1 is null.");
+                            }
+                        #endif
+
                         pendingWork = work;
                     }
                     break;
