@@ -769,7 +769,7 @@ namespace Stratum
                     this.Diff = (int)_params[0];
 
                     // Diff switched on our first block we may need to restart our work
-                    if(_diffSwitches == 2 && NewBlocks == 1)
+                    if(_diffSwitches == 2 && NewBlocks == 0)
                     {
                         // It will only temporarily hurt our hash rate if we switch to a higher diff when we didn't need to, howver we won't get any rejected shares
                         // Computing things at a lower diff when we needed to go higher will result in a lot of rejected shares

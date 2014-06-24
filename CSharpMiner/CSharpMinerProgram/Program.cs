@@ -41,7 +41,12 @@ namespace CSharpMinerProgram
 
             string configFilePath = "config.conf";
             LogHelper.ErrorLogFilePath = "err.log";
-            LogHelper.Verbosity = LogVerbosity.Normal;
+
+            #if DEBUG
+                LogHelper.Verbosity = LogVerbosity.Verbose;
+            #else
+                LogHelper.Verbosity = LogVerbosity.Normal;
+            #endif
 
             foreach(string arg in args)
             {
