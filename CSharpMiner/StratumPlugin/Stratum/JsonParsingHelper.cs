@@ -55,9 +55,11 @@ namespace Stratum
                 }
                 else if (str[0] == ']')
                 {
-                    if (str.Contains(','))
+                    str = str.Substring(1).Trim();
+
+                    if (str.Length > 0 && str[0] == ',')
                     {
-                        str = str.Substring(str.IndexOf(',') + 1);
+                        str = str.Substring(1).Trim();
                     }
 
                     return new Tuple<Object[], string>(arr.ToArray(), str);
@@ -118,6 +120,24 @@ namespace Stratum
             }
 
             return null;
+        }
+
+        public static string ConvertToMonoFriendlyJSON(string str)
+        {
+            if (str.Contains('[') && str.Contains(']'))
+            {
+                // Convert arrays to strings so that we can parse them manually to support deserialization of server commands in Mono
+                int idxStart = str.IndexOf('[');
+                int idxEnd = str.LastIndexOf(']');
+
+                string first = str.Substring(0, idxStart);
+                string middle = str.Substring(idxStart, idxEnd + 1 - idxStart).Replace("\"", "\\\"");
+                string end = str.Substring(idxEnd + 1);
+
+                return string.Format("{0}\"{1}\"{2}", first, middle, end);
+            }
+
+            return str;
         }
     }
 }

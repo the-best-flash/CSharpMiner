@@ -499,19 +499,6 @@ namespace Stratum
             this.processCommands(responses, this.RequestId);
         }
 
-        private string ConvertToMonoFriendlyJSON(string str)
-        {
-            // Convert arrays to strings so that we can parse them manually to support deserialization of server commands in Mono
-            int idxStart = str.IndexOf('[');
-            int idxEnd = str.LastIndexOf(']');
-
-            string first = str.Substring(0, idxStart);
-            string middle = str.Substring(idxStart, idxEnd + 1 - idxStart).Replace("\"", "\\\"");
-            string end = str.Substring(idxEnd + 1);
-
-            return string.Format("{0}\"{1}\"{2}", first, middle, end);
-        }
-
         private StratumResponse processCommands(string[] commands, int id = -1)
         {
             StratumResponse result = null;
@@ -558,7 +545,7 @@ namespace Stratum
                                 {
                                     if (str.Contains('['))
                                     {
-                                        str = ConvertToMonoFriendlyJSON(str);
+                                        str = JsonParsingHelper.ConvertToMonoFriendlyJSON(str);
                                         memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
                                         response = StratumResponse.Deserialize(memStream);
                                     }
@@ -630,7 +617,7 @@ namespace Stratum
                                 {
                                     if (str.Contains('['))
                                     {
-                                        str = ConvertToMonoFriendlyJSON(str);
+                                        str = JsonParsingHelper.ConvertToMonoFriendlyJSON(str);
                                         memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
                                         command = StratumRecieveCommand.Deserialize(memStream);
                                     }
