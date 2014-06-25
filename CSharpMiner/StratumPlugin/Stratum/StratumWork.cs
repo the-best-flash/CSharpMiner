@@ -182,6 +182,7 @@ namespace Stratum
                 "Work:",
                 string.Format("  nonce1: {0}", Extranonce1),
                 string.Format("  nonce2: {0}", Extranonce2),
+                string.Format("  nonce2_size: {0}", ExtraNonce2Size),
                 string.Format("  diff: {0}", Diff),
                 string.Format("  id: {0}", JobId),
                 string.Format("  prevHash: {0}", PreviousHash),

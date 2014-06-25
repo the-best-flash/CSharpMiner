@@ -232,6 +232,7 @@ namespace CSharpMiner.MiningDevice
 
         private void WorkRequestTimerExpired(object sender, System.Timers.ElapsedEventArgs e)
         {
+            LogHelper.DebugConsoleLog(string.Format("Work request timer timed out with interval = {0} for device {1}", this.WorkRequestTimer.Interval, this.Name));
             RequestWork();
         }
 

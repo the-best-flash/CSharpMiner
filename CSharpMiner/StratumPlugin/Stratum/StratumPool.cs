@@ -214,7 +214,7 @@ namespace Stratum
             this.Diff = 0;
             this.RequestId = 0;
             this.Extranonce1 = null;
-            this.Extranonce2Size = 0;
+            this.Extranonce2Size = 4;
 
             this.partialData = null;
 

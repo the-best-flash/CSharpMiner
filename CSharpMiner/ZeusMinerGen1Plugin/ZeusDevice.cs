@@ -245,6 +245,7 @@ namespace ZeusMiner
 
         public override void WorkRejected(IPoolWork work)
         {
+            LogHelper.DebugConsoleLog(string.Format("Device {0} requesting new work since it had rejected work.", this.Name));
             this.RequestWork();
         }
     }

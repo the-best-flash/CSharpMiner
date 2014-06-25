@@ -85,17 +85,17 @@ namespace CSharpMiner.MiningDevice
                 {
                     Exception e = new SerialConnectionException(string.Format("{0} is not a valid USB port.", (Port != null ? Port : "null")));
 
-                    LogHelper.LogErrorSecondary(e);
+                    LogHelper.LogError(e);
 
                     throw e;
                 }
 
                 try
                 {
-                    continueRunning = true;
                     usbPort = new SerialPort(Port, GetBaud());
                     //usbPort.DataReceived += DataReceived; // This works on .NET in windows but not in Mono
                     usbPort.Open();
+                    continueRunning = true;
                 }
                 catch (Exception e)
                 {
@@ -148,7 +148,11 @@ namespace CSharpMiner.MiningDevice
             catch (Exception e)
             {
                 LogHelper.LogErrorAsync(e);
-                this.Restart();
+
+                if (this.continueRunning)
+                {
+                    this.Restart();
+                }
             }
         }
 
