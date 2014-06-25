@@ -134,10 +134,13 @@ namespace CSharpMiner.MiningDevice
                             {
                                 LogHelper.LogErrorAsync(e);
 
-                                Task.Factory.StartNew(() =>
-                                    {
-                                        this.Restart();
-                                    });
+                                if (this.continueRunning)
+                                {
+                                    Task.Factory.StartNew(() =>
+                                        {
+                                            this.Restart();
+                                        });
+                                }
                             }
                         }));
                     this.listenerThread.Start();

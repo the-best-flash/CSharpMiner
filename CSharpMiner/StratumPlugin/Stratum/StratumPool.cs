@@ -321,6 +321,7 @@ namespace Stratum
                 if (pendingWork != null)
                 {
                     pendingWork.Extranonce1 = this.Extranonce1;
+                    pendingWork.ExtraNonce2Size = this.Extranonce2Size;
                     this.OnNewWorkRecieved(pendingWork, true);
                     pendingWork = null;
                 }
