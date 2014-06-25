@@ -30,22 +30,22 @@ using System.Threading.Tasks;
 namespace Stratum
 {
     [DataContract]
-    [MiningModule(Description="Manages a connection to a stratum mining pool.")]
+    [MiningModule(Description = "Manages a connection to a stratum mining pool.")]
     public class StratumPool : IPool
     {
         public const string StratumPrefix = "stratum+tcp";
         public const int DefaultExtraNonce2Size = 4;
 
-        [DataMember(Name = "url", IsRequired=true)]
-        [MiningSetting(ExampleValue = "stratum+tcp://www.somewhere.com:4444", Optional=false, Description="The URL and port of the mining server.")]
+        [DataMember(Name = "url", IsRequired = true)]
+        [MiningSetting(ExampleValue = "stratum+tcp://www.somewhere.com:4444", Optional = false, Description = "The URL and port of the mining server.")]
         public string Url { get; set; }
 
-        [DataMember(Name = "user", IsRequired=true)]
-        [MiningSetting(ExampleValue="SomeUser", Optional=false, Description="The username to connect with. Could be a wallet address.")]
+        [DataMember(Name = "user", IsRequired = true)]
+        [MiningSetting(ExampleValue = "SomeUser", Optional = false, Description = "The username to connect with. Could be a wallet address.")]
         public string Username { get; set; }
 
         [DataMember(Name = "pass")]
-        [MiningSetting(ExampleValue="pass", Optional=true, Description="Password. If none is specified 'x' is used.")]
+        [MiningSetting(ExampleValue = "pass", Optional = true, Description = "Password. If none is specified 'x' is used.")]
         public string Password { get; set; }
 
         [IgnoreDataMember]
@@ -92,7 +92,7 @@ namespace Stratum
         {
             get
             {
-                if(this.connection != null)
+                if (this.connection != null)
                 {
                     return this.connection.Connected;
                 }
@@ -130,6 +130,19 @@ namespace Stratum
 
         private DateTime start;
 
+        private Object[][] acceptedSubmissionFormat;
+        private Object[][] rejectedSubmissionFormat;
+
+        private Object submissionDisplayLock;
+
+        byte[] arr = null;
+
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            InitValues();
+        }
+
         public StratumPool()
             : this("", "", "")
         {
@@ -140,9 +153,56 @@ namespace Stratum
             Url = url;
             Username = username;
             Password = password;
+
+            InitValues();
+        }
+
+        private void InitValues()
+        {
             Alive = false;
             Accepted = 0;
             Rejected = 0;
+            submissionDisplayLock = new Object();
+
+            arr = new byte[10000];
+
+            acceptedSubmissionFormat = new Object[][] {
+                new Object[] {string.Empty, ConsoleColor.Magenta, false},
+                new Object[] {"ACCEPTED", ConsoleColor.Green, false },
+                new Object[] {" ( ", false},
+                new Object[] {0, ConsoleColor.Green, false},
+                new Object[] {" : ", false},
+                new Object[] {0, ConsoleColor.Red, false},
+                new Object[] {" : ", false},
+                new Object[] {0, ConsoleColor.Magenta, false},
+                new Object[] {" ) ", false},
+                new Object[] {" ( ", false},
+                new Object[] {string.Empty, ConsoleColor.Green, false},
+                new Object[] {" : ", false},
+                new Object[] {string.Empty, ConsoleColor.Red, false},
+                new Object[] {" : ", false},
+                new Object[] {string.Empty, ConsoleColor.Magenta, false},
+                new Object[] {" )", true}
+            };
+
+            rejectedSubmissionFormat = new Object[][] {
+                new Object[] {string.Empty, ConsoleColor.Magenta, true},
+                new Object[] {"REJECTED", ConsoleColor.Red, false },
+                new Object[] {" ( ", false},
+                new Object[] {0, ConsoleColor.Green, false},
+                new Object[] {" : ", false},
+                new Object[] {0, ConsoleColor.Red, false},
+                new Object[] {" : ", false},
+                new Object[] {0, ConsoleColor.Magenta, false},
+                new Object[] {" ) ", false},
+                new Object[] {" ( ", false},
+                new Object[] {string.Empty, ConsoleColor.Green, false},
+                new Object[] {" : ", false},
+                new Object[] {string.Empty, ConsoleColor.Red, false},
+                new Object[] {" : ", false},
+                new Object[] {string.Empty, ConsoleColor.Magenta, false},
+                new Object[] {" )", true}
+            };
         }
 
         public void Start()
@@ -288,7 +348,7 @@ namespace Stratum
 
                 Object[] data = (response != null ? response.Data as Object[] : null);
 
-                if(data == null)
+                if (data == null)
                 {
                     throw new StratumConnectionFailureException("Recieved null response from server subscription command.");
                 }
@@ -296,7 +356,7 @@ namespace Stratum
                 this.Extranonce1 = data[1] as string;
                 this.Extranonce2Size = (int)data[2];
 
-                if(Extranonce2Size == 0)
+                if (Extranonce2Size == 0)
                 {
                     Extranonce2Size = DefaultExtraNonce2Size;
                 }
@@ -435,9 +495,9 @@ namespace Stratum
         private object _writeLock = null;
         private void SendData(MemoryStream stream)
         {
-            if(_writeLock != null && connection != null && connection.Connected)
+            if (_writeLock != null && connection != null && connection.Connected)
             {
-                lock(_writeLock)
+                lock (_writeLock)
                 {
                     stream.WriteTo(connection.GetStream());
                 }
@@ -446,13 +506,13 @@ namespace Stratum
 
         public void SubmitWork(StratumWork work, IMiningDevice device, string nonce)
         {
-            if(this.connection == null || !this.connection.Connected)
+            if (this.connection == null || !this.connection.Connected)
             {
                 LogHelper.ConsoleLogErrorAsync("Attempting to submit share to disconnected pool.");
                 return;
             }
 
-            if(!this._allowOldWork && (this.latestWork == null || work.JobId != this.latestWork.JobId))
+            if (!this._allowOldWork && (this.latestWork == null || work.JobId != this.latestWork.JobId))
             {
                 LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", work.JobId), ConsoleColor.Magenta, LogVerbosity.Verbose);
                 return;
@@ -462,25 +522,24 @@ namespace Stratum
             {
                 try
                 {
-                    string[] param = { this.Username, work.JobId, work.Extranonce2, work.Timestamp, nonce };
-                    StratumSendCommand command = null;
+                    long requestId = 0;
 
                     lock (submissionLock)
                     {
-                        command = new StratumSendCommand(this.RequestId, StratumSendCommand.SubmitCommandString, param);
+                        requestId = this.RequestId;
                         this.RequestId++;
-
-                        if (this.connection != null && this.connection.Connected)
-                        {
-                            MemoryStream memStream = new MemoryStream();
-                            command.Serialize(memStream);
-                            this.SendData(memStream);
-                        }
                     }
 
-                    if (command != null)
+                    string[] param = { this.Username, work.JobId, work.Extranonce2, work.Timestamp, nonce };
+                    StratumSendCommand command = new StratumSendCommand(requestId, StratumSendCommand.SubmitCommandString, param);
+
+                    WorkSubmitQueue.Enqueue(new Tuple<StratumSendCommand, StratumWork, IMiningDevice>(command, work, device));
+
+                    if (this.connection != null && this.connection.Connected)
                     {
-                        WorkSubmitQueue.Enqueue(new Tuple<StratumSendCommand, StratumWork, IMiningDevice>(command, work, device));
+                        MemoryStream memStream = new MemoryStream();
+                        command.Serialize(memStream);
+                        this.SendData(memStream);
                     }
                 }
                 catch (Exception e)
@@ -654,7 +713,7 @@ namespace Stratum
 
         private void processWorkAcceptCommand(StratumWork work, IMiningDevice device, StratumResponse response, bool error = false)
         {
-            if(error)
+            if (error)
             {
                 LogHelper.DebugConsoleLogError("Error. Unknown work result. Mismatch in work queue ID and recieved response ID.");
                 return;
@@ -702,24 +761,29 @@ namespace Stratum
 
         private void DisplaySubmissionResponse(bool accepted, StratumResponse response)
         {
-            LogHelper.ConsoleLogAsync(new Object[] {
-                new Object[] {(accepted? "" : string.Format("Rejected with {0}", response.RejectReason)), ConsoleColor.Magenta, !accepted},
-                new Object[] { (accepted ? "ACCEPTED" : "REJECTED"), (accepted ? ConsoleColor.Green : ConsoleColor.Red), false },
-                new Object[] { " ( ", false },
-                new Object[] { this.Accepted, ConsoleColor.Green, false },
-                new Object[] { " : ", false},
-                new Object[] { this.Rejected, ConsoleColor.Red, false },
-                new Object[] { " : ", false},
-                new Object[] { this.HardwareErrors, ConsoleColor.Magenta, false },
-                new Object[] {" ) ", false},
-                new Object[] {" ( ", false},
-                new Object[] {MegaHashDisplayString(ComputeHashRate(this.AcceptedWorkUnits)), ConsoleColor.Green, false},
-                new Object[] {" : ", false},
-                new Object[] {MegaHashDisplayString(ComputeHashRate(this.RejectedWorkUnits)), ConsoleColor.Red, false},
-                new Object[] {" : ", false},
-                new Object[] {MegaHashDisplayString(ComputeHashRate(this.DiscardedWorkUnits)), ConsoleColor.Magenta, false},
-                new Object[] {" )", true}
-            });
+            lock (submissionDisplayLock)
+            {
+                Object[][] format = (accepted ? acceptedSubmissionFormat : rejectedSubmissionFormat);
+
+                format[3][0] = this.Accepted;
+                format[5][0] = this.Rejected;
+                format[7][0] = this.HardwareErrors;
+
+                format[10][0] = MegaHashDisplayString(ComputeHashRate(this.AcceptedWorkUnits));
+                format[12][0] = MegaHashDisplayString(ComputeHashRate(this.RejectedWorkUnits));
+                format[14][0] = MegaHashDisplayString(ComputeHashRate(this.DiscardedWorkUnits));
+
+                if(accepted)
+                {
+                    LogHelper.ConsoleLog(acceptedSubmissionFormat);
+                }
+                else
+                {
+                    format[0][0] = string.Format("Rejected with {0}", response.RejectReason);
+
+                    LogHelper.ConsoleLog(rejectedSubmissionFormat);
+                }
+            }
         }
 
         private void processCommand(StratumRecieveCommand command)
@@ -728,10 +792,10 @@ namespace Stratum
 
             object[] _params = command.Params;
 
-            switch(command.Method.Trim())
+            switch (command.Method.Trim())
             {
                 case StratumCommand.NotifyCommandString:
-                    if(_params == null || _params.Length < 9)
+                    if (_params == null || _params.Length < 9)
                     {
                         LogHelper.LogErrorSecondaryAsync(string.Format("Recieved invalid notification command from {0}", this.Url));
                         throw new InvalidDataException(string.Format("Recieved invalid notification command from {0}", this.Url));
@@ -757,12 +821,12 @@ namespace Stratum
                     }
                     else
                     {
-                        #if DEBUG
-                            if(string.IsNullOrEmpty(this.Extranonce1))
-                            {
-                                LogHelper.LogError("Got work with while Extranonce1 is null.");
-                            }
-                        #endif
+#if DEBUG
+                        if (string.IsNullOrEmpty(this.Extranonce1))
+                        {
+                            LogHelper.LogError("Got work with while Extranonce1 is null.");
+                        }
+#endif
 
                         pendingWork = work;
                     }
@@ -792,14 +856,14 @@ namespace Stratum
             if (this.threadStopping != null && this.connection != null && this.connection.Connected && this.Running)
             {
                 // TODO: Handle null connection
-                byte[] arr = new byte[10000];
                 Task<int> asyncTask = null;
 
                 try
                 {
                     asyncTask = connection.GetStream().ReadAsync(arr, 0, 10000, this.threadStopping.Token);
                     asyncTask.Wait(this.threadStopping.Token);
-                } catch(OperationCanceledException e)
+                }
+                catch (OperationCanceledException e)
                 {
                     LogHelper.LogErrorSecondaryAsync(e);
                     return string.Empty;
@@ -821,7 +885,7 @@ namespace Stratum
                     else
                     {
                         string result = Encoding.ASCII.GetString(arr, 0, bytesRead).Trim();
-                        
+
                         // Guard against messing up good commands because a bad partial command was recieved
                         if (!result.StartsWith("{"))
                         {
@@ -863,7 +927,7 @@ namespace Stratum
 
         public void Dispose()
         {
-            if(this.Running)
+            if (this.Running)
             {
                 this.Stop();
             }
