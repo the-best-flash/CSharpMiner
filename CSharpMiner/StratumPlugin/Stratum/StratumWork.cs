@@ -68,7 +68,7 @@ namespace Stratum
             }
         }
 
-        public int ExtraNonce2Size { get; set; }
+        public int ExtraNonce2Size { get; private set; }
 
         private string _merkleRoot = null;
         public string MerkleRoot

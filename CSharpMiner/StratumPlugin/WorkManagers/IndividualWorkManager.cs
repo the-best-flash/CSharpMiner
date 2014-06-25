@@ -78,9 +78,9 @@ namespace StratumManager
         {
             if (d.HashRate > 0)
             {
-                double fullHashTimeSec = Int32.MaxValue / d.HashRate; // Hashes devided by Hashes per second yeilds seconds
+                double fullHashTimeSec = Int32.MaxValue / (double)d.HashRate; // Hashes devided by Hashes per second yeilds seconds
                 double safeWaitTime = fullHashTimeSec * 0.85 * 0.95; // Assume we lose 15% of our hash rate just in case then only wait until we've covered 95% of the hash space
-                d.WorkRequestTimer.Interval = safeWaitTime;
+                d.WorkRequestTimer.Interval = safeWaitTime * 1000; // Convert to milliseconds
             }
             else
             {

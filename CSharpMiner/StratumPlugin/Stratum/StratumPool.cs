@@ -326,10 +326,9 @@ namespace Stratum
                 // If we recieved work before we started the device manager, give the work to the device manager now
                 if (pendingWork != null)
                 {
-                    pendingWork.Extranonce1 = this.Extranonce1;
-                    pendingWork.ExtraNonce2Size = this.Extranonce2Size;
-                    this.OnNewWorkRecieved(pendingWork, true);
+                    StratumWork work = new StratumWork(pendingWork.CommandArray, this.Extranonce1, this.Extranonce2Size, "00000000", this.Diff);
                     pendingWork = null;
+                    this.OnNewWorkRecieved(work, true);
                 }
 
                 if (successResponse.Data == null || !successResponse.Data.Equals(true))

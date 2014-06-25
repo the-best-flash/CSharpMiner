@@ -165,6 +165,8 @@ namespace CSharpMiner.MiningDevice
 
             if (continueRunning)
             {
+                continueRunning = false;
+
                 if (usbPort != null && usbPort.IsOpen)
                     usbPort.Close();
 
