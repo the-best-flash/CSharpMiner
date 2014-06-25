@@ -61,7 +61,7 @@ namespace StratumManager
         [MiningSetting(Description = "Restarts work on all devices even if the server indicates that a work restart is optional. [Default = true]", Optional = true, ExampleValue="false")]
         public bool AlwaysForceRestart { get; set; }
 
-        private StratumWork currentWork = null;
+        private StratumWork mostRecentWork = null;
 
         [OnDeserialized]
         private void OnDeserializing(StreamingContext context)
@@ -97,9 +97,9 @@ namespace StratumManager
             if (stratumWork != null)
             {
                 startingNonce = Random.Next();
-                StartWorkOnDevice(stratumWork, device, (restartAll || (AlwaysForceRestart && (currentWork == null || currentWork.JobId != work.JobId))), requested);
+                StartWorkOnDevice(stratumWork, device, (restartAll || (AlwaysForceRestart && (mostRecentWork == null || mostRecentWork.JobId != work.JobId))), requested);
 
-                currentWork = stratumWork;
+                mostRecentWork = stratumWork;
             }
         }
 
