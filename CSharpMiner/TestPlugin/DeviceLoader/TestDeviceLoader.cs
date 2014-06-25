@@ -32,17 +32,13 @@ namespace DeviceLoader
         [MiningSetting(ExampleValue="[A value that will be inserted into the example JSON section.]", Optional=false, Description="A value that will be displayed as the description of the setting.")]
         public string[] Ports { get; set; }
 
-        [DataMember(Name = "cores")]
-        [MiningSetting(ExampleValue="42", Optional=true, Description="Because Optional=true this will have the word '(Optional)' appended after the property type.")]
-        public int Cores { get; set; }
-
         public IEnumerable<IMiningDevice> LoadDevices()
         {
             List<IMiningDevice> devices = new List<IMiningDevice>();
 
             foreach(string str in Ports)
             {
-                devices.Add(new TestDevice(str, Cores));
+                devices.Add(new TestDevice(str));
             }
 
             return devices;

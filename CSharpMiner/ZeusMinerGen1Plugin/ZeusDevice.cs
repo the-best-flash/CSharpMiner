@@ -32,6 +32,23 @@ namespace ZeusMiner
     {
         private const int extraDataThreshold = 2; // Number of times through the main USB reading look that we will allow extra data to sit int he buffer
 
+        private int _cores = 1;
+        [DataMember(Name = "cores")]
+        [MiningSetting(ExampleValue = "6", Optional = false, Description = "Number of ZeusChips in the device.")]
+        public int Cores
+        {
+            get
+            {
+                return _cores;
+            }
+            set
+            {
+                _cores = value;
+
+                HashRate = this.GetExpectedHashrate() * Cores;
+            }
+        }
+
         private int _clk;
         [DataMember(Name = "clock")]
         [MiningSetting(ExampleValue = "328", Description = "The clockspeed of the miner. Max = 382", Optional = true)]
@@ -60,7 +77,7 @@ namespace ZeusMiner
                 cmd[0] = _freqCode;
                 cmd[1] = (byte)(0xFF - _freqCode);
 
-                HashRate = this.GetTheoreticalHashrate() * Cores;
+                HashRate = this.GetExpectedHashrate() * Cores;
             }
         }
 
@@ -221,7 +238,7 @@ namespace ZeusMiner
             }
         }
 
-        protected override int GetTheoreticalHashrate()
+        protected int GetExpectedHashrate()
         {
             return (int)(LtcClk * 87.5 * 8);
         }

@@ -16,6 +16,7 @@
 
 using CSharpMiner.Helpers;
 using CSharpMiner.Interfaces;
+using CSharpMiner.MiningDevice;
 using System;
 using System.Runtime.Serialization;
 using System.Timers;
@@ -23,89 +24,37 @@ using System.Timers;
 namespace MiningDevice
 {
     [DataContract]
-    public class TestDevice : IMiningDevice
+    public class TestDevice : MiningDeviceBase
     {
         [DataMember(Name = "path")]
         public string Path { get; set; }
 
-        [DataMember(Name = "cores")]
-        public int Cores { get; set; }
-
         [IgnoreDataMember]
-        public int Id { get; set; }
-
-        [IgnoreDataMember]
-        public int HashRate
-        {
-            get { return 1; }
-        }
-
-        [IgnoreDataMember]
-        public int HardwareErrors { get; set; }
-
-        [IgnoreDataMember]
-        public Timer WorkRequestTimer
-        {
-            get { return new Timer(); }
-        }
-
-        [IgnoreDataMember]
-        public int Accepted { get; set; }
-
-        [IgnoreDataMember]
-        public int Rejected { get; set; }
-
-        [IgnoreDataMember]
-        public int AcceptedWorkUnits { get; set; }
-
-        [IgnoreDataMember]
-        public int RejectedWorkUnits { get; set; }
-
-        [IgnoreDataMember]
-        public int DiscardedWorkUnits { get; set; }
-
-        public double AcceptedHashRate
-        {
-            get { return 0.0; }
-        }
-
-        public double RejectedHashRate
-        {
-            get { return 0.0; }
-        }
-
-        public double DiscardedHashRate
-        {
-            get { return 0.0; }
-        }
-
-        [IgnoreDataMember]
-        public string Name
+        public override string Name
         {
             get { return string.Format("TestDevice{0}", this.Id); }
         }
 
-        public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
-        public event Action<IMiningDevice> WorkRequested;
-        public event Action<IMiningDevice, IPoolWork> InvalidNonce;
-
-        public TestDevice(string path, int cores)
+        public TestDevice(string path)
         {
             Path = path;
-            Cores = cores;
         }
 
-        public void Load()
+        public override void Load()
         {
+            base.Load();
+
             LogHelper.ConsoleLogAsync(string.Format("Loading Miner {0}", Path), LogVerbosity.Verbose);
         }
 
-        public void Unload()
+        public override void Unload()
         {
+            base.Load();
+
             LogHelper.ConsoleLogAsync(string.Format("Unloading Miner {0}", Path), LogVerbosity.Verbose);
         }
 
-        public void StartWork(IPoolWork work)
+        public override void StartWork(IPoolWork work)
         {
             LogHelper.ConsoleLogAsync(new object[]{
                     string.Format("Miner {0} starting work {1} with:", Path, work.JobId),
@@ -116,12 +65,7 @@ namespace MiningDevice
                 LogVerbosity.Verbose);
         }
 
-        public void Dispose()
-        {
-            this.Unload();
-        }
-
-        public void WorkRejected(IPoolWork work)
+        public override void WorkRejected(IPoolWork work)
         {
             throw new NotImplementedException();
         }

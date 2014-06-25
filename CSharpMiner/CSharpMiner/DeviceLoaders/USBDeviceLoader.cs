@@ -25,10 +25,6 @@ namespace CSharpMiner.DeviceLoader
     [DataContract]
     public abstract class USBDeviceLoader : IDeviceLoader
     {
-        [DataMember(Name = "cores")]
-        [MiningSetting(ExampleValue = "6", Optional = false, Description = "Core count. The meaning of this setting is manufacturer specific.")]
-        public int Cores { get; set; }
-
         [DataMember(Name = "ports", IsRequired=true)]
         [MiningSetting(ExampleValue = "[\"/dev/ttyUSB0\", \"/dev/ttyUSB1\", \"COM1\"]", Optional = false, Description = "List of ports devices are connected to. Linux /dev/tty* and Windows COM*")]
         public string[] Ports { get; set; }

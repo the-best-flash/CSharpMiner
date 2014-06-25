@@ -27,37 +27,13 @@ using System.Linq;
 namespace CSharpMiner.MiningDevice
 {
     [DataContract]
-    public abstract class UsbMinerBase : IMiningDevice, IUSBDeviceSettings
+    public abstract class UsbMinerBase : MiningDeviceBase, IUSBDeviceSettings
     {
         protected const int defaultPollTime = 10;
-
-        [IgnoreDataMember]
-        public int Id { get; set; }
 
         [DataMember(Name = "port")]
         [MiningSetting(ExampleValue = "dev/ttyUSB0", Optional = false, Description = "The port the device is connected to. Linux /dev/tty* and Windows COM*")]
         public string Port { get; set; }
-
-        private int _cores = 1;
-        [DataMember(Name = "cores")]
-        [MiningSetting(ExampleValue = "6", Optional = false, Description = "Core count. The meaning of this setting is manufacturer specific.")]
-        public int Cores 
-        {
-            get
-            {
-                return _cores;
-            }
-            set
-            {
-                _cores = value;
-
-                HashRate = this.GetTheoreticalHashrate() * Cores;
-            }
-        }
-
-        [DataMember(Name = "timeout")]
-        [MiningSetting(ExampleValue = "60", Optional = true, Description = "Number of seconds to wait without response before restarting the device.")]
-        public int WatchdogTimeout { get; set; }
 
         private int _pollFrequency;
         [DataMember(Name = "poll")]
@@ -84,155 +60,17 @@ namespace CSharpMiner.MiningDevice
             }
         }
 
-        [IgnoreDataMember]
-        public int HashRate { get; protected set; }
-
-        [IgnoreDataMember]
-        public int HardwareErrors { get; set; }
-
-        private System.Timers.Timer _timer = null;
-        [IgnoreDataMember]
-        public System.Timers.Timer WorkRequestTimer
-        {
-            get 
-            {
-                if (_timer == null)
-                    _timer = new System.Timers.Timer();
-
-                return _timer;
-            }
-        }
-
-        [IgnoreDataMember]
-        public int Accepted { get; set; }
-
-        [IgnoreDataMember]
-        public int Rejected { get; set; }
-
-        [IgnoreDataMember]
-        public int AcceptedWorkUnits { get; set; }
-
-        [IgnoreDataMember]
-        public int RejectedWorkUnits { get; set; }
-
-        [IgnoreDataMember]
-        public int DiscardedWorkUnits { get; set; }
-
-        [IgnoreDataMember]
-        public abstract string Name { get;}
-
-        [IgnoreDataMember]
-        public double AcceptedHashRate
-        {
-            get
-            {
-                return ComputeHashRate(AcceptedWorkUnits);
-            }
-        }
-
-        [IgnoreDataMember]
-        public double RejectedHashRate
-        {
-            get
-            {
-                return ComputeHashRate(RejectedWorkUnits);
-            }
-        }
-
-        [IgnoreDataMember]
-        public double DiscardedHashRate
-        {
-            get
-            {
-                return ComputeHashRate(DiscardedWorkUnits);
-            }
-        }
-
-        public event Action<IMiningDevice, IPoolWork, string> ValidNonce;
-        public event Action<IMiningDevice> WorkRequested;
-        public event Action<IMiningDevice, IPoolWork> InvalidNonce;
-
         protected Thread listenerThread = null;
         protected SerialPort usbPort = null;
         protected IPoolWork pendingWork = null;
 
-        private System.Timers.Timer watchdogTimer = null;
-
-        private DateTime start;
-
         private bool continueRunning = true;
 
-        public void Load()
+        public override void Load()
         {
-            start = DateTime.Now;
-
-            Accepted = 0;
-            Rejected = 0;
-            HardwareErrors = 0;
-
-            AcceptedWorkUnits = 0;
-            RejectedWorkUnits = 0;
-            DiscardedWorkUnits = 0;
-
-            HashRate = GetTheoreticalHashrate();
-
-            WorkRequestTimer.Stop();
-
-            if(WatchdogTimeout <= 0)
-            {
-                WatchdogTimeout = 60; // Default to one minute if not set
-            }
-
-            watchdogTimer = new System.Timers.Timer(WatchdogTimeout * 1000);
-            watchdogTimer.Elapsed += this.WatchdogExpired;
-            watchdogTimer.AutoReset = true;
+            base.Load();
 
             Task.Factory.StartNew(this.Connect);
-        }
-
-        private double ComputeHashRate(int workUnits)
-        {
-            return 65535.0 * workUnits / DateTime.Now.Subtract(start).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
-        }
-
-        protected void RestartWorkRequestTimer()
-        {
-            WorkRequestTimer.Stop();
-            WorkRequestTimer.Start();
-        }
-
-        private void WorkRequestTimerExpired(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            RequestWork();
-        }
-
-        private void WatchdogExpired(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            if(this.WorkRequested != null)
-            {
-                LogHelper.ConsoleLogErrorAsync(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.Name, (double)WatchdogTimeout));
-                RequestWork();
-            }
-        }
-        
-        protected void RequestWork()
-        {
-            if (this.WorkRequested != null)
-            {
-                Task.Factory.StartNew(() =>
-                    {
-                        this.WorkRequested(this);
-                    });
-            }
-        }
-
-        protected void RestartWatchdogTimer()
-        {
-            if(watchdogTimer != null)
-            {
-                watchdogTimer.Stop();
-                watchdogTimer.Start();
-            }
         }
 
         private void Connect()
@@ -312,28 +150,12 @@ namespace CSharpMiner.MiningDevice
             }
         }
 
-        private void Restart()
+        public override void Unload()
         {
-            this.Unload();
-            this.Load();
-        }
+            base.Unload();
 
-        protected void SubmitWork(IPoolWork work, string nonce)
-        {
-            this.OnValidNonce(work, nonce);
-        }
-
-        public void Unload()
-        {
             if (continueRunning)
             {
-                if(this.watchdogTimer != null)
-                {
-                    this.watchdogTimer.Stop();
-                }
-
-                continueRunning = false;
-
                 if (usbPort != null && usbPort.IsOpen)
                     usbPort.Close();
 
@@ -351,40 +173,8 @@ namespace CSharpMiner.MiningDevice
                 }
             }
         }
-        
-        protected void OnValidNonce(IPoolWork work, string nonce)
-        {
-            this.RestartWatchdogTimer();
 
-            if (this.ValidNonce != null)
-            {
-                Task.Factory.StartNew(() =>
-                    {
-                        this.ValidNonce(this, work, nonce);
-                    });
-            }
-        }
-
-        protected void OnInvalidNonce(IPoolWork work)
-        {
-            if (this.InvalidNonce != null)
-            {
-                Task.Factory.StartNew(() =>
-                    {
-                        this.InvalidNonce(this, work);
-                    });
-            }
-        }
-
-        public void Dispose()
-        {
-            this.Unload();
-        }
-
-        public abstract void StartWork(IPoolWork work);
         public abstract int GetBaud();
         protected abstract void DataReceived(object sender, SerialDataReceivedEventArgs e);
-        protected abstract int GetTheoreticalHashrate();
-        public abstract void WorkRejected(IPoolWork work);
     }
 }

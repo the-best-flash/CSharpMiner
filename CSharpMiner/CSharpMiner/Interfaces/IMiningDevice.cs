@@ -22,7 +22,6 @@ namespace CSharpMiner.Interfaces
     public interface IMiningDevice : IMiningDeviceObject, IDisposable
     {
         int Id { get; set; }
-        int Cores { get; }
 
         int HashRate { get; }
 
@@ -45,9 +44,11 @@ namespace CSharpMiner.Interfaces
         event Action<IMiningDevice, IPoolWork, string> ValidNonce;
         event Action<IMiningDevice> WorkRequested;
         event Action<IMiningDevice, IPoolWork> InvalidNonce;
+        event Action<IMiningDevice> Disconnected;
 
         void Load();
         void Unload();
+        void Restart();
         void StartWork(IPoolWork work);
         void WorkRejected(IPoolWork work);
     }

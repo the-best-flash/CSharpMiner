@@ -59,6 +59,7 @@
     <Compile Include="Interfaces\IMiningDeviceObject.cs" />
     <Compile Include="Interfaces\IShareResponse.cs" />
     <Compile Include="Interfaces\IUSBDeviceSettings.cs" />
+    <Compile Include="MiningDevices\MiningDeviceBase.cs" />
     <Compile Include="MiningDevices\SerialConnectionException.cs" />
     <Compile Include="MiningDevices\UsbMinerBase.cs" />
     <Compile Include="DeviceManagers\WorkManagerBase.cs" />

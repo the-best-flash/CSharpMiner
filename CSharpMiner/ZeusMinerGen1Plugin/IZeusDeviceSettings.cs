@@ -8,6 +8,7 @@ namespace ZeusMinerGen1Plugin
 {
     public interface IZeusDeviceSettings
     {
+        int Cores { get; set; }
         int LtcClk { get; set; }
     }
 }

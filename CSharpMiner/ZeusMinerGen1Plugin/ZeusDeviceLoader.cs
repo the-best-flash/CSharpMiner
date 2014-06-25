@@ -27,6 +27,10 @@ namespace ZeusMiner
     [MiningModule(Description = "Configures many ZeusMiner(Gen1) or GAWMiner(A1) devices at once.")]
     public class ZeusDeviceLoader : USBDeviceLoader, IZeusDeviceSettings
     {
+        [DataMember(Name = "cores")]
+        [MiningSetting(ExampleValue = "6", Optional = false, Description = "Number of ZeusChips in the device.")]
+        public int Cores { get; set; }
+
         [DataMember(Name = "clock")]
         [MiningSetting(ExampleValue="328", Description="The clockspeed of the miner. Max = 382", Optional=true)]
         public int LtcClk { get; set; }
