@@ -207,25 +207,22 @@ namespace CSharpMiner.DeviceManager
                 boundPools = true;
             }
 
-            Task.Factory.StartNew(() =>
+            loadedDevices = new List<IMiningDevice>();
+            hotplugLoaders = new List<IHotplugLoader>();
+
+            foreach (IMiningDeviceObject d in this.MiningDevices)
             {
-                loadedDevices = new List<IMiningDevice>();
-                hotplugLoaders = new List<IHotplugLoader>();
+                LoadDevice(d);
+            }
 
-                foreach(IMiningDeviceObject d in this.MiningDevices)
-                {
-                    LoadDevice(d);
-                }
+            if(Pools.Length > 0)
+            {
+                this.ActivePool = Pools[0];
+                this.ActivePoolId = 0;
+                this.ActivePool.Start();
+            }
 
-                if(Pools.Length > 0)
-                {
-                    this.ActivePool = Pools[0];
-                    this.ActivePoolId = 0;
-                    this.ActivePool.Start();
-                }
-
-                started = true;
-            });
+            started = true;
         }
 
         private void LoadDevice(IMiningDeviceObject d)
@@ -416,8 +413,6 @@ namespace CSharpMiner.DeviceManager
                 this.ActivePool.HardwareErrors++;
                 this.ActivePool.DiscardedWorkUnits += work.Diff;
             }
-
-            throw new NotImplementedException();
         }
 
         public void PoolDisconnected(IPool pool)

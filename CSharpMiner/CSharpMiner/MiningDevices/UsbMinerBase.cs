@@ -29,7 +29,7 @@ namespace CSharpMiner.MiningDevice
     [DataContract]
     public abstract class UsbMinerBase : MiningDeviceBase, IUSBDeviceSettings
     {
-        protected const int defaultPollTime = 10;
+        protected const int defaultPollTime = 50;
 
         [DataMember(Name = "port")]
         [MiningSetting(ExampleValue = "dev/ttyUSB0", Optional = false, Description = "The port the device is connected to. Linux /dev/tty* and Windows COM*")]
@@ -108,6 +108,11 @@ namespace CSharpMiner.MiningDevice
                             this.StartWork(pendingWork);
                             pendingWork = null;
                         });
+                }
+
+                if(PollFrequency <= 0)
+                {
+                    PollFrequency = defaultPollTime;
                 }
 
                 if (this.listenerThread == null)

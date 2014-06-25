@@ -20,6 +20,7 @@ using CSharpMiner.ModuleLoading;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace CSharpMinerProgram
 {
@@ -161,6 +162,8 @@ namespace CSharpMinerProgram
 
                     do
                     {
+                        Thread.Sleep(500);
+
                         pressedKey = Console.ReadKey().Key;
 
                         if (pressedKey == ConsoleKey.OemPlus || pressedKey == ConsoleKey.Add || pressedKey.ToString() == "=")

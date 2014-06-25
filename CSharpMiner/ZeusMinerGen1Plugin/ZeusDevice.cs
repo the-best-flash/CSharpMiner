@@ -220,21 +220,18 @@ namespace ZeusMiner
         {
             if(currentWork != null)
             {
-                Task.Factory.StartNew(() =>
-                    {
-                        LogHelper.ConsoleLogAsync(string.Format("Device {0} submitting {1} for job {2}.", this.Name, HexConversionHelper.ConvertToHexString(packet), (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan, LogVerbosity.Verbose);
+                string nonce = HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet));
 
-                        string nonce = HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet));
+                if (this.ValidateNonce(nonce))
+                {
+                    this.SubmitWork(currentWork, nonce);
+                }
+                else
+                {
+                    this.OnInvalidNonce(currentWork);
+                }
 
-                        if (this.ValidateNonce(nonce))
-                        {
-                            this.SubmitWork(currentWork, nonce);
-                        }
-                        else
-                        {
-                            this.OnInvalidNonce(currentWork);
-                        }
-                    });
+                LogHelper.ConsoleLogAsync(string.Format("Device {0} submitting {1} for job {2}.", this.Name, nonce, (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan, LogVerbosity.Verbose);
             }
         }
 
