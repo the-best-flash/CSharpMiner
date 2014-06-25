@@ -28,6 +28,8 @@ namespace StratumManager
     [MiningModule(Description = "Uses the stratum protocol to generate a unique work item for each device it manages. It will allow the device to continue working on its work item until one of the following occurs: the device requests a new work item, the server forces a work restart, or the device submits a stale share.")]
     public class IndividualWorkManager : WorkManagerBase
     {
+        private const int defaultWorkRestartTimeout = 180000;
+
         private static Random _random = null;
         private static Random Random
         {
@@ -72,9 +74,16 @@ namespace StratumManager
 
         protected override void SetUpDevice(IMiningDevice d)
         {
-            double fullHashTimeSec = Int32.MaxValue / d.HashRate; // Hashes devided by Hashes per second yeilds seconds
-            double safeWaitTime = fullHashTimeSec * 0.85 * 0.95; // Assume we lose 15% of our hash rate just in case then only wait until we've covered 95% of the hash space
-            d.WorkRequestTimer.Interval = safeWaitTime;
+            if (d.HashRate > 0)
+            {
+                double fullHashTimeSec = Int32.MaxValue / d.HashRate; // Hashes devided by Hashes per second yeilds seconds
+                double safeWaitTime = fullHashTimeSec * 0.85 * 0.95; // Assume we lose 15% of our hash rate just in case then only wait until we've covered 95% of the hash space
+                d.WorkRequestTimer.Interval = safeWaitTime;
+            }
+            else
+            {
+                d.WorkRequestTimer.Interval = defaultWorkRestartTimeout; // Unknown hashrate. Assume we need to restart the device every few minutes
+            }
         }
 
         private int startingNonce = 0;
