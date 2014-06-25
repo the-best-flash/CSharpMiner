@@ -21,17 +21,17 @@ namespace CSharpMiner.Interfaces
 {
     public interface IMiningDevice : IMiningDeviceObject, IDisposable
     {
-        int Id { get; set; }
+        long Id { get; set; }
 
-        int HashRate { get; }
+        long HashRate { get; }
 
-        int Accepted { get; set; }
-        int Rejected { get; set; }
-        int HardwareErrors { get; set; }
+        long Accepted { get; set; }
+        long Rejected { get; set; }
+        long HardwareErrors { get; set; }
 
-        int AcceptedWorkUnits { get; set; }
-        int RejectedWorkUnits { get; set; }
-        int DiscardedWorkUnits { get; set; }
+        long AcceptedWorkUnits { get; set; }
+        long RejectedWorkUnits { get; set; }
+        long DiscardedWorkUnits { get; set; }
 
         double AcceptedHashRate { get; }
         double RejectedHashRate { get; }

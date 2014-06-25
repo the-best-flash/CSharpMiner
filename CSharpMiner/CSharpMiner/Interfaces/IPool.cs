@@ -24,15 +24,15 @@ namespace CSharpMiner.Interfaces
         string Username { get; set; }
         string Password { get; set; }
 
-        int Accepted { get; set; }
-        int Rejected { get; set; }
-        int HardwareErrors { get; set; }
+        long Accepted { get; set; }
+        long Rejected { get; set; }
+        long HardwareErrors { get; set; }
 
-        int AcceptedWorkUnits { get; }
-        int RejectedWorkUnits { get; set; }
-        int DiscardedWorkUnits { get; set; }
+        long AcceptedWorkUnits { get; }
+        long RejectedWorkUnits { get; set; }
+        long DiscardedWorkUnits { get; set; }
 
-        int NewBlocks { get; }
+        long NewBlocks { get; }
         int Diff { get; }
 
         bool Alive { get; }

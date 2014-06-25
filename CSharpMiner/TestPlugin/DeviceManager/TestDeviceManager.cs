@@ -112,12 +112,12 @@ namespace DeviceManager
             throw new NotImplementedException();
         }
 
-        public void RemovePool(int poolIndex)
+        public void RemovePool(IPool pool)
         {
             throw new NotImplementedException();
         }
 
-        public void RemoveDevice(int deviceIndex)
+        public void RemoveDevice(IMiningDevice device)
         {
             throw new NotImplementedException();
         }

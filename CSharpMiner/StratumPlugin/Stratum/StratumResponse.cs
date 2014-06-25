@@ -53,7 +53,7 @@ namespace Stratum
         }
 
         [DataMember(Name = "id")]
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         private Object _data = null;
         [DataMember(Name = "result")]

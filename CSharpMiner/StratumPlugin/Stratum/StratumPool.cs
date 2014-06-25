@@ -51,28 +51,28 @@ namespace Stratum
         public bool Alive { get; private set; }
 
         [IgnoreDataMember]
-        public int Accepted { get; set; }
+        public long Accepted { get; set; }
 
         [IgnoreDataMember]
-        public int Rejected { get; set; }
+        public long Rejected { get; set; }
 
         [IgnoreDataMember]
-        public int AcceptedWorkUnits { get; private set; }
+        public long AcceptedWorkUnits { get; private set; }
 
         [IgnoreDataMember]
-        public int RejectedWorkUnits { get; set; }
+        public long RejectedWorkUnits { get; set; }
 
         [IgnoreDataMember]
-        public int DiscardedWorkUnits { get; set; }
+        public long DiscardedWorkUnits { get; set; }
 
         [IgnoreDataMember]
-        public int NewBlocks { get; private set; }
+        public long NewBlocks { get; private set; }
 
         [IgnoreDataMember]
         public int Diff { get; private set; }
 
         [IgnoreDataMember]
-        public int RequestId { get; private set; }
+        public long RequestId { get; private set; }
 
         [IgnoreDataMember]
         public string Extranonce1 { get; private set; }
@@ -106,7 +106,7 @@ namespace Stratum
         public bool Connecting { get; private set; }
 
         [IgnoreDataMember]
-        public int HardwareErrors { get; set; }
+        public long HardwareErrors { get; set; }
 
         public event Action<IPool, IPoolWork, bool> NewWorkRecieved;
         public event Action<IPool> Disconnected;
@@ -500,7 +500,7 @@ namespace Stratum
             this.processCommands(responses, this.RequestId);
         }
 
-        private StratumResponse processCommands(string[] commands, int id = -1)
+        private StratumResponse processCommands(string[] commands, long id = -1)
         {
             StratumResponse result = null;
 
@@ -680,7 +680,7 @@ namespace Stratum
                 });
         }
 
-        private double ComputeHashRate(int workUnits)
+        private double ComputeHashRate(long workUnits)
         {
             return 65535.0 * workUnits / DateTime.Now.Subtract(start).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
         }
@@ -737,7 +737,7 @@ namespace Stratum
                         LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow, LogVerbosity.Verbose);
                     }
 
-                    StratumWork work = new StratumWork(_params, this.Extranonce1, "00000000", this.Diff);
+                    StratumWork work = new StratumWork(_params, this.Extranonce1, this.Extranonce2Size, "00000000", this.Diff);
 
                     latestWork = work;
 

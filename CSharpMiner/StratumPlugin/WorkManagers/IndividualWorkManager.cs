@@ -124,25 +124,25 @@ namespace StratumManager
         {
             if (!restartWork && device != null && requested)
             {
-                StartWorkOnDevice(device, work.CommandArray, work.Extranonce1, work.Diff);
+                StartWorkOnDevice(device, work.CommandArray, work.Extranonce1, work.ExtraNonce2Size, work.Diff);
             }
             else if(restartWork)
             {
-                StartWorking(work.CommandArray, work.Extranonce1, work.Diff);
+                StartWorking(work.CommandArray, work.Extranonce1, work.ExtraNonce2Size, work.Diff);
             }
         }
 
-        private void StartWorking(object[] param, string extranonce1, int diff)
+        private void StartWorking(object[] param, string extranonce1, int extraNonce2Size, int diff)
         {
             foreach (IMiningDevice device in this.loadedDevices)
             {
-                StartWorkOnDevice(device, param, extranonce1, diff);
+                StartWorkOnDevice(device, param, extranonce1, extraNonce2Size, diff);
             }
         }
 
-        private void StartWorkOnDevice(IMiningDevice device, object[] param, string extranonce1, int diff)
+        private void StartWorkOnDevice(IMiningDevice device, object[] param, string extranonce1, int extraNonce2Size, int diff)
         {
-            device.StartWork(new StratumWork(param, extranonce1, string.Format("{0,8:X8}", startingNonce), diff));
+            device.StartWork(new StratumWork(param, extranonce1, extraNonce2Size, string.Format("{0,8:X8}", startingNonce), diff));
             if (startingNonce != int.MaxValue)
             {
                 startingNonce++;

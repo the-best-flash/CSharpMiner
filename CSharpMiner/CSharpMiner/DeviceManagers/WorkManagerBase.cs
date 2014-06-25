@@ -75,7 +75,7 @@ namespace CSharpMiner.DeviceManager
         protected IPoolWork currentWork = null;
         protected IPoolWork nextWork = null;
 
-        private int deviceId = 0;
+        private long deviceId = 0;
 
         protected abstract void StartWork(IPoolWork work, IMiningDevice device, bool restartAll, bool requested);
         protected abstract void NoWork(IPoolWork oldWork, IMiningDevice device, bool requested);
@@ -504,12 +504,12 @@ namespace CSharpMiner.DeviceManager
             throw new NotImplementedException();
         }
 
-        public void RemovePool(int poolIndex)
+        public void RemovePool(IPool pool)
         {
             throw new NotImplementedException();
         }
 
-        public void RemoveDevice(int deviceIndex)
+        public void RemoveDevice(IMiningDevice device)
         {
             throw new NotImplementedException();
         }

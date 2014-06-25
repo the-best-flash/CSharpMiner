@@ -53,8 +53,8 @@ namespace Stratum
         }
 
         private string _extranonce2 = null;
-        public string Extranonce2 
-        { 
+        public string Extranonce2
+        {
             get
             {
                 return _extranonce2;
@@ -68,12 +68,14 @@ namespace Stratum
             }
         }
 
+        public int ExtraNonce2Size { get; private set; }
+
         private string _merkleRoot = null;
         public string MerkleRoot
         {
             get
             {
-                if(_merkleRoot == null)
+                if (_merkleRoot == null)
                 {
                     lock (_lock)
                     {
@@ -108,9 +110,9 @@ namespace Stratum
             _header = null;
         }
 
-        public StratumWork(Object[] serverCommandArray, string extranonce1, string extranonce2, int diff, int startingNonce = 0)
+        public StratumWork(Object[] serverCommandArray, string extranonce1, int extranonce2Size, string extranonce2, int diff, int startingNonce = 0)
         {
-            if(serverCommandArray.Length < 8)
+            if (serverCommandArray.Length < 8)
             {
                 Exception e = new ArgumentException("Unrecognized work format from server. Work array length < 8.");
                 LogHelper.LogErrorSecondaryAsync(e);
@@ -120,7 +122,32 @@ namespace Stratum
             CommandArray = serverCommandArray;
 
             Extranonce1 = extranonce1;
-            Extranonce2 = extranonce2;
+
+            // Make sure extranonce 2 is the right length
+            if (extranonce2.Length != extranonce2Size * 2)
+            {
+                if (extranonce2Size * 2 > extranonce2.Length)
+                {
+                    int neededZeros = extranonce2Size * 2 - extranonce2.Length;
+                    string fix = extranonce2;
+
+                    for(int i = 0; i < neededZeros; i++)
+                    {
+                        fix = "0" + fix;
+                    }
+
+                    Extranonce2 = fix;
+                }
+                else
+                {
+                    Extranonce2 = extranonce2.Substring(0, extranonce2Size * 2);
+                }
+            }
+            else
+            {
+                Extranonce2 = extranonce2;
+            }
+
             Diff = diff;
 
             StartingNonce = startingNonce;
@@ -135,11 +162,11 @@ namespace Stratum
 
             Object[] merkleTreeParts = serverCommandArray[4] as Object[];
 
-            if(merkleTreeParts != null)
+            if (merkleTreeParts != null)
             {
                 MerkleBranch = new string[merkleTreeParts.Length];
 
-                for(int i = 0; i < merkleTreeParts.Length; i++)
+                for (int i = 0; i < merkleTreeParts.Length; i++)
                 {
                     MerkleBranch[i] = merkleTreeParts[i] as string;
                 }

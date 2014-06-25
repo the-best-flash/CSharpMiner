@@ -84,7 +84,8 @@ namespace Stratum
         [DataMember(Name = "params")]
         public Object[] Params { get; set; }
 
-        public StratumSendCommand(int id, string method, Object[] param) : base(id, method)
+        public StratumSendCommand(long id, string method, Object[] param)
+            : base(id, method)
         {
             Params = param;
         }

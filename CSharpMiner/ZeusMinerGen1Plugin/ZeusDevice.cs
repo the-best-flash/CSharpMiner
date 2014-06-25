@@ -238,9 +238,9 @@ namespace ZeusMiner
             }
         }
 
-        protected int GetExpectedHashrate()
+        protected long GetExpectedHashrate()
         {
-            return (int)(LtcClk * 87.5 * 8);
+            return (long)(LtcClk * 87.5 * 8);
         }
 
         public override void WorkRejected(IPoolWork work)

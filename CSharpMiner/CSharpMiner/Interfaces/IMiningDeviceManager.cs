@@ -26,8 +26,8 @@ namespace CSharpMiner.Interfaces
         void AddNewPool(IPool pool);
         void AddNewDevice(IMiningDevice device);
 
-        void RemovePool(int poolIndex);
-        void RemoveDevice(int deviceIndex);
+        void RemovePool(IPool pool);
+        void RemoveDevice(IMiningDevice device);
 
         void Start();
         void Stop();

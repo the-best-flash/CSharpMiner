@@ -35,28 +35,28 @@ namespace CSharpMiner.MiningDevice
         public int WatchdogTimeout { get; set; }
 
         [IgnoreDataMember]
-        public virtual int Id { get; set; }
+        public virtual long Id { get; set; }
 
         [IgnoreDataMember]
-        public virtual int HashRate { get; protected set; }
+        public virtual long HashRate { get; protected set; }
 
         [IgnoreDataMember]
-        public virtual int HardwareErrors { get; set; }
+        public virtual long HardwareErrors { get; set; }
 
         [IgnoreDataMember]
-        public virtual int Accepted { get; set; }
+        public virtual long Accepted { get; set; }
 
         [IgnoreDataMember]
-        public virtual int Rejected { get; set; }
+        public virtual long Rejected { get; set; }
 
         [IgnoreDataMember]
-        public virtual int AcceptedWorkUnits { get; set; }
+        public virtual long AcceptedWorkUnits { get; set; }
 
         [IgnoreDataMember]
-        public virtual int RejectedWorkUnits { get; set; }
+        public virtual long RejectedWorkUnits { get; set; }
 
         [IgnoreDataMember]
-        public virtual int DiscardedWorkUnits { get; set; }
+        public virtual long DiscardedWorkUnits { get; set; }
 
         [IgnoreDataMember]
         public abstract string Name { get; }
@@ -244,7 +244,7 @@ namespace CSharpMiner.MiningDevice
             }
         }
 
-        private double ComputeHashRate(int workUnits)
+        private double ComputeHashRate(long workUnits)
         {
             return 65535.0 * workUnits / DateTime.Now.Subtract(start).TotalSeconds; // Expected hashes per work unit * work units / sec = hashes per sec
         }

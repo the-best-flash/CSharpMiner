@@ -8,7 +8,7 @@ namespace CSharpMiner.Interfaces
 {
     public interface IShareResponse
     {
-        int Id { get; set; }
+        long Id { get; set; }
         Object Data { get; set; }
         Object[] Error { get; set; }
         int RejectErrorId { get; }
