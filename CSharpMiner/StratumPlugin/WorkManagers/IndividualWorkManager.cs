@@ -55,6 +55,21 @@ namespace StratumManager
         [MiningSetting(Description = "A collection of pools to connect to. This connects to the first pool and only uses the other pools if the first one fails. It does not automatically go back to the first pool if it becomes available again.", Optional = false)]
         public StratumPool[] StratumPools { get; set; }
 
+        [DataMember(IsRequired=false, Name="forceRestart")]
+        [MiningSetting(Description = "Restarts work on all devices even if the server indicates that a work restart is optional. [Default = true]", Optional = true, ExampleValue="false")]
+        public bool AlwaysForceRestart { get; set; }
+
+        [OnDeserialized]
+        private void OnDeserializing(StreamingContext context)
+        {
+            SetDefaultValues();
+        }
+
+        private void SetDefaultValues()
+        {
+            AlwaysForceRestart = true;
+        }
+
         protected override void SetUpDevice(IMiningDevice d)
         {
             double fullHashTimeSec = Int32.MaxValue / d.HashRate; // Hashes devided by Hashes per second yeilds seconds
@@ -71,7 +86,7 @@ namespace StratumManager
             if (stratumWork != null)
             {
                 startingNonce = Random.Next();
-                StartWorkOnDevice(stratumWork, device, restartAll, requested);
+                StartWorkOnDevice(stratumWork, device, (restartAll || AlwaysForceRestart), requested);
             }
         }
 
