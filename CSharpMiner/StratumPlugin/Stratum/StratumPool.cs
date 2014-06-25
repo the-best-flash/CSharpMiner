@@ -546,11 +546,6 @@ namespace Stratum
                             {
                                 try
                                 {
-                                    if(str.Contains('['))
-                                    {
-                                        str = str.Replace("[", "(").Replace("]", ")");
-                                    }
-
                                     response = StratumResponse.Deserialize(memStream);
                                 }
                                 catch
@@ -624,11 +619,6 @@ namespace Stratum
                             {
                                 try
                                 {
-                                    if (str.Contains('['))
-                                    {
-                                        str = str.Replace("[", "(").Replace("]", ")");
-                                    }
-
                                     command = StratumRecieveCommand.Deserialize(memStream);
                                 }
                                 catch

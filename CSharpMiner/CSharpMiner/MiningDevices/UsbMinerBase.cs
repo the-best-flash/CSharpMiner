@@ -35,7 +35,6 @@ namespace CSharpMiner.MiningDevice
         [MiningSetting(ExampleValue = "dev/ttyUSB0", Optional = false, Description = "The port the device is connected to. Linux /dev/tty* and Windows COM*")]
         public string Port { get; set; }
 
-        private int _pollFrequency;
         [DataMember(Name = "poll")]
         [MiningSetting(ExampleValue = "50", Optional = true, Description = "Milliseconds the thread waits before looking for incoming data. A larger value will decrease the processor usage but shares won't be submitted right away.")]
         public int PollFrequency { get; set; }
