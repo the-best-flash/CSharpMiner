@@ -34,6 +34,7 @@ namespace Stratum
     public class StratumPool : IPool
     {
         public const string StratumPrefix = "stratum+tcp";
+        public const int DefaultExtraNonce2Size = 4;
 
         [DataMember(Name = "url", IsRequired=true)]
         [MiningSetting(ExampleValue = "stratum+tcp://www.somewhere.com:4444", Optional=false, Description="The URL and port of the mining server.")]
@@ -294,6 +295,11 @@ namespace Stratum
 
                 this.Extranonce1 = data[1] as string;
                 this.Extranonce2Size = (int)data[2];
+
+                if(Extranonce2Size == 0)
+                {
+                    Extranonce2Size = DefaultExtraNonce2Size;
+                }
 
                 LogHelper.ConsoleLog(string.Format("Successfully connected to pool {0}", this.Url));
 
