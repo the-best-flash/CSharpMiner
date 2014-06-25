@@ -122,6 +122,7 @@ namespace Stratum
             CommandArray = serverCommandArray;
 
             Extranonce1 = extranonce1;
+            ExtraNonce2Size = extranonce2Size;
 
             // Make sure extranonce 2 is the right length
             if (extranonce2.Length != extranonce2Size * 2)
