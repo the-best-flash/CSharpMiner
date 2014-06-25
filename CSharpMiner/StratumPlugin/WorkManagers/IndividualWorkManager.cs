@@ -82,10 +82,6 @@ namespace StratumManager
                 double safeWaitTime = fullHashTimeSec * 0.85 * 0.95; // Assume we lose 15% of our hash rate just in case then only wait until we've covered 95% of the hash space
                 d.WorkRequestTimer.Interval = safeWaitTime * 1000; // Convert to milliseconds
             }
-            else
-            {
-                d.WorkRequestTimer.Interval = defaultWorkRestartTimeout; // Unknown hashrate. Assume we need to restart the device every few minutes
-            }
         }
 
         private int startingNonce = 0;
