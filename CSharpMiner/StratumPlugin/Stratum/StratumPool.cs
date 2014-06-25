@@ -361,7 +361,10 @@ namespace Stratum
                     Extranonce2Size = DefaultExtraNonce2Size;
                 }
 
-                LogHelper.ConsoleLog(string.Format("Successfully connected to pool {0}", this.Url));
+                if (LogHelper.ShouldDisplay(LogVerbosity.Normal))
+                {
+                    LogHelper.ConsoleLog(string.Format("Successfully connected to pool {0}", this.Url));
+                }
 
                 LogHelper.DebugConsoleLogAsync(new Object[] {
                         string.Format("Extranonce1: {0}", data[1]),
@@ -514,7 +517,10 @@ namespace Stratum
 
             if (!this._allowOldWork && (this.latestWork == null || work.JobId != this.latestWork.JobId))
             {
-                LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", work.JobId), ConsoleColor.Magenta, LogVerbosity.Verbose);
+                if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                {
+                    LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", work.JobId), ConsoleColor.Magenta, LogVerbosity.Verbose);
+                }
                 return;
             }
 
@@ -761,34 +767,40 @@ namespace Stratum
 
         private void DisplaySubmissionResponse(bool accepted, StratumResponse response)
         {
-            lock (submissionDisplayLock)
+            if ((int)LogHelper.Verbosity >= (int)LogVerbosity.Normal)
             {
-                Object[][] format = (accepted ? acceptedSubmissionFormat : rejectedSubmissionFormat);
-
-                format[3][0] = this.Accepted;
-                format[5][0] = this.Rejected;
-                format[7][0] = this.HardwareErrors;
-
-                format[10][0] = MegaHashDisplayString(ComputeHashRate(this.AcceptedWorkUnits));
-                format[12][0] = MegaHashDisplayString(ComputeHashRate(this.RejectedWorkUnits));
-                format[14][0] = MegaHashDisplayString(ComputeHashRate(this.DiscardedWorkUnits));
-
-                if(accepted)
+                lock (submissionDisplayLock)
                 {
-                    LogHelper.ConsoleLog(acceptedSubmissionFormat);
-                }
-                else
-                {
-                    format[0][0] = string.Format("Rejected with {0}", response.RejectReason);
+                    Object[][] format = (accepted ? acceptedSubmissionFormat : rejectedSubmissionFormat);
 
-                    LogHelper.ConsoleLog(rejectedSubmissionFormat);
+                    format[3][0] = this.Accepted;
+                    format[5][0] = this.Rejected;
+                    format[7][0] = this.HardwareErrors;
+
+                    format[10][0] = MegaHashDisplayString(ComputeHashRate(this.AcceptedWorkUnits));
+                    format[12][0] = MegaHashDisplayString(ComputeHashRate(this.RejectedWorkUnits));
+                    format[14][0] = MegaHashDisplayString(ComputeHashRate(this.DiscardedWorkUnits));
+
+                    if (accepted)
+                    {
+                        LogHelper.ConsoleLog(acceptedSubmissionFormat);
+                    }
+                    else
+                    {
+                        format[0][0] = string.Format("Rejected with {0}", response.RejectReason);
+
+                        LogHelper.ConsoleLog(rejectedSubmissionFormat);
+                    }
                 }
             }
         }
 
         private void processCommand(StratumRecieveCommand command)
         {
-            LogHelper.DebugConsoleLogAsync(string.Format("Command: {0}", command.Method), LogVerbosity.Verbose);
+            if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+            {
+                LogHelper.DebugConsoleLogAsync(string.Format("Command: {0}", command.Method), LogVerbosity.Verbose);
+            }
 
             object[] _params = command.Params;
 
@@ -801,12 +813,19 @@ namespace Stratum
                         throw new InvalidDataException(string.Format("Recieved invalid notification command from {0}", this.Url));
                     }
 
-                    LogHelper.ConsoleLogAsync(string.Format("Got Work from {0}!", this.Url), LogVerbosity.Verbose);
+                    if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                    {
+                        LogHelper.ConsoleLogAsync(string.Format("Got Work from {0}!", this.Url), LogVerbosity.Verbose);
+                    }
 
                     if (_params != null && _params.Length >= 9 && _params[8] != null && _params[8].Equals(true))
                     {
                         this.NewBlocks++;
-                        LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow, LogVerbosity.Verbose);
+
+                        if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                        {
+                            LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow, LogVerbosity.Verbose);
+                        }
                     }
 
                     StratumWork work = new StratumWork(_params, this.Extranonce1, this.Extranonce2Size, "00000000", this.Diff);
@@ -839,7 +858,11 @@ namespace Stratum
                         throw new InvalidDataException(string.Format("Recieved invalid difficulty command from {0}", this.Url));
                     }
 
-                    LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", _params[0], this.Url), LogVerbosity.Verbose);
+                    if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                    {
+                        LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", _params[0], this.Url), LogVerbosity.Verbose);
+                    }
+
                     LogHelper.DebugConsoleLog(string.Format("Diff Change {0} => {1}", this.Diff, _params[0]), ConsoleColor.Magenta);
 
                     this.Diff = (int)_params[0];

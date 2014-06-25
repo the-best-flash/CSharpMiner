@@ -115,7 +115,11 @@ namespace StratumManager
 
             if(response.JobNotFound || response.RejectReason.Contains("job not found"))
             {
-                LogHelper.ConsoleLog(string.Format("Device {0} submitted stale share. Restarting with new work.", device.Name), LogVerbosity.Verbose);
+                if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                {
+                    LogHelper.ConsoleLog(string.Format("Device {0} submitted stale share. Restarting with new work.", device.Name), LogVerbosity.Verbose);
+                }
+
                 this.RequestWork(device);
             }
         }

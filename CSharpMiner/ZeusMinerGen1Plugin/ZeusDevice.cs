@@ -134,7 +134,10 @@ namespace ZeusMiner
 
                 if (this.usbPort != null && this.usbPort.IsOpen)
                 {
-                    LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
+                    if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                    {
+                        LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
+                    }
 
                     this.RestartWorkRequestTimer();
 
@@ -231,7 +234,10 @@ namespace ZeusMiner
                     this.OnInvalidNonce(currentWork);
                 }
 
-                LogHelper.ConsoleLogAsync(string.Format("Device {0} submitting {1} for job {2}.", this.Name, nonce, (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan, LogVerbosity.Verbose);
+                if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                {
+                    LogHelper.ConsoleLog(string.Format("Device {0} submitting {1} for job {2}.", this.Name, nonce, (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan, LogVerbosity.Verbose);
+                }
             }
         }
 

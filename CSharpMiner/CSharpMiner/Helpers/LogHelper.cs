@@ -74,6 +74,11 @@ namespace CSharpMiner.Helpers
 
         private static Object consoleLock = new Object();
 
+        public static bool ShouldDisplay(LogVerbosity verbosity)
+        {
+            return ((int)verbosity <= (int)Verbosity);
+        }
+
         [Conditional("DEBUG")]
         public static void DebugConsoleLogErrorAsync(Object thing)
         {
@@ -82,7 +87,7 @@ namespace CSharpMiner.Helpers
 
         public static void ConsoleLogErrorAsync(Object thing)
         {
-            if (Verbosity != LogVerbosity.VeryQuiet)
+            if (ShouldDisplay(LogVerbosity.Quiet))
             {
                 Task.Factory.StartNew(() =>
                 {
@@ -110,7 +115,7 @@ namespace CSharpMiner.Helpers
 
         public static void ConsoleLogAsync(Object[] things, LogVerbosity verbosity = LogVerbosity.Normal)
         {
-            if ((int)Verbosity >= (int)verbosity)
+            if (ShouldDisplay(verbosity))
             {
                 Task.Factory.StartNew(() =>
                 {
@@ -127,7 +132,7 @@ namespace CSharpMiner.Helpers
 
         public static void ConsoleLog(Object[] things, LogVerbosity verbosity = LogVerbosity.Normal)
         {
-            if ((int)Verbosity >= (int)verbosity)
+            if (ShouldDisplay(verbosity))
             {
                 lock (consoleLock)
                 {
@@ -144,7 +149,7 @@ namespace CSharpMiner.Helpers
 
         public static void ConsoleLogAsync(Object thing, ConsoleColor color, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
         {
-            if ((int)Verbosity >= (int)verbosity)
+            if (ShouldDisplay(verbosity))
             {
                 Task.Factory.StartNew(() =>
                 {
@@ -161,7 +166,7 @@ namespace CSharpMiner.Helpers
 
         public static void ConsoleLogAsync(Object thing, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
         {
-            if ((int)Verbosity >= (int)verbosity)
+            if (ShouldDisplay(verbosity))
             {
                 Task.Factory.StartNew(() =>
                 {
@@ -178,7 +183,7 @@ namespace CSharpMiner.Helpers
 
         public static void ConsoleLogAsync(LogVerbosity verbosity = LogVerbosity.Normal)
         {
-            if ((int)Verbosity >= (int)verbosity)
+            if (ShouldDisplay(verbosity))
             {
                 Task.Factory.StartNew(() =>
                     {
@@ -225,7 +230,7 @@ namespace CSharpMiner.Helpers
         {
             lock(consoleLock)
             {
-                if ((int)Verbosity >= (int)verbosity)
+                if (ShouldDisplay(verbosity))
                 {
                     Console.WriteLine();
                 }
@@ -234,7 +239,7 @@ namespace CSharpMiner.Helpers
 
         private static void WriteToConsoleLog(Object thing, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
         {
-            if ((int)Verbosity >= (int)verbosity)
+            if (ShouldDisplay(verbosity))
             {
                 if (writeLine)
                 {
@@ -249,32 +254,39 @@ namespace CSharpMiner.Helpers
 
         public static void WriteToConsoleLog(Object[] things, LogVerbosity verbosity = LogVerbosity.Normal)
         {
-            foreach (Object thing in things)
+            if (ShouldDisplay(verbosity))
             {
-                Object[] thingArray = thing as Object[];
-
-                if (thingArray != null)
+                foreach (Object thing in things)
                 {
-                    if (thingArray.Length == 3)
+                    Object[] thingArray = thing as Object[];
+
+                    if (thingArray != null)
                     {
-                        if (thingArray[1] is ConsoleColor && thingArray[2] is bool)
+                        if (thingArray.Length == 3)
                         {
-                            WriteToConsoleLog(thingArray[0], (ConsoleColor)thingArray[1], verbosity, (bool)thingArray[2]);
+                            if (thingArray[1] is ConsoleColor && thingArray[2] is bool)
+                            {
+                                WriteToConsoleLog(thingArray[0], (ConsoleColor)thingArray[1], verbosity, (bool)thingArray[2]);
+                            }
+                            else
+                            {
+                                WriteToConsoleLog(thingArray, verbosity);
+                            }
                         }
-                        else
+                        else if (thingArray.Length == 2)
                         {
-                            WriteToConsoleLog(thingArray, verbosity);
-                        }
-                    }
-                    else if (thingArray.Length == 2)
-                    {
-                        if (thingArray[1] is bool)
-                        {
-                            WriteToConsoleLog(thingArray[0], verbosity, (bool)thingArray[1]);
-                        }
-                        else if (thingArray[1] is ConsoleColor)
-                        {
-                            WriteToConsoleLog(thingArray[0], (ConsoleColor)thingArray[1], verbosity);
+                            if (thingArray[1] is bool)
+                            {
+                                WriteToConsoleLog(thingArray[0], verbosity, (bool)thingArray[1]);
+                            }
+                            else if (thingArray[1] is ConsoleColor)
+                            {
+                                WriteToConsoleLog(thingArray[0], (ConsoleColor)thingArray[1], verbosity);
+                            }
+                            else
+                            {
+                                WriteToConsoleLog(thingArray, verbosity);
+                            }
                         }
                         else
                         {
@@ -283,19 +295,15 @@ namespace CSharpMiner.Helpers
                     }
                     else
                     {
-                        WriteToConsoleLog(thingArray, verbosity);
+                        WriteToConsoleLog(thing, verbosity);
                     }
-                }
-                else
-                {
-                    WriteToConsoleLog(thing, verbosity);
                 }
             }
         }
 
         private static void WriteToConsoleLog(Object thing, ConsoleColor color, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
         {
-            if ((int)Verbosity >= (int)verbosity)
+            if (ShouldDisplay(verbosity))
             {
                 Console.ForegroundColor = color;
                 WriteToConsoleLog(thing, verbosity, writeLine);
