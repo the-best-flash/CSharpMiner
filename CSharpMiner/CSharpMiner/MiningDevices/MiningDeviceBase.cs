@@ -106,9 +106,25 @@ namespace CSharpMiner.MiningDevice
         public abstract void StartWork(IPoolWork work);
 
         [OnDeserializing]
-        protected virtual void SetValuesOnDeserializing(StreamingContext context)
+        private void Deserializing(StreamingContext context)
+        {
+            OnDeserializing();
+        }
+
+        protected virtual void OnDeserializing()
         {
             WatchdogTimeout = defaultWatchdogTimeout;
+        }
+
+        [OnDeserialized]
+        private void Deserialized(StreamingContext context)
+        {
+            OnDeserialized();
+        }
+
+        protected virtual void OnDeserialized()
+        {
+
         }
 
         public virtual void Load()

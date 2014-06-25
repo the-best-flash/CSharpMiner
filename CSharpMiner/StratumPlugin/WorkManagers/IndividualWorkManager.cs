@@ -63,7 +63,7 @@ namespace StratumManager
 
         private StratumWork mostRecentWork = null;
 
-        [OnDeserialized]
+        [OnDeserializing]
         private void OnDeserializing(StreamingContext context)
         {
             SetDefaultValues();

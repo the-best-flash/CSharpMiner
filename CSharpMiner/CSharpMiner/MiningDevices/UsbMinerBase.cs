@@ -38,33 +38,30 @@ namespace CSharpMiner.MiningDevice
         private int _pollFrequency;
         [DataMember(Name = "poll")]
         [MiningSetting(ExampleValue = "50", Optional = true, Description = "Milliseconds the thread waits before looking for incoming data. A larger value will decrease the processor usage but shares won't be submitted right away.")]
-        public int PollFrequency
-        {
-            get
-            {
-                if (_pollFrequency == 0)
-                    _pollFrequency = defaultPollTime;
-
-                return _pollFrequency;
-            }
-            set
-            {
-                if (value <= 0)
-                {
-                    _pollFrequency = defaultPollTime;
-                }
-                else
-                {
-                    _pollFrequency = value;
-                }
-            }
-        }
+        public int PollFrequency { get; set; }
 
         protected Thread listenerThread = null;
         protected SerialPort usbPort = null;
         protected IPoolWork pendingWork = null;
 
         private bool continueRunning = true;
+
+        protected override void OnDeserializing()
+        {
+            base.OnDeserialized();
+
+            PollFrequency = defaultPollTime;
+        }
+
+        protected override void OnDeserialized()
+        {
+            base.OnDeserialized();
+
+            if (PollFrequency <= 0)
+            {
+                PollFrequency = defaultPollTime;
+            }
+        }
 
         public override void Load()
         {

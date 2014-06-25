@@ -546,12 +546,18 @@ namespace Stratum
                             {
                                 try
                                 {
+                                    if(str.Contains('['))
+                                    {
+                                        str = str.Replace("[", "(").Replace("]", ")");
+                                    }
+
                                     response = StratumResponse.Deserialize(memStream);
                                 }
                                 catch
                                 {
                                     if (str.Contains('['))
                                     {
+                                        LogHelper.DebugConsoleLog(string.Format("Falling back to manual parsing. Could not parse response: {0}", str));
                                         str = JsonParsingHelper.ConvertToMonoFriendlyJSON(str);
                                         memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
                                         response = StratumResponse.Deserialize(memStream);
@@ -618,12 +624,18 @@ namespace Stratum
                             {
                                 try
                                 {
+                                    if (str.Contains('['))
+                                    {
+                                        str = str.Replace("[", "(").Replace("]", ")");
+                                    }
+
                                     command = StratumRecieveCommand.Deserialize(memStream);
                                 }
                                 catch
                                 {
                                     if (str.Contains('['))
                                     {
+                                        LogHelper.DebugConsoleLog(string.Format("Falling back to manual parsing. Could not parse command: {0}", str));
                                         str = JsonParsingHelper.ConvertToMonoFriendlyJSON(str);
                                         memStream = new MemoryStream(Encoding.ASCII.GetBytes(str));
                                         command = StratumRecieveCommand.Deserialize(memStream);

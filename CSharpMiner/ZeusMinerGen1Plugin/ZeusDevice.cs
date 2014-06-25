@@ -122,7 +122,7 @@ namespace ZeusMiner
             LtcClk = clk;
             Cores = cores;
             WatchdogTimeout = watchdogTimeout;
-            PollFrequency = defaultPollTime;
+            PollFrequency = pollFrequency;
         }
 
         public override void StartWork(IPoolWork work)

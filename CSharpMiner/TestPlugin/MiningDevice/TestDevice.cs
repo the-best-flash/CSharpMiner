@@ -69,5 +69,10 @@ namespace MiningDevice
         {
             throw new NotImplementedException();
         }
+
+        protected override void OnDeserializing()
+        {
+            // Do nothing
+        }
     }
 }
