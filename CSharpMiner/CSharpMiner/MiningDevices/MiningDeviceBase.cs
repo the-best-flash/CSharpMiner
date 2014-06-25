@@ -30,6 +30,9 @@ namespace CSharpMiner.MiningDevice
     [DataContract]
     public abstract class MiningDeviceBase : IMiningDevice
     {
+        private const int defaultWatchdogTimeout = 60;
+        private const int defaultWorkRestartTimeout = 300000;
+
         [DataMember(Name = "timeout")]
         [MiningSetting(ExampleValue = "60", Optional = true, Description = "Number of seconds to wait without response before restarting the device.")]
         public int WatchdogTimeout { get; set; }
@@ -102,6 +105,12 @@ namespace CSharpMiner.MiningDevice
         public abstract void WorkRejected(IPoolWork work);
         public abstract void StartWork(IPoolWork work);
 
+        [OnDeserializing]
+        protected virtual void SetValuesOnDeserializing(StreamingContext context)
+        {
+            WatchdogTimeout = defaultWatchdogTimeout;
+        }
+
         public virtual void Load()
         {
             start = DateTime.Now;
@@ -116,12 +125,12 @@ namespace CSharpMiner.MiningDevice
 
             if (WatchdogTimeout <= 0)
             {
-                WatchdogTimeout = 60; // Default to one minute if not set
+                WatchdogTimeout = defaultWatchdogTimeout; // Default if not set
             }
 
             DestoryWorkRequestTimer();
 
-            this.WorkRequestTimer = new Timer();
+            this.WorkRequestTimer = new Timer(defaultWorkRestartTimeout);
             this.WorkRequestTimer.Elapsed += this.WorkRequestTimerExpired;
             this.WorkRequestTimer.AutoReset = false;
 
@@ -231,6 +240,22 @@ namespace CSharpMiner.MiningDevice
             if (watchdogTimer != null)
             {
                 watchdogTimer.Stop();
+                watchdogTimer.Start();
+            }
+        }
+
+        protected void StopWatchdogTimer()
+        {
+            if(watchdogTimer != null)
+            {
+                watchdogTimer.Stop();
+            }
+        }
+
+        protected void StartWatchdogTimer()
+        {
+            if(watchdogTimer != null)
+            {
                 watchdogTimer.Start();
             }
         }

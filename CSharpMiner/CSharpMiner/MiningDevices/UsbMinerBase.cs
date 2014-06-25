@@ -75,7 +75,7 @@ namespace CSharpMiner.MiningDevice
 
         private void Connect()
         {
-            RestartWatchdogTimer();
+            StopWatchdogTimer();
 
             try
             {
@@ -142,6 +142,8 @@ namespace CSharpMiner.MiningDevice
                         }));
                     this.listenerThread.Start();
                 }
+
+                StartWatchdogTimer();
             }
             catch (Exception e)
             {
