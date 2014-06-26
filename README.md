@@ -226,6 +226,7 @@ Planned Features:
     Ability to connect both SHA265 and Scrypt ASICs at once.
     Add a way for modules to specify dependencies so that the program can avoid loading them if they won't run. This will also allow users to be notified of any missing dependencies.
     Implement stratum reconnection protocol to avoid losing shares during temporary disconnects.
+    Implement stratum suggest difficluty command for suggesting a difficluty on startup.
 
 Known Issues
 ===
