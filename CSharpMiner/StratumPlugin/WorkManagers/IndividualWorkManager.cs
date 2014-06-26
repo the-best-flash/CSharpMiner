@@ -86,23 +86,30 @@ namespace StratumManager
 
         private void OnNTimeUpdate(Object state)
         {
-            if (currentWork != null && nextWork != null)
+            try
             {
-                LogHelper.DebugConsoleLog("Incrementing ntime on work.", ConsoleColor.DarkYellow, LogVerbosity.Normal);
-
-                StratumWork work = this.currentWork.Clone() as StratumWork;
-                work.IncrementTimestamp();
-
-                if (currentWork != nextWork)
+                if (currentWork != null && nextWork != null)
                 {
-                    (nextWork as StratumWork).IncrementTimestamp();
-                }
-                else
-                {
-                    nextWork = work;
-                }
+                    LogHelper.DebugConsoleLog("Incrementing ntime on work.", ConsoleColor.DarkYellow, LogVerbosity.Normal);
 
-                currentWork = work;
+                    StratumWork work = this.currentWork.Clone() as StratumWork;
+                    work.IncrementTimestamp();
+
+                    if (currentWork != nextWork)
+                    {
+                        (nextWork as StratumWork).IncrementTimestamp();
+                    }
+                    else
+                    {
+                        nextWork = work;
+                    }
+
+                    currentWork = work;
+                }
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogError(e);
             }
         }
 
