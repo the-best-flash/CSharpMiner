@@ -290,16 +290,20 @@ namespace CSharpMiner.DeviceManager
             {
                 device.Rejected++;
                 device.RejectedWorkUnits += work.Diff;
-
-                // Fix for bug where some pools will change the difficluty in the middle of a job and expect shares at the new difficluty
-                if(pool.Diff > work.Diff)
-                {
-                    work.Diff = pool.Diff;
-                    StartWork(work, null, true, false);
-                }
             }
             else
             {
+                // Fix for bug where some pools will change the difficluty in the middle of a job and expect shares at the new difficluty
+                if (pool.Diff > work.Diff)
+                {
+                    LogHelper.DebugLogErrorAsync(string.Format("Submitted share with low difficluty while pool diff was different than work diff. P: {0} W: {0}", pool.Diff, work.Diff));
+
+                    LogHelper.DebugConsoleLog("Restarting work on all to attempt to synchronize difficluty.", ConsoleColor.Red, LogVerbosity.Quiet);
+
+                    work.Diff = pool.Diff;
+                    StartWork(work, null, true, false);
+                }
+
                 device.HardwareErrors++;
                 device.DiscardedWorkUnits += work.Diff;
 
