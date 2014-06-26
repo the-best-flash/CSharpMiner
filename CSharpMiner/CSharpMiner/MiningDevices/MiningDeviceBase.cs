@@ -33,6 +33,20 @@ namespace CSharpMiner.MiningDevice
         private const int defaultWatchdogTimeout = 60;
         private const int defaultWorkRestartTimeout = 300000;
 
+        private static Object _serialWriteLock;
+        public static Object SerialWriteLock
+        {
+            get
+            {
+                if(_serialWriteLock == null)
+                {
+                    _serialWriteLock = new object();
+                }
+
+                return _serialWriteLock;
+            }
+        }
+
         [DataMember(Name = "timeout")]
         [MiningSetting(ExampleValue = "60", Optional = true, Description = "Number of seconds to wait without response before restarting the device.")]
         public int WatchdogTimeout { get; set; }

@@ -74,37 +74,11 @@ namespace ZeusMiner
 
                 byte _freqCode = (byte)(_clk * 2 / 3);
 
-                byte[] cmd = CommandPacket;
+                byte[] cmd = _commandPacket;
                 cmd[0] = _freqCode;
                 cmd[1] = (byte)(0xFF - _freqCode);
 
                 HashRate = this.GetExpectedHashrate() * Cores;
-            }
-        }
-
-        private byte[] _eventPacket = null;
-        [IgnoreDataMember]
-        private byte[] EventPacket
-        {
-            get
-            {
-                if (_eventPacket == null)
-                    _eventPacket = new byte[4];
-
-                return _eventPacket;
-            }
-        }
-
-        private byte[] _commandPacket = null;
-        [IgnoreDataMember]
-        private byte[] CommandPacket
-        {
-            get
-            {
-                if (_commandPacket == null)
-                    _commandPacket = new byte[84];
-
-                return _commandPacket;
             }
         }
 
@@ -114,11 +88,28 @@ namespace ZeusMiner
             get { return this.Port; }
         }
 
+        private byte[] _eventPacket = null;
+        private byte[] _commandPacket = null;
         private IPoolWork currentWork = null;
         private int timesNonZero = 0;
 
+        protected override void OnDeserializing()
+        {
+            SetUpDefaultValues();
+
+            base.OnDeserializing();
+        }
+
+        private void SetUpDefaultValues()
+        {
+            _commandPacket = new byte[84];
+            _eventPacket = new byte[4];
+        }
+
         public ZeusDevice(string port, int clk, int cores, int watchdogTimeout, int pollFrequency = defaultPollTime)
         {
+            SetUpDefaultValues();
+
             Port = port;
             LtcClk = clk;
             Cores = cores;
@@ -128,51 +119,64 @@ namespace ZeusMiner
 
         public override void StartWork(IPoolWork work)
         {
-            if (work != null)
+            try
             {
-                timesNonZero = 0;
-                this.RestartWatchdogTimer();
-
-                if (this.usbPort != null && this.usbPort.IsOpen)
+                if (work != null)
                 {
-                    if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                    timesNonZero = 0;
+                    this.RestartWatchdogTimer();
+
+                    if (this.usbPort != null && this.usbPort.IsOpen)
                     {
-                        LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
+                        if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                        {
+                            LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
+                        }
+
+                        this.RestartWorkRequestTimer();
+
+                        int diffCode = 0xFFFF / work.Diff;
+                        byte[] cmd = _commandPacket;
+
+                        cmd[3] = (byte)diffCode;
+                        cmd[2] = (byte)(diffCode >> 8);
+
+                        int offset = 4;
+
+                        // Starting nonce
+                        byte[] nonceBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Swap(string.Format("{0,8:X8}", work.StartingNonce)));
+                        CopyToByteArray(nonceBytes, offset, cmd);
+                        offset += nonceBytes.Length;
+
+                        byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
+                        CopyToByteArray(headerBytes, offset, cmd);
+
+                        LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)));
+
+                        LogHelper.DebugLogToFileAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)), deviceLogFile);
+
+                        // Send work to the miner
+                        this.currentWork = work;
+                        this.usbPort.DiscardInBuffer();
+
+                        lock (UsbMinerBase.SerialWriteLock)
+                        {
+                            this.usbPort.Write(cmd, 0, cmd.Length);
+                        }
                     }
+                    else
+                    {
+                        LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
 
-                    this.RestartWorkRequestTimer();
-
-                    int diffCode = 0xFFFF / work.Diff;
-                    byte[] cmd = CommandPacket;
-
-                    cmd[3] = (byte)diffCode;
-                    cmd[2] = (byte)(diffCode >> 8);
-
-                    int offset = 4;
-
-                    // Starting nonce
-                    byte[] nonceBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Swap(string.Format("{0,8:X8}", work.StartingNonce)));
-                    CopyToByteArray(nonceBytes, offset, cmd);
-                    offset += nonceBytes.Length;
-
-                    byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
-                    CopyToByteArray(headerBytes, offset, cmd);
-
-                    LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)));
-
-                    LogHelper.DebugLogToFileAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)), deviceLogFile);
-
-                    // Send work to the miner
-                    this.currentWork = work;
-                    this.usbPort.DiscardInBuffer();
-                    this.usbPort.Write(cmd, 0, cmd.Length);
+                        this.pendingWork = work;
+                    }
                 }
-                else
-                {
-                    LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogError(e);
 
-                    this.pendingWork = work;
-                }
+                throw e;
             }
         }
 
@@ -198,8 +202,10 @@ namespace ZeusMiner
                 while (sp.BytesToRead >= 4)
                 {
                     this.RestartWatchdogTimer();
-                    sp.Read(EventPacket, 0, 4);
-                    ProcessEventPacket(EventPacket);
+                    if (sp.Read(_eventPacket, 0, 4) == 4)
+                    {
+                        ProcessEventPacket(_eventPacket);
+                    }
                 }
 
                 // Check if there was any left over data
