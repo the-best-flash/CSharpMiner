@@ -36,8 +36,22 @@ namespace Stratum
         public string Version { get; private set; }
         public string NetworkDiff { get; private set; } // nbits
         public int Diff { get; set; }
-        public string Timestamp { get; private set; }
         public int StartingNonce { get; private set; }
+
+        private string _timestamp;
+        public string Timestamp 
+        { 
+            get
+            {
+                return _timestamp;
+            }
+
+            private set
+            {
+                _timestamp = value;
+                this.ClearHeaderData();
+            }
+        }
 
         private string _extranonce1;
         public string Extranonce1
@@ -221,6 +235,15 @@ namespace Stratum
         private string MakeHeader()
         {
             return string.Format("{0}{1}{2}{3}{4}", Version, PreviousHash, MerkleRoot, Timestamp, NetworkDiff);
+        }
+
+        public void IncrementTimestamp()
+        {
+            uint timestamp = Convert.ToUInt32(Timestamp, 8);
+
+            timestamp++;
+
+            Timestamp = string.Format("{0,8:X8}", timestamp);
         }
 
         public IPoolWork Clone()

@@ -164,7 +164,7 @@ namespace Stratum
             get
             {
                 int rejectId = RejectErrorId;
-                return (rejectId == -2 || rejectId == 23);
+                return (rejectId == 23);
             }
         }
 

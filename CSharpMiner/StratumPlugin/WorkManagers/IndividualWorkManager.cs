@@ -21,6 +21,7 @@ using CSharpMiner.ModuleLoading;
 using Stratum;
 using System;
 using System.Runtime.Serialization;
+using System.Threading;
 
 namespace StratumManager
 {
@@ -29,6 +30,7 @@ namespace StratumManager
     public class IndividualWorkManager : WorkManagerBase
     {
         private const int defaultWorkRestartTimeout = 180000;
+        private const int nTimeUpdateInterval = 1050;
 
         private static Random _random = null;
         private static Random Random
@@ -63,6 +65,10 @@ namespace StratumManager
 
         private StratumWork mostRecentWork = null;
 
+        private Timer nTimeUpdateTimer;
+
+        private Object startingNonceLock;
+
         [OnDeserializing]
         private void OnDeserializing(StreamingContext context)
         {
@@ -72,6 +78,38 @@ namespace StratumManager
         private void SetDefaultValues()
         {
             AlwaysForceRestart = true;
+
+            nTimeUpdateTimer = new Timer(OnNTimeUpdate, null, System.Threading.Timeout.Infinite, nTimeUpdateInterval);
+
+            startingNonceLock = new Object();
+        }
+
+        private void OnNTimeUpdate(Object state)
+        {
+            if (currentWork != null && nextWork != null)
+            {
+                LogHelper.DebugConsoleLog("Incrementing ntime on work.", ConsoleColor.DarkYellow, LogVerbosity.Normal);
+
+                StratumWork work = this.currentWork.Clone() as StratumWork;
+                work.IncrementTimestamp();
+
+                if (currentWork != nextWork)
+                {
+                    (nextWork as StratumWork).IncrementTimestamp();
+                }
+                else
+                {
+                    nextWork = work;
+                }
+
+                currentWork = work;
+            }
+        }
+
+        protected override void OnNewWork(IPool pool, IPoolWork newWork, bool forceStart)
+        {
+            // Restart the time
+            nTimeUpdateTimer.Change(0, nTimeUpdateInterval);
         }
 
         protected override void SetUpDevice(IMiningDevice d)
@@ -146,15 +184,26 @@ namespace StratumManager
 
         private void StartWorkOnDevice(IMiningDevice device, object[] param, string extranonce1, int extraNonce2Size, int diff)
         {
-            device.StartWork(new StratumWork(param, extranonce1, extraNonce2Size, string.Format("{0,8:X8}", startingNonce), diff));
-            if (startingNonce != int.MaxValue)
+            lock (startingNonceLock)
             {
-                startingNonce++;
+                device.StartWork(new StratumWork(param, extranonce1, extraNonce2Size, string.Format("{0,8:X8}", startingNonce), diff));
+                if (startingNonce != int.MaxValue)
+                {
+                    startingNonce++;
+                }
+                else
+                {
+                    startingNonce = 0;
+                }
             }
-            else
-            {
-                startingNonce = 0;
-            }
+        }
+
+        public override void Stop()
+        {
+            base.Stop();
+
+            // Stop the timer
+            nTimeUpdateTimer.Change(System.Threading.Timeout.Infinite, nTimeUpdateInterval);
         }
     }
 }

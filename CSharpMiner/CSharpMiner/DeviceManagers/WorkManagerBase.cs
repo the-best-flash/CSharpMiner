@@ -123,8 +123,15 @@ namespace CSharpMiner.DeviceManager
                             nextWork = newWork;
                         }
                     }
+
+                    OnNewWork(pool, newWork, forceStart);
                 }
             }
+        }
+
+        protected virtual void OnNewWork(IPool pool, IPoolWork newWork, bool forceStart)
+        {
+            // Do nothing
         }
 
         public virtual void SubmitWork(IMiningDevice device, IPoolWork work, string nonce)
@@ -290,7 +297,7 @@ namespace CSharpMiner.DeviceManager
 
         protected virtual void OnWorkRejected(IPool pool, IPoolWork work, IMiningDevice device, IShareResponse response)
         {
-            if (!response.IsLowDifficlutyShare && !response.RejectReason.Contains("low difficulty"))
+            if (!response.IsLowDifficlutyShare && !response.RejectReason.Contains("low difficulty") && !response.RejectReason.Contains("above target"))
             {
                 device.Rejected++;
                 device.RejectedWorkUnits += work.Diff;
