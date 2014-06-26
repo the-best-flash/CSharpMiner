@@ -189,7 +189,7 @@ Expect high reject rates (5 - 10%) until I implement a method of verifying the c
 Error Logging
 ===
 
-With the "-log" parameter you can control where the program outputs error logs. By default, it will log to err.log in the current working directory.
+With the "-log" parameter you can control where the program logs errors. By default, it will log to err.log in the current working directory.
 
 If you run into a bug the error log can help me debug it. There will also be an error log with "_secondary" appended to the file name. (ex. err._secondary.log) This contains a log of almost every exception thrown by the program and can be quite large if you run into a lot of errors. You should only submit this file in a bug report if I need more context. 
 
