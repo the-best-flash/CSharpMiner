@@ -28,6 +28,8 @@ namespace CSharpMiner.ModuleLoading
 {
     public static class ModuleLoader
     {
+        private const string CSharpMinerDllFile = "CSharpMiner.dll";
+
         private static string _moduleFolder = "bin";
         public static string ModuleFolder
         {
@@ -35,7 +37,7 @@ namespace CSharpMiner.ModuleLoading
             {
                 return _moduleFolder;
             }
-            
+
             set
             {
                 _moduleFolder = value;
@@ -54,29 +56,32 @@ namespace CSharpMiner.ModuleLoading
                         LogHelper.DebugConsoleLog(string.Format("Loading modules from {0}...", ModuleFolder));
                         foreach (string filename in Directory.EnumerateFiles(ModuleFolder))
                         {
-                            LogHelper.DebugConsoleLog(string.Format("Attempting to load assembly {0}", filename));
-
-                            Assembly assembly = null;
-
-                            try
+                            if (!filename.EndsWith(CSharpMinerDllFile))
                             {
-                                assembly = Assembly.LoadFrom(filename);
-                                LogHelper.DebugConsoleLog(string.Format("Successfully loaded assembly {0}", filename));
-                            }
-                            catch (BadImageFormatException)
-                            {
-                                LogHelper.DebugConsoleLog(string.Format("{0} is not an assembly...", filename));
-                            }
+                                LogHelper.DebugConsoleLog(string.Format("Attempting to load assembly {0}", filename));
 
-                            if(assembly != null)
-                            {
-                                if(_knownTypes == null)
+                                Assembly assembly = null;
+
+                                try
                                 {
-                                    _knownTypes = GetKnownTypesFromAssembly(assembly);
+                                    assembly = Assembly.LoadFrom(filename);
+                                    LogHelper.DebugConsoleLog(string.Format("Successfully loaded assembly {0}", filename));
                                 }
-                                else
+                                catch (BadImageFormatException)
                                 {
-                                    _knownTypes = _knownTypes.Concat(GetKnownTypesFromAssembly(assembly));
+                                    LogHelper.DebugConsoleLog(string.Format("{0} is not an assembly...", filename));
+                                }
+
+                                if (assembly != null)
+                                {
+                                    if (_knownTypes == null)
+                                    {
+                                        _knownTypes = GetKnownTypesFromAssembly(assembly);
+                                    }
+                                    else
+                                    {
+                                        _knownTypes = _knownTypes.Concat(GetKnownTypesFromAssembly(assembly));
+                                    }
                                 }
                             }
                         }
@@ -130,7 +135,7 @@ namespace CSharpMiner.ModuleLoading
                 OutputTypeInfoList(deviceLoaders, "\t");
             }
 
-            if(hotplugLoaders.Count() > 0)
+            if (hotplugLoaders.Count() > 0)
             {
                 Console.WriteLine("Hotplug Loaders:");
                 Console.WriteLine();
@@ -185,12 +190,12 @@ namespace CSharpMiner.ModuleLoading
                 Console.WriteLine();
                 OuputJSONTypeString(t);
                 Console.WriteLine();
-                
+
                 if (Attribute.IsDefined(t, typeof(MiningModuleAttribute)))
                 {
                     MiningModuleAttribute attrib = Attribute.GetCustomAttribute(t, typeof(MiningModuleAttribute)) as MiningModuleAttribute;
 
-                    if(attrib != null)
+                    if (attrib != null)
                     {
                         Console.WriteLine("    Description: ");
                         Console.WriteLine();
@@ -228,11 +233,11 @@ namespace CSharpMiner.ModuleLoading
                     Console.Write(prop.PropertyType.Name);
                     Console.ResetColor();
 
-                    if(Attribute.IsDefined(prop, typeof(MiningSettingAttribute)))
+                    if (Attribute.IsDefined(prop, typeof(MiningSettingAttribute)))
                     {
                         MiningSettingAttribute attrib = Attribute.GetCustomAttribute(prop, typeof(MiningSettingAttribute)) as MiningSettingAttribute;
- 
-                        if(attrib != null)
+
+                        if (attrib != null)
                         {
                             Console.ForegroundColor = ConsoleColor.DarkMagenta;
                             Console.WriteLine((attrib.Optional ? " (Optional)" : ""));
@@ -259,12 +264,12 @@ namespace CSharpMiner.ModuleLoading
 
         private static string GetJSONFormatExample(Type t, IEnumerable<PropertyInfo> serializableProperties, string append = "", bool showType = true, int recursion = 0)
         {
-            if(recursion > 20) // We're probably infinate looping on a type that contains a type that contains the first type. Or this is an extremely complex JSON object. Either way we can be done now.
+            if (recursion > 20) // We're probably infinate looping on a type that contains a type that contains the first type. Or this is an extremely complex JSON object. Either way we can be done now.
             {
                 return string.Empty;
             }
 
-            if(!t.IsAbstract && Attribute.IsDefined(t, typeof(DataContractAttribute)))
+            if (!t.IsAbstract && Attribute.IsDefined(t, typeof(DataContractAttribute)))
             {
                 StringBuilder sb = new StringBuilder();
 
@@ -277,7 +282,7 @@ namespace CSharpMiner.ModuleLoading
 
                 bool first = true;
 
-                foreach(PropertyInfo info in serializableProperties)
+                foreach (PropertyInfo info in serializableProperties)
                 {
                     if (showType || !first)
                     {
@@ -297,8 +302,8 @@ namespace CSharpMiner.ModuleLoading
                             name = dataMemberAttrib.Name;
                         }
                     }
-                    
-                    if(string.IsNullOrEmpty(name))
+
+                    if (string.IsNullOrEmpty(name))
                     {
                         name = info.Name;
                     }
@@ -321,17 +326,17 @@ namespace CSharpMiner.ModuleLoading
 
             string exampleValue = null;
 
-            if(Attribute.IsDefined(prop, typeof(MiningSettingAttribute)))
+            if (Attribute.IsDefined(prop, typeof(MiningSettingAttribute)))
             {
                 MiningSettingAttribute attrib = Attribute.GetCustomAttribute(prop, typeof(MiningSettingAttribute)) as MiningSettingAttribute;
 
-                if(attrib != null)
+                if (attrib != null)
                 {
                     exampleValue = attrib.ExampleValue;
                 }
             }
 
-            if(string.IsNullOrEmpty(exampleValue))
+            if (string.IsNullOrEmpty(exampleValue))
             {
                 if (propertyType == typeof(string))
                 {
@@ -351,7 +356,7 @@ namespace CSharpMiner.ModuleLoading
                         exampleValue = GetJSONFormatExample(propType, serializableProperties, append + "    ", false, recursion + 1);
                     }
 
-                    if(propertyType.IsArray)
+                    if (propertyType.IsArray)
                     {
                         exampleValue = string.Format("[{0}]", exampleValue);
                     }
@@ -369,7 +374,7 @@ namespace CSharpMiner.ModuleLoading
                 }
             }
 
-            if(propertyType == typeof(string))
+            if (propertyType == typeof(string))
             {
                 return string.Format("\"{0}\"", exampleValue);
             }

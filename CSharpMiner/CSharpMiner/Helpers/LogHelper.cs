@@ -460,5 +460,83 @@ namespace CSharpMiner.Helpers
                 LogErrorSecondary(errors);
             });
         }
+
+        private static Dictionary<string, Object> fileLocks = new Dictionary<string, object>();
+
+        private static Object GetFileLockObject(string filename)
+        {
+            Object lockObj = null;
+
+            if (!fileLocks.TryGetValue(filename, out lockObj))
+            {
+                lockObj = new Object();
+                fileLocks.Add(filename, lockObj);
+            }
+
+            return lockObj;
+        }
+
+        [Conditional("DEBUG")]
+        public static void DebugLogToFileAsync(Object obj, string filename)
+        {
+            Task.Factory.StartNew(() =>
+                {
+                    lock (GetFileLockObject(filename))
+                    {
+                        try
+                        {
+                            using (StreamWriter writer = new StreamWriter(File.Open(filename, FileMode.Append)))
+                            {
+                                writer.WriteLine(string.Format("{0}: {1}", DateTime.Now, obj));
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            LogError(new Object[] {
+                                string.Format("Could not write to file {0}:", filename),
+                                e
+                            });
+                        }
+                    }
+                });
+        }
+
+        [Conditional("DEBUG")]
+        public static void DebugLogToFileAsync(Object[] objects, string filename)
+        {
+            Task.Factory.StartNew(() =>
+                {
+                    lock (GetFileLockObject(filename))
+                    {
+                        try
+                        {
+                            bool first = true;
+
+                            using (StreamWriter writer = new StreamWriter(File.Open(filename, FileMode.Append)))
+                            {
+                                foreach (Object obj in objects)
+                                {
+                                    if (first)
+                                    {
+                                        writer.WriteLine(string.Format("{0}: {1}", DateTime.Now, obj));
+                                        first = false;
+                                    }
+                                    else
+                                    {
+                                        writer.WriteLine(obj);
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            LogError(new Object[] {
+                                string.Format("Could not write to file {0}:", filename),
+                                e
+                            });
+                        }
+                    }
+                });
+        }
     }
 }

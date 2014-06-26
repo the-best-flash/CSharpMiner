@@ -35,6 +35,7 @@ namespace Stratum
     {
         public const string StratumPrefix = "stratum+tcp";
         public const int DefaultExtraNonce2Size = 4;
+        private const string NetworkTrafficLogFile = "network.log";
 
         [DataMember(Name = "url", IsRequired = true)]
         [MiningSetting(ExampleValue = "stratum+tcp://www.somewhere.com:4444", Optional = false, Description = "The URL and port of the mining server.")]
@@ -500,6 +501,17 @@ namespace Stratum
         {
             if (_writeLock != null && connection != null && connection.Connected)
             {
+                #if DEBUG
+                stream.Position = 0;
+                StreamReader reader = new StreamReader(stream);
+                string data = reader.ReadToEnd();
+
+                LogHelper.DebugLogToFileAsync(new Object[] {
+                        string.Format("Sending command to {0}:", this.Url),
+                        data
+                    }, NetworkTrafficLogFile);
+                #endif
+
                 lock (_writeLock)
                 {
                     stream.WriteTo(connection.GetStream());
@@ -577,6 +589,11 @@ namespace Stratum
 
             foreach (string s in commands)
             {
+                LogHelper.DebugLogToFileAsync(new Object[] {
+                    string.Format("Got Command from {0}: ", this.Url),
+                    s
+                }, NetworkTrafficLogFile);
+
                 if (!string.IsNullOrWhiteSpace(s))
                 {
                     if (!s.Trim().EndsWith("}"))

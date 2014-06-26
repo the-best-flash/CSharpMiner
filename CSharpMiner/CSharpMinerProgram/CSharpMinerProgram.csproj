@@ -51,6 +51,7 @@
     <ProjectReference Include="..\CSharpMiner\CSharpMiner.csproj">
       <Project>{0ee026b7-8a64-4d56-985f-ac200d577784}</Project>
       <Name>CSharpMiner</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
