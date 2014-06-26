@@ -195,21 +195,6 @@ namespace Stratum
                 throw e;
             }
 
-            LogHelper.DebugConsoleLogAsync(new Object[] {
-                "Work:",
-                string.Format("  nonce1: {0}", Extranonce1),
-                string.Format("  nonce2: {0}", Extranonce2),
-                string.Format("  nonce2_size: {0}", ExtraNonce2Size),
-                string.Format("  diff: {0}", Diff),
-                string.Format("  id: {0}", JobId),
-                string.Format("  prevHash: {0}", PreviousHash),
-                string.Format("  coinb1: {0}", Coinbase1),
-                string.Format("  coinb2: {0}", Coinbase2),
-                string.Format("  version: {0}", Version),
-                string.Format("  nbits: {0}", NetworkDiff),
-                string.Format("  ntime: {0}", Timestamp)
-            });
-
             LogHelper.DebugLogToFileAsync(new Object[] {
                 "Work:",
                 string.Format("  nonce1: {0}", Extranonce1),

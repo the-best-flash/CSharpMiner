@@ -90,21 +90,20 @@ namespace StratumManager
             {
                 if (this.currentWork != null && this.nextWork != null)
                 {
-                    StratumWork work = this.currentWork.Clone() as StratumWork;
-                    work.IncrementTimestamp();
+                    #if DEBUG
+                    string old = (this.currentWork as StratumWork).Timestamp;
+                    #endif
 
-                    LogHelper.DebugConsoleLog(string.Format("Incrementing ntime on work. Old: {0} New: {1}", (currentWork as StratumWork).Timestamp, work.Timestamp), ConsoleColor.DarkYellow, LogVerbosity.Normal);
-
-                    if (currentWork != nextWork)
+                    if (this.currentWork != this.nextWork)
                     {
                         (this.nextWork as StratumWork).IncrementTimestamp();
                     }
-                    else
-                    {
-                        this.nextWork = work;
-                    }
 
-                    this.currentWork = work;
+                    (this.currentWork as StratumWork).IncrementTimestamp();
+
+                    #if DEBUG
+                    LogHelper.DebugConsoleLog(string.Format("Incrementing ntime on work. Old: {0} New: {1}", old, (this.currentWork as StratumWork).Timestamp), ConsoleColor.DarkYellow, LogVerbosity.Normal);
+                    #endif
                 }
             }
             catch (Exception e)
