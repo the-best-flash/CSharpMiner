@@ -30,7 +30,6 @@ namespace StratumManager
     public class IndividualWorkManager : WorkManagerBase
     {
         private const int defaultWorkRestartTimeout = 180000;
-        private const int nTimeUpdateInterval = 1050;
 
         private static Random _random = null;
         private static Random Random
@@ -65,9 +64,10 @@ namespace StratumManager
 
         private StratumWork mostRecentWork = null;
 
-        private Timer nTimeUpdateTimer;
-
         private Object startingNonceLock;
+
+        private DateTime lastWorkRecievedTime;
+        private uint lastReceivedNTime;
 
         [OnDeserializing]
         private void OnDeserializing(StreamingContext context)
@@ -79,43 +79,13 @@ namespace StratumManager
         {
             AlwaysForceRestart = true;
 
-            nTimeUpdateTimer = new Timer(OnNTimeUpdate, null, System.Threading.Timeout.Infinite, nTimeUpdateInterval);
-
             startingNonceLock = new Object();
-        }
-
-        private void OnNTimeUpdate(Object state)
-        {
-            try
-            {
-                if (this.currentWork != null && this.nextWork != null)
-                {
-                    #if DEBUG
-                    string old = (this.currentWork as StratumWork).Timestamp;
-                    #endif
-
-                    if (this.currentWork != this.nextWork)
-                    {
-                        (this.nextWork as StratumWork).IncrementTimestamp();
-                    }
-
-                    (this.currentWork as StratumWork).IncrementTimestamp();
-
-                    #if DEBUG
-                    LogHelper.DebugConsoleLog(string.Format("Incrementing ntime on work. Old: {0} New: {1}", old, (this.currentWork as StratumWork).Timestamp), ConsoleColor.DarkYellow, LogVerbosity.Normal);
-                    #endif
-                }
-            }
-            catch (Exception e)
-            {
-                LogHelper.LogError(e);
-            }
         }
 
         protected override void OnNewWork(IPool pool, IPoolWork newWork, bool forceStart)
         {
-            // Restart the time
-            nTimeUpdateTimer.Change(0, nTimeUpdateInterval);
+            lastWorkRecievedTime = DateTime.Now;
+            lastReceivedNTime = Convert.ToUInt32((newWork as StratumWork).Timestamp, 16);
         }
 
         protected override void SetUpDevice(IMiningDevice d)
@@ -190,9 +160,12 @@ namespace StratumManager
 
         private void StartWorkOnDevice(IMiningDevice device, object[] param, string extranonce1, int extraNonce2Size, int diff)
         {
+            string extranonce2 = string.Empty;
+
             lock (startingNonceLock)
             {
-                device.StartWork(new StratumWork(param, extranonce1, extraNonce2Size, string.Format("{0,8:X8}", startingNonce), diff));
+                extranonce2 = string.Format("{0,8:X8}", startingNonce);
+
                 if (startingNonce != int.MaxValue)
                 {
                     startingNonce++;
@@ -202,14 +175,25 @@ namespace StratumManager
                     startingNonce = 0;
                 }
             }
+
+            StratumWork deviceWork = new StratumWork(param, extranonce1, extraNonce2Size, extranonce2, diff);
+
+            #if DEBUG
+            string previous = deviceWork.Timestamp;
+            #endif
+
+            deviceWork.SetTimestamp(lastReceivedNTime + (uint)DateTime.Now.Subtract(lastWorkRecievedTime).TotalSeconds);
+
+            #if DEBUG
+            LogHelper.DebugConsoleLog(string.Format("Update timestamp from {0} to {1}.", previous, deviceWork.Timestamp), ConsoleColor.DarkYellow, LogVerbosity.Quiet);
+            #endif
+
+            device.StartWork(deviceWork);
         }
 
         public override void Stop()
         {
             base.Stop();
-
-            // Stop the timer
-            nTimeUpdateTimer.Change(System.Threading.Timeout.Infinite, nTimeUpdateInterval);
         }
     }
 }

@@ -103,6 +103,8 @@ namespace CSharpMiner.DeviceManager
             {
                 if (newWork != null)
                 {
+                    OnNewWork(pool, newWork, forceStart);
+
                     // Pool asked us to toss out our old work or we don't have any work yet
                     if (forceStart || currentWork == null)
                     {
@@ -123,8 +125,6 @@ namespace CSharpMiner.DeviceManager
                             nextWork = newWork;
                         }
                     }
-
-                    OnNewWork(pool, newWork, forceStart);
                 }
             }
         }

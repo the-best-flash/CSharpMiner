@@ -222,15 +222,11 @@ namespace Stratum
             return string.Format("{0}{1}{2}{3}{4}", Version, PreviousHash, MerkleRoot, Timestamp, NetworkDiff);
         }
 
-        public void IncrementTimestamp()
+        public void SetTimestamp(uint timestamp)
         {
-            uint timestamp = Convert.ToUInt32(this.Timestamp, 16);
-
-            timestamp++;
-
-            string result = string.Format("{0,8:X8}", timestamp);
-            this.CommandArray[7] = result;
-            this.Timestamp = result;
+            string value = string.Format("{0,8:X8}", timestamp);
+            this.CommandArray[7] = value;
+            this.Timestamp = value;
         }
 
         public IPoolWork Clone()
