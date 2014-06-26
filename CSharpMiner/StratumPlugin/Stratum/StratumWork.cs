@@ -135,7 +135,7 @@ namespace Stratum
                 throw e;
             }
 
-            CommandArray = serverCommandArray;
+            CommandArray = serverCommandArray.Clone() as object[];
 
             Extranonce1 = extranonce1;
             ExtraNonce2Size = extranonce2Size;
@@ -239,11 +239,13 @@ namespace Stratum
 
         public void IncrementTimestamp()
         {
-            uint timestamp = Convert.ToUInt32(Timestamp, 16);
+            uint timestamp = Convert.ToUInt32(this.Timestamp, 16);
 
             timestamp++;
 
-            Timestamp = string.Format("{0,8:X8}", timestamp);
+            string result = string.Format("{0,8:X8}", timestamp);
+            this.CommandArray[7] = result;
+            this.Timestamp = result;
         }
 
         public IPoolWork Clone()
