@@ -239,7 +239,7 @@ namespace Stratum
 
         public void IncrementTimestamp()
         {
-            uint timestamp = Convert.ToUInt32(Timestamp, 8);
+            uint timestamp = Convert.ToUInt32(Timestamp, 16);
 
             timestamp++;
 
