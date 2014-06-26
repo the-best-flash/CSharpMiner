@@ -31,6 +31,7 @@ namespace ZeusMiner
     class ZeusDevice : UsbMinerBase, IZeusDeviceSettings
     {
         private const int extraDataThreshold = 2; // Number of times through the main USB reading look that we will allow extra data to sit int he buffer
+        private const string deviceLogFile = "device.log";
 
         private int _cores = 1;
         [DataMember(Name = "cores")]
@@ -158,6 +159,8 @@ namespace ZeusMiner
                     CopyToByteArray(headerBytes, offset, cmd);
 
                     LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)));
+
+                    LogHelper.DebugLogToFileAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)), deviceLogFile);
 
                     // Send work to the miner
                     this.currentWork = work;
