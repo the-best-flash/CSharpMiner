@@ -304,8 +304,9 @@ namespace CSharpMiner.DeviceManager
 
                     LogHelper.DebugConsoleLog("Restarting work on all to attempt to synchronize difficluty.", ConsoleColor.Red, LogVerbosity.Quiet);
 
-                    work.Diff = pool.Diff;
-                    StartNewWork(work);
+                    IPoolWork newWork = work.Clone();
+                    newWork.Diff = pool.Diff;
+                    StartNewWork(newWork);
                 }
 
                 device.HardwareErrors++;

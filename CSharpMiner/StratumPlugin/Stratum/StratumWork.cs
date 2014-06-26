@@ -222,5 +222,10 @@ namespace Stratum
         {
             return string.Format("{0}{1}{2}{3}{4}", Version, PreviousHash, MerkleRoot, Timestamp, NetworkDiff);
         }
+
+        public IPoolWork Clone()
+        {
+            return new StratumWork(this.CommandArray, this.Extranonce1, this.ExtraNonce2Size, this.Extranonce2, this.Diff, this.StartingNonce);
+        }
     }
 }

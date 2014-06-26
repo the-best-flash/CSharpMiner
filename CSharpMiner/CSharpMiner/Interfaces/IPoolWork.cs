@@ -22,5 +22,7 @@ namespace CSharpMiner.Interfaces
         int Diff { get; set; }
         string Header { get; }
         int StartingNonce { get; }
+
+        IPoolWork Clone();
     }
 }
