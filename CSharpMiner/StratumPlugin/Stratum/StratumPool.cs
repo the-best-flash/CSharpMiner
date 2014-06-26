@@ -36,6 +36,7 @@ namespace Stratum
         public const string StratumPrefix = "stratum+tcp";
         public const int DefaultExtraNonce2Size = 4;
         private const string NetworkTrafficLogFile = "network.log";
+        private const string ServerWorkLogFile = "serverWork.log";
 
         [DataMember(Name = "url", IsRequired = true)]
         [MiningSetting(ExampleValue = "stratum+tcp://www.somewhere.com:4444", Optional = false, Description = "The URL and port of the mining server.")]
@@ -846,6 +847,21 @@ namespace Stratum
                     }
 
                     StratumWork work = new StratumWork(_params, this.Extranonce1, this.Extranonce2Size, "00000000", this.Diff);
+
+                    LogHelper.DebugLogToFileAsync(new Object[] {
+                        "Server Work:",
+                        string.Format("  nonce1: {0}", work.Extranonce1),
+                        string.Format("  nonce2: {0}", work.Extranonce2),
+                        string.Format("  nonce2_size: {0}", work.ExtraNonce2Size),
+                        string.Format("  diff: {0}", work.Diff),
+                        string.Format("  id: {0}", work.JobId),
+                        string.Format("  prevHash: {0}", work.PreviousHash),
+                        string.Format("  coinb1: {0}", work.Coinbase1),
+                        string.Format("  coinb2: {0}", work.Coinbase2),
+                        string.Format("  version: {0}", work.Version),
+                        string.Format("  nbits: {0}", work.NetworkDiff),
+                        string.Format("  ntime: {0}", work.Timestamp)
+                    }, ServerWorkLogFile);
 
                     latestWork = work;
 
