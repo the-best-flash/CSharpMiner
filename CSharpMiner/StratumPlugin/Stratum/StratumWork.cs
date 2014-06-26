@@ -33,7 +33,7 @@ namespace Stratum
         public string[] MerkleBranch { get; private set; }
         public string Version { get; private set; }
         public string NetworkDiff { get; private set; } // nbits
-        public int Diff { get; private set; }
+        public int Diff { get; set; }
         public string Timestamp { get; private set; }
         public int StartingNonce { get; private set; }
 

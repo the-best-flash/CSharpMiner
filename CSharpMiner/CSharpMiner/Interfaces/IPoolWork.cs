@@ -19,7 +19,7 @@ namespace CSharpMiner.Interfaces
     public interface IPoolWork
     {
         string JobId { get; }
-        int Diff { get; }
+        int Diff { get; set; }
         string Header { get; }
         int StartingNonce { get; }
     }
