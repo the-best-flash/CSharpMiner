@@ -106,11 +106,7 @@ namespace CSharpMiner.DeviceManager
                     // Pool asked us to toss out our old work or we don't have any work yet
                     if (forceStart || currentWork == null)
                     {
-                        currentWork = newWork;
-                        nextWork = newWork;
-
-                        working = true;
-                        StartWork(newWork, null, true, false);
+                        StartNewWork(newWork);
                     }
                     else // We can keep the old work
                     {
@@ -151,7 +147,7 @@ namespace CSharpMiner.DeviceManager
 
         public void StartWorkOnDevice(IPoolWork work, IMiningDevice device, bool requested)
         {
-            if (nextWork.JobId != currentWork.JobId)
+            if (nextWork.JobId != currentWork.JobId || nextWork.Diff != currentWork.Diff)
             {
                 // Start working on the last thing the server sent us
                 currentWork = nextWork;
@@ -284,6 +280,14 @@ namespace CSharpMiner.DeviceManager
                 });
         }
 
+        protected void StartNewWork(IPoolWork work)
+        {
+            currentWork = work;
+            nextWork = work;
+            working = true;
+            StartWork(work, null, true, false);
+        }
+
         protected virtual void OnWorkRejected(IPool pool, IPoolWork work, IMiningDevice device, IShareResponse response)
         {
             if (!response.IsLowDifficlutyShare && !response.RejectReason.Contains("low difficulty"))
@@ -301,7 +305,7 @@ namespace CSharpMiner.DeviceManager
                     LogHelper.DebugConsoleLog("Restarting work on all to attempt to synchronize difficluty.", ConsoleColor.Red, LogVerbosity.Quiet);
 
                     work.Diff = pool.Diff;
-                    StartWork(work, null, true, false);
+                    StartNewWork(work);
                 }
 
                 device.HardwareErrors++;
