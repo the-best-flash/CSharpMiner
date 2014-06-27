@@ -161,6 +161,8 @@ namespace CSharpMiner.MiningDevice
                     this.Restart();
                 }
             }
+
+            this.OnConnected();
         }
 
         public override void Unload()

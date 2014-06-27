@@ -36,6 +36,17 @@ namespace CSharpMiner
 
         private Object syncLock = new Object();
 
+        public event Action<IPool, IPoolWork, IMiningDevice> WorkAccepted;
+        public event Action<IPool, IPoolWork, IMiningDevice, IShareResponse> WorkRejected;
+        public event Action<IPool, IPoolWork, IMiningDevice> WorkDiscarded; // Usually due to hardware error
+        public event Action<IPool, IPoolWork, bool> NewWorkRecieved;
+        public event Action<IMiningDeviceManager, IMiningDevice> DeviceConnected;
+        public event Action<IMiningDeviceManager, IMiningDevice> DeviceDisconnected;
+        public event Action<IPool> PoolConnected;
+        public event Action<IPool> PoolDisconnected;
+        public event Action<Miner> Started;
+        public event Action<Miner> Stopped;
+
         public IEnumerable<IMiningDeviceManager> MiningManagers
         {
             get
@@ -93,6 +104,15 @@ namespace CSharpMiner
 
                     foreach (IMiningDeviceManager m in config.Managers)
                     {
+                        m.WorkAccepted += this.WorkAccepted;
+                        m.WorkRejected += this.WorkRejected;
+                        m.WorkDiscarded += this.WorkDiscarded;
+                        m.NewWorkRecieved += this.NewWorkRecieved;
+                        m.DeviceConnected += this.DeviceConnected;
+                        m.DeviceDisconnected += this.DeviceDisconnected;
+                        m.PoolConnected += this.PoolConnected;
+                        m.PoolDisconnected += this.PoolDisconnected;
+
                         m.Start();
                     }
                 }
@@ -110,6 +130,11 @@ namespace CSharpMiner
             }
 
             started = true;
+
+            if(this.Started != null)
+            {
+                this.Started(this);
+            }
         }
 
         public void Stop()
@@ -120,11 +145,25 @@ namespace CSharpMiner
                 {
                     foreach (IMiningDeviceManager m in config.Managers)
                     {
+                        m.WorkAccepted -= this.WorkAccepted;
+                        m.WorkRejected -= this.WorkRejected;
+                        m.WorkDiscarded -= this.WorkDiscarded;
+                        m.NewWorkRecieved -= this.NewWorkRecieved;
+                        m.DeviceConnected -= this.DeviceConnected;
+                        m.DeviceDisconnected -= this.DeviceDisconnected;
+                        m.PoolConnected -= this.PoolConnected;
+                        m.PoolDisconnected -= this.PoolDisconnected;
+
                         m.Stop();
                     }
 
                     config = null;
                     started = false;
+                }
+
+                if(this.Stopped != null)
+                {
+                    this.Stopped(this);
                 }
             }
         }

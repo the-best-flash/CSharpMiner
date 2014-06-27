@@ -112,6 +112,7 @@ namespace CSharpMiner.MiningDevice
         public event Action<IMiningDevice> WorkRequested;
         public event Action<IMiningDevice, IPoolWork> InvalidNonce;
         public event Action<IMiningDevice> Disconnected;
+        public event Action<IMiningDevice> Connected;
 
         private DateTime start;
         private Timer watchdogTimer = null;
@@ -251,6 +252,14 @@ namespace CSharpMiner.MiningDevice
                     {
                         this.Disconnected(this);
                     });
+            }
+        }
+
+        protected void OnConnected()
+        {
+            if(this.Connected != null)
+            {
+                this.Connected(this);
             }
         }
 

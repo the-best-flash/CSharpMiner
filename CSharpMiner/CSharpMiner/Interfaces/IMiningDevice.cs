@@ -45,6 +45,7 @@ namespace CSharpMiner.Interfaces
         event Action<IMiningDevice> WorkRequested;
         event Action<IMiningDevice, IPoolWork> InvalidNonce;
         event Action<IMiningDevice> Disconnected;
+        event Action<IMiningDevice> Connected;
 
         void Load();
         void Unload();

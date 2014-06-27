@@ -35,12 +35,13 @@ namespace CSharpMiner.Interfaces
         long NewBlocks { get; }
         int Diff { get; }
 
-        bool Alive { get; }
-        bool Connected { get; }
-        bool Connecting { get; }
+        bool IsAlive { get; }
+        bool IsConnected { get; }
+        bool IsConnecting { get; }
 
         event Action<IPool, IPoolWork, bool> NewWorkRecieved;
         event Action<IPool> Disconnected;
+        event Action<IPool> Connected;
 
         event Action<IPool, IPoolWork, IMiningDevice> WorkAccepted;
         event Action<IPool, IPoolWork, IMiningDevice, IShareResponse> WorkRejected;

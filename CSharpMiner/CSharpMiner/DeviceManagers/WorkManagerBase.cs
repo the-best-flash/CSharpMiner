@@ -97,11 +97,6 @@ namespace CSharpMiner.DeviceManager
 
         private long deviceId = 0;
 
-        protected abstract void StartWork(IPoolWork work, IMiningDevice device, bool restartAll, bool requested);
-        protected abstract void NoWork(IPoolWork oldWork, IMiningDevice device, bool requested);
-        protected abstract void SetUpDevice(IMiningDevice d);
-        protected abstract void OnWorkUpdateTimerExpired();
-
         bool boundPools = false;
 
         Object deviceListLock = new Object();
@@ -115,6 +110,22 @@ namespace CSharpMiner.DeviceManager
         private IPool poolReconnectingTo = null;
 
         private Timer _workUpdateTimer;
+
+        protected abstract void StartWork(IPoolWork work, IMiningDevice device, bool restartAll, bool requested);
+        protected abstract void NoWork(IPoolWork oldWork, IMiningDevice device, bool requested);
+        protected abstract void SetUpDevice(IMiningDevice d);
+        protected abstract void OnWorkUpdateTimerExpired();
+
+        public event Action<IPool, IPoolWork, IMiningDevice> WorkAccepted;
+        public event Action<IPool, IPoolWork, IMiningDevice, IShareResponse> WorkRejected;
+        public event Action<IPool, IPoolWork, IMiningDevice> WorkDiscarded;
+        public event Action<IPool, IPoolWork, bool> NewWorkRecieved;
+        public event Action<IMiningDeviceManager, IMiningDevice> DeviceConnected;
+        public event Action<IMiningDeviceManager, IMiningDevice> DeviceDisconnected;
+        public event Action<IPool> PoolConnected;
+        public event Action<IPool> PoolDisconnected;
+        public event Action<IMiningDeviceManager> Started;
+        public event Action<IMiningDeviceManager> Stopped;
 
         [OnDeserialized]
         private void Deserialized(StreamingContext context)
@@ -174,6 +185,14 @@ namespace CSharpMiner.DeviceManager
 
         public void NewWork(IPool pool, IPoolWork newWork, bool forceStart)
         {
+            if (this.NewWorkRecieved != null)
+            {
+                Task.Factory.StartNew(() =>
+                    {
+                        this.NewWorkRecieved(pool, newWork, forceStart);
+                    });
+            }
+
             longWait = false;
             reconnectionAttempts = 0; // We know that we've connected to something now
             poolReconnectingTo = null;
@@ -217,7 +236,7 @@ namespace CSharpMiner.DeviceManager
 
         public virtual void SubmitWork(IMiningDevice device, IPoolWork work, string nonce)
         {
-            if (started && this.ActivePool != null && currentWork != null && this.ActivePool.Connected)
+            if (started && this.ActivePool != null && currentWork != null && this.ActivePool.IsConnected)
             {
                 Task.Factory.StartNew(() =>
                     {
@@ -226,7 +245,7 @@ namespace CSharpMiner.DeviceManager
 
                 StartWorkOnDevice(work, device, false);
             }
-            else if(this.ActivePool != null && !this.ActivePool.Connected && !this.ActivePool.Connecting)
+            else if(this.ActivePool != null && !this.ActivePool.IsConnected && !this.ActivePool.IsConnecting)
             {
                 //Attempt to connect to another pool
                 this.AttemptPoolReconnect();
@@ -253,6 +272,14 @@ namespace CSharpMiner.DeviceManager
         {
             LogHelper.DebugConsoleLogAsync(string.Format("Device {0} requested new work.", device.Name));
             StartWorkOnDevice(this.currentWork, device, true);
+        }
+
+        protected virtual void OnPoolConnected(IPool pool)
+        {
+            if(this.PoolConnected != null)
+            {
+                this.PoolConnected(pool);
+            }
         }
 
         public virtual void Start()
@@ -282,7 +309,8 @@ namespace CSharpMiner.DeviceManager
             {
                 foreach(IPool pool in this.Pools)
                 {
-                    pool.Disconnected += this.PoolDisconnected;
+                    pool.Connected += OnPoolConnected;
+                    pool.Disconnected += this.OnPoolDisconnected;
                     pool.NewWorkRecieved += this.NewWork;
                     pool.WorkAccepted += this.OnWorkAccepted;
                     pool.WorkRejected += this.OnWorkRejected;
@@ -307,6 +335,11 @@ namespace CSharpMiner.DeviceManager
             }
 
             started = true;
+
+            if(this.Started != null)
+            {
+                this.Started(this);
+            }
         }
 
         private void LoadDevice(IMiningDeviceObject d)
@@ -352,11 +385,30 @@ namespace CSharpMiner.DeviceManager
                         device.WorkRequested += this.RequestWork;
                         device.InvalidNonce += this.InvalidNonce;
 
+                        device.Connected += OnDeviceConnected;
+                        device.Disconnected += OnDeviceDisconnected;
+
                         device.Load();
 
                         this.SetUpDevice(device);
                     }
                 }
+            }
+        }
+
+        protected virtual void OnDeviceConnected(IMiningDevice device)
+        {
+            if(this.DeviceConnected != null)
+            {
+                this.DeviceConnected(this, device);
+            }
+        }
+
+        protected virtual void OnDeviceDisconnected(IMiningDevice device)
+        {
+            if(this.DeviceDisconnected != null)
+            {
+                this.DeviceDisconnected(this, device);
             }
         }
 
@@ -382,6 +434,11 @@ namespace CSharpMiner.DeviceManager
             {
                 device.Rejected++;
                 device.RejectedWorkUnits += work.Diff;
+
+                if(this.WorkRejected != null)
+                {
+                    this.WorkRejected(pool, work, device, response);
+                }
             }
             else
             {
@@ -411,6 +468,11 @@ namespace CSharpMiner.DeviceManager
             }
 
             DisplayDeviceStats(device);
+
+            if(this.WorkDiscarded != null)
+            {
+                this.WorkDiscarded(pool, work, device);
+            }
         }
 
         protected virtual void OnWorkAccepted(IPool pool, IPoolWork work, IMiningDevice device)
@@ -419,6 +481,11 @@ namespace CSharpMiner.DeviceManager
             device.AcceptedWorkUnits += work.Diff;
 
             DisplayDeviceStats(device);
+
+            if(this.WorkAccepted != null)
+            {
+                this.WorkAccepted(pool, work, device);
+            }
         }
 
         private void DisplayDeviceStats(IMiningDevice d)
@@ -456,7 +523,8 @@ namespace CSharpMiner.DeviceManager
             {
                 foreach(IPool pool in this.Pools)
                 {
-                    pool.Disconnected -= this.PoolDisconnected;
+                    pool.Connected -= this.OnPoolConnected;
+                    pool.Disconnected -= this.OnPoolDisconnected;
                     pool.NewWorkRecieved -= this.NewWork;
                     pool.WorkRejected -= this.OnWorkRejected;
                     pool.WorkAccepted -= this.OnWorkAccepted;
@@ -496,6 +564,9 @@ namespace CSharpMiner.DeviceManager
                                 d.ValidNonce -= this.SubmitWork;
                                 d.InvalidNonce -= this.InvalidNonce;
 
+                                d.Connected -= this.OnDeviceConnected;
+                                d.Disconnected -= this.OnDeviceDisconnected;
+
                                 d.Unload();
                             }
                         }
@@ -508,6 +579,11 @@ namespace CSharpMiner.DeviceManager
                     this.ActivePool = null;
                 }
             }
+
+            if(this.Stopped != null)
+            {
+                this.Stopped(this);
+            }
         }
 
         public virtual void InvalidNonce(IMiningDevice device, IPoolWork work)
@@ -519,8 +595,16 @@ namespace CSharpMiner.DeviceManager
             }
         }
 
-        public void PoolDisconnected(IPool pool)
+        public virtual void OnPoolDisconnected(IPool pool)
         {
+            if(this.PoolDisconnected != null)
+            {
+                Task.Factory.StartNew(() =>
+                    {
+                        this.PoolDisconnected(pool);
+                    });
+            }
+
             if (pool != null)
             {
                 LogHelper.ConsoleLogErrorAsync(string.Format("Disconnected from pool {0}", pool.Url));
@@ -544,7 +628,7 @@ namespace CSharpMiner.DeviceManager
                     {
                         lock (reconnectLock)
                         {
-                            if (poolReconnectingTo == null && (this.ActivePool == null || (!this.ActivePool.Connected && !this.ActivePool.Connected)))
+                            if (poolReconnectingTo == null && (this.ActivePool == null || (!this.ActivePool.IsConnected && !this.ActivePool.IsConnected)))
                             {
                                 // TODO: Handle when all pools are unable to be reached
                                 if (this.started)

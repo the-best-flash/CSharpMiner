@@ -51,7 +51,7 @@ namespace Stratum
         public string Password { get; set; }
 
         [IgnoreDataMember]
-        public bool Alive { get; private set; }
+        public bool IsAlive { get; private set; }
 
         [IgnoreDataMember]
         public long Accepted { get; set; }
@@ -90,7 +90,7 @@ namespace Stratum
         public Thread Thread { get; private set; }
 
         [IgnoreDataMember]
-        public bool Connected
+        public bool IsConnected
         {
             get
             {
@@ -106,15 +106,17 @@ namespace Stratum
         }
 
         [IgnoreDataMember]
-        public bool Connecting { get; private set; }
+        public bool IsConnecting { get; private set; }
 
         [IgnoreDataMember]
         public long HardwareErrors { get; set; }
 
         public event Action<IPool, IPoolWork, bool> NewWorkRecieved;
-        public event Action<IPool> Disconnected;
         public event Action<IPool, IPoolWork, IMiningDevice> WorkAccepted;
         public event Action<IPool, IPoolWork, IMiningDevice, IShareResponse> WorkRejected;
+
+        public event Action<IPool> Connected;
+        public event Action<IPool> Disconnected;
 
         private Queue WorkSubmitQueue = null;
         private TcpClient connection = null;
@@ -161,7 +163,7 @@ namespace Stratum
 
         private void InitValues()
         {
-            Alive = false;
+            IsAlive = false;
             Accepted = 0;
             Rejected = 0;
             submissionDisplayLock = new Object();
@@ -209,7 +211,7 @@ namespace Stratum
 
         public void Start()
         {
-            if (!this.Running && !this.Connecting)
+            if (!this.Running && !this.IsConnecting)
             {
                 start = DateTime.Now;
                 Accepted = 0;
@@ -222,7 +224,7 @@ namespace Stratum
                 submissionLock = new Object();
                 _writeLock = new Object();
 
-                this.Connecting = true;
+                this.IsConnecting = true;
 
                 if (this.Thread == null)
                 {
@@ -267,8 +269,8 @@ namespace Stratum
 
             latestWork = null;
 
-            this.Connecting = false;
-            this.Alive = false;
+            this.IsConnecting = false;
+            this.IsAlive = false;
 
             _allowOldWork = true;
             latestWork = null;
@@ -297,7 +299,7 @@ namespace Stratum
                 WorkSubmitQueue = Queue.Synchronized(new Queue());
 
                 this.Running = true;
-                this.Alive = false;
+                this.IsAlive = false;
 
                 this._allowOldWork = true;
                 this.latestWork = null;
@@ -330,7 +332,7 @@ namespace Stratum
                     throw new StratumConnectionFailureException(e);
                 }
 
-                this.Connecting = false;
+                this.IsConnecting = false;
 
                 if (!connection.Connected)
                 {
@@ -385,7 +387,7 @@ namespace Stratum
 
                 if (connection.Connected)
                 {
-                    this.Alive = true;
+                    this.IsAlive = true;
                 }
 
                 // If we recieved work before we started the device manager, give the work to the device manager now
@@ -398,7 +400,7 @@ namespace Stratum
 
                 if (successResponse.Data == null || !successResponse.Data.Equals(true))
                 {
-                    this.Alive = false;
+                    this.IsAlive = false;
 
                     LogHelper.ConsoleLogError(string.Format("Pool Username or Password rejected with: {0}", successResponse.Error));
 
@@ -430,12 +432,17 @@ namespace Stratum
             }
             catch (Exception e)
             {
-                this.Connecting = false;
+                this.IsConnecting = false;
 
                 LogHelper.LogErrorSecondaryAsync(e);
 
                 this.Stop();
                 this.OnDisconnect();
+            }
+
+            if (this.Connected != null)
+            {
+                this.Connected(this);
             }
         }
 
@@ -865,7 +872,7 @@ namespace Stratum
 
                     latestWork = work;
 
-                    if (this.Alive && this.NewWorkRecieved != null && !string.IsNullOrEmpty(this.Extranonce1))
+                    if (this.IsAlive && this.NewWorkRecieved != null && !string.IsNullOrEmpty(this.Extranonce1))
                     {
                         bool forceRestart = (_params != null && _params.Length >= 9 && _params[8] != null && _params[8] is bool ? _params[8].Equals(true) : true);
 

@@ -14,13 +14,24 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using System;
 using System.Collections.Generic;
 
 namespace CSharpMiner.Interfaces
 {
     public interface IMiningDeviceManager
     {
-        IEnumerable<IMiningDevice> LoadedDevices { get; }
+        event Action<IPool, IPoolWork, IMiningDevice> WorkAccepted;
+        event Action<IPool, IPoolWork, IMiningDevice, IShareResponse> WorkRejected;
+        event Action<IPool, IPoolWork, IMiningDevice> WorkDiscarded; // Usually due to hardware error
+        event Action<IPool, IPoolWork, bool> NewWorkRecieved;
+        event Action<IMiningDeviceManager, IMiningDevice> DeviceConnected;
+        event Action<IMiningDeviceManager, IMiningDevice> DeviceDisconnected;
+        event Action<IPool> PoolConnected;
+        event Action<IPool> PoolDisconnected;
+        event Action<IMiningDeviceManager> Started;
+        event Action<IMiningDeviceManager> Stopped;
+
         IPool[] Pools { get; }
 
         void AddNewPool(IPool pool);

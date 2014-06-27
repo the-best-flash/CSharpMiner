@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.DeviceManager;
 using CSharpMiner.Helpers;
 using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
@@ -25,28 +26,27 @@ namespace DeviceManager
 {
     [DataContract]
     [MiningModule(Description = "Since there wasn't any data member information specified the program attempts to auto generate it without descriptions.")]
-    public class TestDeviceManager : IMiningDeviceManager
+    public class TestDeviceManager : WorkManagerBase
     {
+        private bool started = false;
+
         [DataMember(Name = "pools")]
-        public IPool[] Pools { get; set; }
+        public IPool[] PoolCollection { get; set; }
 
         [IgnoreDataMember]
-        public IMiningDevice[] MiningDevices { get; private set; }
+        public override IPool[] Pools
+        {
+            get
+            {
+                return PoolCollection;
+            }
+        }
 
         [IgnoreDataMember]
         public string ExtraNonce1 { get; private set; }
 
         [IgnoreDataMember]
         public Action<string, string, string, string> SubmitWorkAction { get; private set; }
-
-        private bool started = false;
-        [IgnoreDataMember]
-        public bool Started { get { return started; } }
-
-        public IEnumerable<IMiningDevice> LoadedDevices
-        {
-            get { return MiningDevices; }
-        }
 
         public void NewWork(object[] poolWorkData, int diff)
         {
@@ -67,34 +67,28 @@ namespace DeviceManager
             // Do nothing
         }
 
-        public void Start()
+        public override void Start()
         {
-            started = true;
+            base.Start();
 
-            if(Pools.Length > 0)
-            {
-                Pools[0].Disconnected += this.PoolDisconnected;
-                Pools[0].Start();
-            }
+            started = true;
         }
 
-        public void Stop()
+        public override void Stop()
         {
-            if (started && Pools.Length > 0)
-            {
-                Pools[0].Stop();
-            }
+            base.Stop();
 
             started = false;
         }
 
-
-        public void PoolDisconnected(IPool pool)
+        public override void OnPoolDisconnected(IPool pool)
         {
             if (started && Pools.Length > 0)
             {
                 LogHelper.ConsoleLogAsync(string.Format("Pool {0} disconnected...", Pools[0].Url), LogVerbosity.Quiet);
             }
+
+            base.OnPoolDisconnected(pool);
         }
 
         public void RequestWork(int deviceId)
@@ -102,24 +96,24 @@ namespace DeviceManager
             // do nothing
         }
 
-        public void AddNewPool(IPool pool)
+        protected override void StartWork(IPoolWork work, IMiningDevice device, bool restartAll, bool requested)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
-        public void AddNewDevice(IMiningDevice device)
+        protected override void NoWork(IPoolWork oldWork, IMiningDevice device, bool requested)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
-        public void RemovePool(IPool pool)
+        protected override void SetUpDevice(IMiningDevice d)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
-        public void RemoveDevice(IMiningDevice device)
+        protected override void OnWorkUpdateTimerExpired()
         {
-            throw new NotImplementedException();
+            // do nothing
         }
     }
 }
