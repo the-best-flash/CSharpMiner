@@ -34,6 +34,7 @@ namespace CSharpMiner.DeviceManager
         private const int longWaitDisplayTime = 10;
         private const int shortWaitDisplayTime = 30;
         private const int longWaitThreshold = 10;
+        private const int defaultWorkUpdateInterval = 60;
 
         public abstract IPool[] Pools { get; }
 
@@ -54,6 +55,25 @@ namespace CSharpMiner.DeviceManager
     }
 ]")]
         public IMiningDeviceObject[] MiningDevices { get; set; }
+
+        private int _workUpdateTimerInterval;
+
+        [DataMember(Name = "workUpdate")]
+        [MiningSetting(Description="Interval in seconds before forcing devices to start a new work with a new ntime. Can often be left alone. [0 = disabled. Default 60]", ExampleValue="60", Optional=true)]
+        public int WorkUpdateTimerInterval 
+        { 
+            get
+            {
+                return _workUpdateTimerInterval;        
+            }
+
+            set
+            {
+                _workUpdateTimerInterval = value;
+
+                _workUpdateTimer.Change(System.Threading.Timeout.Infinite, value * 1000);
+            }
+        }
 
         [IgnoreDataMember]
         public IPool ActivePool { get; private set; }
@@ -80,6 +100,7 @@ namespace CSharpMiner.DeviceManager
         protected abstract void StartWork(IPoolWork work, IMiningDevice device, bool restartAll, bool requested);
         protected abstract void NoWork(IPoolWork oldWork, IMiningDevice device, bool requested);
         protected abstract void SetUpDevice(IMiningDevice d);
+        protected abstract void OnWorkUpdateTimerExpired();
 
         bool boundPools = false;
 
@@ -91,7 +112,65 @@ namespace CSharpMiner.DeviceManager
         private int waitAttempts = 0;
         private bool longWait = false;
         private bool waitingToReconnect = false;
-        private IPool poolReconnectingTo = null;       
+        private IPool poolReconnectingTo = null;
+
+        private Timer _workUpdateTimer;
+
+        [OnDeserialized]
+        private void Deserialized(StreamingContext context)
+        {
+            this.OnDeserialized();
+        }
+
+        [OnDeserializing]
+        private void Deserializing(StreamingContext context)
+        {
+            this.OnDeserializing();
+        }
+
+        public WorkManagerBase()
+        {
+            SetDefaultValues();
+        }
+
+        protected virtual void OnDeserialized()
+        {
+
+        }
+
+        protected virtual void OnDeserializing()
+        {
+            SetDefaultValues();
+        }
+
+        private void WorkUpdateTimerExipred(Object state)
+        {
+            if(currentWork != nextWork)
+            {
+                currentWork = nextWork;
+            }
+
+            this.OnWorkUpdateTimerExpired();
+        }
+
+        protected void RestartWorkUpdateTimer()
+        {
+            if (this.WorkUpdateTimerInterval > 0)
+            {
+                _workUpdateTimer.Change(0, this.WorkUpdateTimerInterval * 1000);
+            }
+        }
+
+        protected void StopWorkUpdateTimer()
+        {
+            _workUpdateTimer.Change(System.Threading.Timeout.Infinite, 0);
+        }
+
+        private void SetDefaultValues()
+        {
+            _workUpdateTimer = new Timer(this.WorkUpdateTimerExipred, null, System.Threading.Timeout.Infinite, 0);
+            WorkUpdateTimerInterval = defaultWorkUpdateInterval;
+        }
 
         public void NewWork(IPool pool, IPoolWork newWork, bool forceStart)
         {
@@ -103,6 +182,8 @@ namespace CSharpMiner.DeviceManager
             {
                 if (newWork != null)
                 {
+                    RestartWorkUpdateTimer();
+
                     OnNewWork(pool, newWork, forceStart);
 
                     // Pool asked us to toss out our old work or we don't have any work yet

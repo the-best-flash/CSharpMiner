@@ -88,6 +88,14 @@ namespace StratumManager
             lastReceivedNTime = Convert.ToUInt32((newWork as StratumWork).Timestamp, 16);
         }
 
+        protected override void OnWorkUpdateTimerExpired()
+        {
+            if(currentWork != null)
+            {
+                StartWorkOnDevice(currentWork as StratumWork, null, true, false);
+            }
+        }
+
         protected override void SetUpDevice(IMiningDevice d)
         {
             if (d.HashRate > 0)

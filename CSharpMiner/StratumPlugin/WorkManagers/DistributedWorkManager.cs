@@ -54,5 +54,10 @@ namespace StratumManager
         {
             throw new NotImplementedException();
         }
+
+        protected override void OnWorkUpdateTimerExpired()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
