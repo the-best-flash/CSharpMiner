@@ -233,7 +233,8 @@ Known Issues
     
 Known Issues:
 
-    Some mining pools use the stratum difficulty notification protocol to change the difficluty of a previous job. This currently can cause a large number of rejected shares since the miners will be submitting shares at a lower difficluty. I'm working on implementing a system that will restart the local work at the most recent difficluty if a share is rejected due to invalid nonce. 
+    Pool auto failover not working
+    Pool restarting not working
 
 Why make this? 
 ===
