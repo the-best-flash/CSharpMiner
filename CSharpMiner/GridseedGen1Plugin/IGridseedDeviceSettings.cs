@@ -20,11 +20,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ZeusMinerGen1Plugin
+namespace Gridseed
 {
-    public interface IZeusDeviceSettings
+    public interface IGridseedDeviceSettings
     {
-        int Cores { get; set; }
-        int LtcClk { get; set; }
+        int Chips { get; set; }
+        int Frequency { get; set; }
     }
 }

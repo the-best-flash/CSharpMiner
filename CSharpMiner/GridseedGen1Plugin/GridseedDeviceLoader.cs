@@ -14,17 +14,31 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using CSharpMiner.DeviceLoader;
+using CSharpMiner.ModuleLoading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ZeusMinerGen1Plugin
+namespace Gridseed
 {
-    public interface IZeusDeviceSettings
+    [DataContract]
+    class GridseedDeviceLoader : USBDeviceLoader, IGridseedDeviceSettings
     {
-        int Cores { get; set; }
-        int LtcClk { get; set; }
+        [DataMember(Name = "chips", IsRequired = true)]
+        [MiningSetting(ExampleValue = GridseedDevice.chipsExampleString, Optional = false, Description = GridseedDevice.chipsDescriptionString)]
+        public int Chips { get; set; }
+
+        [DataMember(Name = "freq", IsRequired = true)]
+        [MiningSetting(ExampleValue = "850", Optional = false, Description = GridseedDevice.freqDescriptionString)]
+        public int Frequency { get; set; }
+
+        public override IEnumerable<CSharpMiner.Interfaces.IMiningDevice> LoadDevices()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

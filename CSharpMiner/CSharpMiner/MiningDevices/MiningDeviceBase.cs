@@ -30,8 +30,8 @@ namespace CSharpMiner.MiningDevice
     [DataContract]
     public abstract class MiningDeviceBase : IMiningDevice
     {
-        private const int defaultWatchdogTimeout = 60;
-        private const int defaultWorkRestartTimeout = 300000;
+        protected const int defaultWatchdogTimeout = 60;
+        protected const int defaultWorkRestartTimeout = 300000;
 
         private static Object _serialWriteLock;
         public static Object SerialWriteLock
@@ -119,6 +119,11 @@ namespace CSharpMiner.MiningDevice
 
         public abstract void WorkRejected(IPoolWork work);
         public abstract void StartWork(IPoolWork work);
+
+        protected MiningDeviceBase(int watchdogTimeout = defaultWatchdogTimeout)
+        {
+            this.WatchdogTimeout = watchdogTimeout;
+        }
 
         [OnDeserializing]
         private void Deserializing(StreamingContext context)

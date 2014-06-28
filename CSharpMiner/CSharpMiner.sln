@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeusMinerGen1Plugin", "Zeus
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StratumPlugin", "StratumPlugin\StratumPlugin.csproj", "{8FB60CBD-FD04-492A-BAF9-DCC6269ECB03}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GridseedGen1Plugin", "GridseedGen1Plugin\GridseedGen1Plugin.csproj", "{DDDBDE99-D000-4AC3-B0E0-DED1EFE6EBE8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{8FB60CBD-FD04-492A-BAF9-DCC6269ECB03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8FB60CBD-FD04-492A-BAF9-DCC6269ECB03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8FB60CBD-FD04-492A-BAF9-DCC6269ECB03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DDDBDE99-D000-4AC3-B0E0-DED1EFE6EBE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDDBDE99-D000-4AC3-B0E0-DED1EFE6EBE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDDBDE99-D000-4AC3-B0E0-DED1EFE6EBE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDDBDE99-D000-4AC3-B0E0-DED1EFE6EBE8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

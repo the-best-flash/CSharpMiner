@@ -27,12 +27,12 @@ namespace ZeusMiner
     [MiningModule(Description = "Configures many ZeusMiner(Gen1) or GAWMiner(A1) devices at once.")]
     public class ZeusDeviceLoader : USBDeviceLoader, IZeusDeviceSettings
     {
-        [DataMember(Name = "cores")]
-        [MiningSetting(ExampleValue = "6", Optional = false, Description = "Number of ZeusChips in the device.")]
+        [DataMember(Name = ZeusDevice.coresJsonName)]
+        [MiningSetting(ExampleValue = ZeusDevice.coresExampleString, Optional = false, Description = ZeusDevice.coresDescription)]
         public int Cores { get; set; }
 
-        [DataMember(Name = "clock")]
-        [MiningSetting(ExampleValue="328", Description="The clockspeed of the miner. Max = 382", Optional=true)]
+        [DataMember(Name = ZeusDevice.ltcClkJsonName)]
+        [MiningSetting(ExampleValue = ZeusDevice.ltcClkExampleString, Optional = true, Description = ZeusDevice.ltcClkDescription)]
         public int LtcClk { get; set; }
 
         public override IEnumerable<IMiningDevice> LoadDevices()

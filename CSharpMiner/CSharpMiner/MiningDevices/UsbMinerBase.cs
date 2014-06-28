@@ -39,11 +39,20 @@ namespace CSharpMiner.MiningDevice
         [MiningSetting(ExampleValue = "50", Optional = true, Description = "Milliseconds the thread waits before looking for incoming data. A larger value will decrease the processor usage but shares won't be submitted right away.")]
         public int PollFrequency { get; set; }
 
+        [IgnoreDataMember]
+        public abstract int BaudRate { get; }
+
         protected Thread listenerThread = null;
         protected SerialPort usbPort = null;
         protected IPoolWork pendingWork = null;
 
         private bool continueRunning = true;
+
+        public UsbMinerBase(string port, int watchdogTimeout = defaultWatchdogTimeout, int pollFrequency = defaultPollTime) : base(watchdogTimeout)
+        {
+            this.Port = port;
+            this.PollFrequency = pollFrequency;
+        }
 
         protected override void OnDeserializing()
         {
@@ -88,7 +97,7 @@ namespace CSharpMiner.MiningDevice
 
                 try
                 {
-                    usbPort = new SerialPort(Port, GetBaud());
+                    usbPort = new SerialPort(Port, BaudRate);
                     //usbPort.DataReceived += DataReceived; // This works on .NET in windows but not in Mono
                     usbPort.Open();
                     continueRunning = true;
@@ -191,7 +200,6 @@ namespace CSharpMiner.MiningDevice
             }
         }
 
-        public abstract int GetBaud();
         protected abstract void DataReceived(object sender, SerialDataReceivedEventArgs e);
     }
 }

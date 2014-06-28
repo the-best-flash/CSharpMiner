@@ -33,9 +33,18 @@ namespace ZeusMiner
         private const int extraDataThreshold = 2; // Number of times through the main USB reading look that we will allow extra data to sit int he buffer
         private const string deviceLogFile = "device.log";
 
+        internal const string coresJsonName = "cores";
+        internal const string coresExampleString = "6";
+        internal const string coresDescription = "Number of ZeusChips in the device.";
+
+        internal const string ltcClkJsonName = "clock";
+        internal const int ltcClkDefaultValue = 328;
+        internal const string ltcClkExampleString = "328";
+        internal const string ltcClkDescription = "The clockspeed of the miner. Max = 382";
+
         private int _cores = 1;
-        [DataMember(Name = "cores")]
-        [MiningSetting(ExampleValue = "6", Optional = false, Description = "Number of ZeusChips in the device.")]
+        [DataMember(Name = coresJsonName)]
+        [MiningSetting(ExampleValue = coresExampleString, Optional = false, Description = coresDescription)]
         public int Cores
         {
             get
@@ -46,19 +55,19 @@ namespace ZeusMiner
             {
                 _cores = value;
 
-                HashRate = this.GetExpectedHashrate() * Cores;
+                HashRate = this.GetExpectedHashrate();
             }
         }
 
         private int _clk;
-        [DataMember(Name = "clock")]
-        [MiningSetting(ExampleValue = "328", Description = "The clockspeed of the miner. Max = 382", Optional = true)]
-        public int LtcClk 
-        { 
+        [DataMember(Name = ltcClkJsonName)]
+        [MiningSetting(ExampleValue = ltcClkExampleString, Description = ltcClkDescription, Optional = true)]
+        public int LtcClk
+        {
             get
             {
                 if (_clk == 0)
-                    _clk = 328;
+                    _clk = ltcClkDefaultValue;
 
                 return _clk;
             }
@@ -78,7 +87,7 @@ namespace ZeusMiner
                 cmd[0] = _freqCode;
                 cmd[1] = (byte)(0xFF - _freqCode);
 
-                HashRate = this.GetExpectedHashrate() * Cores;
+                HashRate = this.GetExpectedHashrate();
             }
         }
 
@@ -86,6 +95,15 @@ namespace ZeusMiner
         public override string Name
         {
             get { return this.Port; }
+        }
+
+        [IgnoreDataMember]
+        public override int BaudRate
+        {
+            get
+            {
+                return 115200;
+            }
         }
 
         private byte[] _eventPacket = null;
@@ -106,15 +124,13 @@ namespace ZeusMiner
             _eventPacket = new byte[4];
         }
 
-        public ZeusDevice(string port, int clk, int cores, int watchdogTimeout, int pollFrequency = defaultPollTime)
+        public ZeusDevice(string port, int clk, int cores, int watchdogTimeout = defaultWatchdogTimeout, int pollFrequency = defaultPollTime)
+            : base(port, watchdogTimeout, pollFrequency)
         {
             SetUpDefaultValues();
 
-            Port = port;
             LtcClk = clk;
             Cores = cores;
-            WatchdogTimeout = watchdogTimeout;
-            PollFrequency = pollFrequency;
         }
 
         public override void StartWork(IPoolWork work)
@@ -188,16 +204,11 @@ namespace ZeusMiner
             }
         }
 
-        public override int GetBaud()
-        {
-            return 115200;
-        }
-
         protected override void DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             SerialPort sp = sender as SerialPort;
 
-            if(sp != null)
+            if (sp != null)
             {
                 while (sp.BytesToRead >= 4)
                 {
@@ -219,7 +230,7 @@ namespace ZeusMiner
                     // Attempt to prevent a synchronization error in the underlying bytestream
                     sp.DiscardInBuffer();
                 }
-            } 
+            }
         }
 
         private bool ValidateNonce(string nonce)
@@ -230,7 +241,7 @@ namespace ZeusMiner
 
         private void ProcessEventPacket(byte[] packet)
         {
-            if(currentWork != null)
+            if (currentWork != null)
             {
                 string nonce = HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet));
 
@@ -252,7 +263,7 @@ namespace ZeusMiner
 
         protected long GetExpectedHashrate()
         {
-            return (long)(LtcClk * 87.5 * 8);
+            return (long)(LtcClk * 87.5 * 8) * Cores;
         }
 
         public override void WorkRejected(IPoolWork work)
