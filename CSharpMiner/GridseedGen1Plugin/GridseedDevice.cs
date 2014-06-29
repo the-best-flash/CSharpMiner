@@ -204,6 +204,10 @@ namespace Gridseed
                                 LogHelper.ConsoleLog(string.Format("Device {0} submitting {1} for job {2}.", this.Name, nonceString, this._currentWork.JobId), ConsoleColor.DarkCyan, LogVerbosity.Verbose);
                             }
                         }
+                        else
+                        {
+                            LogHelper.DebugConsoleLogError(string.Format("Device {0} discarding share with old task ID. Got {0}. Expected {1}.", taskId, _currentTaskId));
+                        }
                     }
                 }
                 else if(response[1] == 0xAA && response[2] == 0xC0)
