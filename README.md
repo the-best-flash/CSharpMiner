@@ -26,12 +26,6 @@ This is in an Alpha, working state. I have tried it breifly on a few of the most
 
 This should work on Windows, Linux, and OSX. You can run this on .NET or <a href="http://www.mono-project.com/Main_Page">Mono</a>. Mono can run binaries compiled for .NET, but it is recommended that you use a binary compiled for Mono. I have verified that I can run this on Windows and the Debian Linux on my raspberry PI.
 
-If you wish to donate you can donate to the following addresses:
-
-    1DguxkZenDbFY2xMSrYuJBiuYteH6vQTCu (BTC)
-    LX68osgfBkDk3r3tS7hYi8u2cVU2omZc2f (LTC)
-    DAF4pCnyiMVrkAGkmnxk4fzKS2mNjsDpD4 (DOGE)
-
 Compilation
 ===
 
@@ -64,7 +58,7 @@ To run the program under Mono type "mono" before your command line parameters. L
     mono CSharpMiner.exe -c:/path/to/config.conf 
 
 Commands
-==
+===
 
 While running the program you can use the following keyboard commands:
 
@@ -248,3 +242,11 @@ Another goal of this project was to create a mining program that could be run be
 The final goal of this project was to create a mining program written in an Object Oriented language that was easy to modify and compile. Part of this goal is to attempt to make the program without using any libraries outside of the libraries provided as part of the .NET and Mono runtime.
 
 Also, I like programming things in my spare time and I had some mining ASICs. As a result it made sense to write a ASIC mining interface.
+
+Donation
+===
+If you wish to donate you can donate to the following addresses:
+
+    1DguxkZenDbFY2xMSrYuJBiuYteH6vQTCu (BTC)
+    LX68osgfBkDk3r3tS7hYi8u2cVU2omZc2f (LTC)
+    DAF4pCnyiMVrkAGkmnxk4fzKS2mNjsDpD4 (DOGE)
