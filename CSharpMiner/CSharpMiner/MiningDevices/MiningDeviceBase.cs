@@ -260,7 +260,13 @@ namespace CSharpMiner.MiningDevice
             }
         }
 
-        protected void OnConnected()
+        protected virtual bool ValidateNonce(string nonce)
+        {
+            // TODO: Make this do something
+            return true;
+        }
+
+        protected virtual void OnConnected()
         {
             if(this.Connected != null)
             {

@@ -233,12 +233,6 @@ namespace ZeusMiner
             }
         }
 
-        private bool ValidateNonce(string nonce)
-        {
-            // TODO: Make this do something
-            return true;
-        }
-
         private void ProcessEventPacket(byte[] packet)
         {
             if (currentWork != null)
@@ -256,14 +250,14 @@ namespace ZeusMiner
 
                 if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
                 {
-                    LogHelper.ConsoleLog(string.Format("Device {0} submitting {1} for job {2}.", this.Name, nonce, (this.currentWork != null ? this.currentWork.JobId : "null")), ConsoleColor.DarkCyan, LogVerbosity.Verbose);
+                    LogHelper.ConsoleLog(string.Format("Device {0} submitting {1} for job {2}.", this.Name, nonce, this.currentWork.JobId), ConsoleColor.DarkCyan, LogVerbosity.Verbose);
                 }
             }
         }
 
         protected long GetExpectedHashrate()
         {
-            return (long)(LtcClk * 87.5 * 8) * Cores;
+            return (long)(LtcClk * 84.5 * 8) * Cores;
         }
 
         public override void WorkRejected(IPoolWork work)

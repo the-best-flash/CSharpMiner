@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="Configuration\JsonConfiguration.cs" />
     <Compile Include="CSharpMiner.cs" />
+    <Compile Include="Helpers\MathHelper.cs" />
     <Compile Include="Interfaces\IDeviceLoader.cs" />
     <Compile Include="Interfaces\IHotplugLoader.cs" />
     <Compile Include="DeviceLoaders\USBDeviceLoader.cs" />
