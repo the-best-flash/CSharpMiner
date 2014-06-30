@@ -64,15 +64,32 @@ namespace CSharpMiner.DeviceManager
         { 
             get
             {
-                return _workUpdateTimerInterval;        
+                if (_workUpdateTimerInterval > 0)
+                {
+                    return _workUpdateTimerInterval;
+                }
+                else
+                {
+                    return defaultWorkUpdateInterval;
+                }
             }
 
             set
             {
-                _workUpdateTimerInterval = value;
+                if (value > 0)
+                {
+                    _workUpdateTimerInterval = value;
 
-                if(_workUpdateTimer != null)
-                    _workUpdateTimer.Interval = value * 1000;
+                    if (_workUpdateTimer != null)
+                        _workUpdateTimer.Interval = value * 1000;
+                }
+                else
+                {
+                    _workUpdateTimerInterval = defaultWorkUpdateInterval;
+
+                    if (_workUpdateTimer != null)
+                        _workUpdateTimer.Interval = defaultWorkUpdateInterval * 1000;
+                }
             }
         }
 
