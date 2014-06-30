@@ -238,7 +238,7 @@ namespace ZeusMiner
         {
             if (currentWork != null)
             {
-                long nonce = ((long)packet[0] << 24) | ((long)packet[1] << 16) | ((long)packet[2] << 8) | (long)packet[4];
+                long nonce = ((long)packet[0] << 24) | ((long)packet[1] << 16) | ((long)packet[2] << 8) | (long)packet[3];
                 string nonceString = string.Format("{0,8:X8}", nonce);
 
                 if (this.ValidateNonce(nonceString))
