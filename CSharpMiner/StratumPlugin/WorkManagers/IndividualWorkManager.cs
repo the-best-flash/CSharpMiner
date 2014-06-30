@@ -64,7 +64,8 @@ namespace StratumManager
 
         private StratumWork mostRecentWork = null;
 
-        private Object startingNonceLock;
+        private Object extraNonce2Lock;
+        private int currentExtraNonce2 = 0;
 
         private DateTime lastWorkRecievedTime;
         private uint lastReceivedNTime;
@@ -79,7 +80,7 @@ namespace StratumManager
         {
             AlwaysForceRestart = true;
 
-            startingNonceLock = new Object();
+            extraNonce2Lock = new Object();
         }
 
         protected override void OnNewWork(IPool pool, IPoolWork newWork, bool forceStart)
@@ -100,13 +101,11 @@ namespace StratumManager
         {
             if (d.HashRate > 0)
             {
-                double fullHashTimeSec = Int32.MaxValue / (double)d.HashRate; // Hashes devided by Hashes per second yeilds seconds
-                double safeWaitTime = fullHashTimeSec * 0.85 * 0.95; // Assume we lose 15% of our hash rate just in case then only wait until we've covered 95% of the hash space
+                double fullHashTimeSec = 0xFFFFFFFF / (double)d.HashRate; // Hashes devided by Hashes per second yeilds seconds
+                double safeWaitTime = fullHashTimeSec * 0.85 * 0.95; // Assume we have 15% more hash rate then only wait until we've covered 95% of the nonce space
                 d.WorkRequestTimer.Interval = safeWaitTime * 1000; // Convert to milliseconds
             }
         }
-
-        private int startingNonce = 0;
 
         protected override void StartWork(IPoolWork work, IMiningDevice device, bool restartAll, bool requested)
         {
@@ -114,7 +113,7 @@ namespace StratumManager
 
             if (stratumWork != null)
             {
-                startingNonce = Random.Next();
+                currentExtraNonce2 = Random.Next();
                 StartWorkOnDevice(stratumWork, device, (restartAll || (AlwaysForceRestart && (mostRecentWork == null || mostRecentWork.JobId != work.JobId))), requested);
 
                 mostRecentWork = stratumWork;
@@ -170,17 +169,17 @@ namespace StratumManager
         {
             string extranonce2 = string.Empty;
 
-            lock (startingNonceLock)
+            lock (extraNonce2Lock)
             {
-                extranonce2 = string.Format("{0,8:X8}", startingNonce);
+                extranonce2 = string.Format("{0,8:X8}", currentExtraNonce2);
 
-                if (startingNonce != int.MaxValue)
+                if (currentExtraNonce2 != int.MaxValue)
                 {
-                    startingNonce++;
+                    currentExtraNonce2++;
                 }
                 else
                 {
-                    startingNonce = 0;
+                    currentExtraNonce2 = 0;
                 }
             }
 

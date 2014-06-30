@@ -51,6 +51,7 @@ namespace CSharpMiner.Interfaces
         void Unload();
         void Restart();
         void StartWork(IPoolWork work);
+        void StartWork(IPoolWork work, long startingNonce, long endingNonce);
         void WorkRejected(IPoolWork work);
     }
 }

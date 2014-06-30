@@ -58,7 +58,6 @@ namespace MiningDevice
         {
             LogHelper.ConsoleLogAsync(new object[]{
                     string.Format("Miner {0} starting work {1} with:", Path, work.JobId),
-                    string.Format("\tStartNonce:  {0}", work.StartingNonce),
                     string.Format("\tDiff: {0}", work.Diff),
                     string.Format("\tHeader: {0}", work.Header)
                 }, 
@@ -73,6 +72,18 @@ namespace MiningDevice
         protected override void OnDeserializing()
         {
             // Do nothing
+        }
+
+        public override void StartWork(IPoolWork work, long startingNonce, long endingNonce)
+        {
+            LogHelper.ConsoleLogAsync(new object[]{
+                    string.Format("Miner {0} starting work {1} with:", Path, work.JobId),
+                    string.Format("\tDiff: {0}", work.Diff),
+                    string.Format("\tHeader: {0}", work.Header),
+                    string.Format("\tStartNonce: {0,8:X8}", startingNonce),
+                    string.Format("\tEndNonce: {0,8:X8}", endingNonce)
+                },
+                LogVerbosity.Verbose);
         }
     }
 }

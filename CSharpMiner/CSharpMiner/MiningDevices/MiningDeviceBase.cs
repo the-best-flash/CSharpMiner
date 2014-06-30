@@ -119,6 +119,7 @@ namespace CSharpMiner.MiningDevice
 
         public abstract void WorkRejected(IPoolWork work);
         public abstract void StartWork(IPoolWork work);
+        public abstract void StartWork(IPoolWork work, long startingNonce, long endingNonce);
 
         protected MiningDeviceBase(int watchdogTimeout = defaultWatchdogTimeout)
         {

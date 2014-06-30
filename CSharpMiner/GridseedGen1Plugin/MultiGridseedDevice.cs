@@ -38,15 +38,17 @@ namespace Gridseed
         [MiningSetting(ExampleValue = "850", Optional = false, Description = GridseedDevice.freqDescriptionString)]
         public int Frequency { get; set; }
 
-        private int _lastDevices;
+        private int _lastDeviceCount;
         private string _name;
         [IgnoreDataMember]
         public override string Name
         {
             get 
             {
-                if (_name == null || _lastDevices != this.LoadedDevices.Count)
+                if (_name == null || _lastDeviceCount != this.LoadedDevices.Count)
                     _name = string.Format(defaultNameFormat, LoadedDevices.Count);
+
+                _lastDeviceCount = this.LoadedDevices.Count;
 
                 return _name;
             }
@@ -70,6 +72,11 @@ namespace Gridseed
         }
 
         public override void StartWork(CSharpMiner.Interfaces.IPoolWork work)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void StartWork(CSharpMiner.Interfaces.IPoolWork work, long startingNonce, long endingNonce)
         {
             throw new NotImplementedException();
         }

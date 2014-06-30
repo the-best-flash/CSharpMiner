@@ -233,7 +233,7 @@ namespace Gridseed
             CopyWorkToCommandBuffer(work);
         }
 
-        public void StartWork(IPoolWork work, long startingNonce, long endingNonce)
+        public override void StartWork(IPoolWork work, long startingNonce, long endingNonce)
         {
             CopyWorkToCommandBuffer(work, startingNonce, endingNonce);
         }

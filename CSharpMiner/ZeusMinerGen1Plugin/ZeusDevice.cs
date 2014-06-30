@@ -135,6 +135,16 @@ namespace ZeusMiner
 
         public override void StartWork(IPoolWork work)
         {
+            SendWork(work);
+        }
+
+        public override void StartWork(IPoolWork work, long startingNonce, long endingNonce)
+        {
+            SendWork(work, startingNonce);
+        }
+
+        private void SendWork(IPoolWork work, long startingNonce = 0)
+        {
             try
             {
                 if (work != null)
@@ -160,12 +170,14 @@ namespace ZeusMiner
                         int offset = 4;
 
                         // Starting nonce
-                        byte[] nonceBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Swap(string.Format("{0,8:X8}", work.StartingNonce)));
-                        CopyToByteArray(nonceBytes, offset, cmd);
-                        offset += nonceBytes.Length;
+                        cmd[offset] = (byte)startingNonce;
+                        cmd[offset + 1] = (byte)(startingNonce >> 8);
+                        cmd[offset + 2] = (byte)(startingNonce >> 16);
+                        cmd[offset + 3] = (byte)(startingNonce >> 24);
+                        offset += 4;
 
                         byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
-                        CopyToByteArray(headerBytes, offset, cmd);
+                        headerBytes.CopyTo(cmd, offset);
 
                         LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)));
 
@@ -193,14 +205,6 @@ namespace ZeusMiner
                 LogHelper.LogError(e);
 
                 throw e;
-            }
-        }
-
-        private void CopyToByteArray(byte[] src, int offset, byte[] dest)
-        {
-            for (int i = 0; i < src.Length; i++)
-            {
-                dest[i + offset] = src[i];
             }
         }
 

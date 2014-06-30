@@ -36,7 +36,6 @@ namespace Stratum
         public string Version { get; private set; }
         public string NetworkDiff { get; private set; } // nbits
         public int Diff { get; set; }
-        public int StartingNonce { get; private set; }
 
         private string _timestamp;
         public string Timestamp 
@@ -126,7 +125,7 @@ namespace Stratum
             _header = null;
         }
 
-        public StratumWork(Object[] serverCommandArray, string extranonce1, int extranonce2Size, string extranonce2, int diff, int startingNonce = 0)
+        public StratumWork(Object[] serverCommandArray, string extranonce1, int extranonce2Size, string extranonce2, int diff)
         {
             if (serverCommandArray.Length < 8)
             {
@@ -166,8 +165,6 @@ namespace Stratum
             }
 
             Diff = diff;
-
-            StartingNonce = startingNonce;
 
             JobId = serverCommandArray[0] as string;
             PreviousHash = serverCommandArray[1] as string;
@@ -231,7 +228,7 @@ namespace Stratum
 
         public IPoolWork Clone()
         {
-            return new StratumWork(this.CommandArray, this.Extranonce1, this.ExtraNonce2Size, this.Extranonce2, this.Diff, this.StartingNonce);
+            return new StratumWork(this.CommandArray, this.Extranonce1, this.ExtraNonce2Size, this.Extranonce2, this.Diff);
         }
     }
 }

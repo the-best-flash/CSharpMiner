@@ -21,7 +21,6 @@ namespace CSharpMiner.Interfaces
         string JobId { get; }
         int Diff { get; set; }
         string Header { get; }
-        int StartingNonce { get; }
 
         IPoolWork Clone();
     }
