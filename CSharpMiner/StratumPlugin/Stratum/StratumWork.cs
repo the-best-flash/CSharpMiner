@@ -105,6 +105,26 @@ namespace Stratum
             }
         }
 
+        private string _midState = null;
+        public string Midstate
+        {
+            get
+            {
+                if(_midState == null)
+                {
+                    lock (_lock)
+                    {
+                        if (_midState == null) // Just in case a thread was waiting on the lock. No sense in recomputing the midstate
+                        {
+                            _midState = ComputeMidstate();
+                        }
+                    }
+                }
+
+                return _midState;
+            }
+        }
+
         private string _header = null;
         public string Header
         {
@@ -208,6 +228,12 @@ namespace Stratum
             }, WorkLogFile);
         }
 
+        private string ComputeMidstate()
+        {
+            // TODO
+            return string.Empty;
+        }
+
         private string ComputeMerkleRoot()
         {
             string coinbase = string.Format("{0}{1}{2}{3}", Coinbase1, Extranonce1, Extranonce2, Coinbase2);
@@ -226,7 +252,7 @@ namespace Stratum
             this.Timestamp = value;
         }
 
-        public IPoolWork Clone()
+        public object Clone()
         {
             return new StratumWork(this.CommandArray, this.Extranonce1, this.ExtraNonce2Size, this.Extranonce2, this.Diff);
         }

@@ -449,7 +449,7 @@ namespace CSharpMiner.DeviceManager
 
                     LogHelper.DebugConsoleLog("Restarting work on all to attempt to synchronize difficluty.", ConsoleColor.Red, LogVerbosity.Quiet);
 
-                    IPoolWork newWork = work.Clone();
+                    IPoolWork newWork = work.Clone() as IPoolWork;
                     newWork.Diff = pool.Diff;
                     StartNewWork(newWork);
                 }

@@ -14,14 +14,15 @@
     You should have received a copy of the GNU General Public License
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
+using System;
+
 namespace CSharpMiner.Interfaces
 {
-    public interface IPoolWork
+    public interface IPoolWork : ICloneable
     {
         string JobId { get; }
         int Diff { get; set; }
         string Header { get; }
-
-        IPoolWork Clone();
+        string Midstate { get; }
     }
 }
