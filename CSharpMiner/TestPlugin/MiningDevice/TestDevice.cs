@@ -80,8 +80,8 @@ namespace MiningDevice
                     string.Format("Miner {0} starting work {1} with:", Path, work.JobId),
                     string.Format("\tDiff: {0}", work.Diff),
                     string.Format("\tHeader: {0}", work.Header),
-                    string.Format("\tStartNonce: {0,8:X8}", startingNonce),
-                    string.Format("\tEndNonce: {0,8:X8}", endingNonce)
+                    string.Format("\tStartNonce: {0:X8}", startingNonce),
+                    string.Format("\tEndNonce: {0:X8}", endingNonce)
                 },
                 LogVerbosity.Verbose);
         }

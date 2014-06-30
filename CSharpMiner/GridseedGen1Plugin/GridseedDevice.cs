@@ -275,8 +275,8 @@ namespace Gridseed
 
                         if (taskId == _currentTaskId)
                         {
-                            long nonce = ((long)response[4] << 24) | ((long)response[5] << 16) | ((long)response[6] << 8) | (long)response[7];
-                            string nonceString = string.Format("{0,8:X8}", nonce);
+                            long nonce = ((long)response[7] << 24) | ((long)response[6] << 16) | ((long)response[5] << 8) | (long)response[4];
+                            string nonceString = string.Format("{0:X8}", nonce);
 
                             if (this.ValidateNonce(nonceString))
                             {

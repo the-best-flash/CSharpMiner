@@ -171,7 +171,7 @@ namespace StratumManager
 
             lock (extraNonce2Lock)
             {
-                extranonce2 = string.Format("{0,8:X8}", currentExtraNonce2);
+                extranonce2 = string.Format("{0:X8}", currentExtraNonce2);
 
                 if (currentExtraNonce2 != int.MaxValue)
                 {

@@ -221,7 +221,7 @@ namespace Stratum
 
         public void SetTimestamp(uint timestamp)
         {
-            string value = string.Format("{0,8:X8}", timestamp);
+            string value = string.Format("{0:X8}", timestamp);
             this.CommandArray[7] = value;
             this.Timestamp = value;
         }

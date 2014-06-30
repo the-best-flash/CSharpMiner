@@ -252,7 +252,7 @@ namespace ZeusMiner
 
                 if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
                 {
-                    LogHelper.ConsoleLog(string.Format("Device {0} submitting {1} for job {2}.", this.Name, nonce, this.currentWork.JobId), ConsoleColor.DarkCyan, LogVerbosity.Verbose);
+                    LogHelper.ConsoleLog(string.Format("Device {0} submitting {1} for job {2}.", this.Name, nonceString, this.currentWork.JobId), ConsoleColor.DarkCyan, LogVerbosity.Verbose);
                 }
             }
         }
