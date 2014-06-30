@@ -157,6 +157,18 @@ namespace Gridseed
 
         private object _deviceSendLock;
 
+        [OnDeserializing]
+        private void OnDeserializing(StreamingContext context)
+        {
+            this.OnDeserializing();
+        }
+
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            this.OnDeserialized();
+        }
+
         public GridseedDevice(string port, int freq = defaultFreq, int chips = defaultChips, int watchdogTimeout = defaultWatchdogTimeout, int pollFrequency = defaultPollTime)
             : base(port, watchdogTimeout, pollFrequency)
         {

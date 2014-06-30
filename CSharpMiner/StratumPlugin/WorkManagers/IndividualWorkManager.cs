@@ -70,6 +70,18 @@ namespace StratumManager
         private DateTime lastWorkRecievedTime;
         private uint lastReceivedNTime;
 
+        [OnDeserializing]
+        private void OnDeserializing(StreamingContext context)
+        {
+            this.OnDeserializing();
+        }
+
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            this.OnDeserialized();
+        }
+
         protected override void OnDeserializing()
         {
             base.OnDeserializing();
