@@ -71,7 +71,8 @@ namespace CSharpMiner.DeviceManager
             {
                 _workUpdateTimerInterval = value;
 
-                _workUpdateTimer.Change(System.Threading.Timeout.Infinite, value * 1000);
+                if(_workUpdateTimer != null)
+                    _workUpdateTimer.Interval = value * 1000;
             }
         }
 
@@ -109,7 +110,7 @@ namespace CSharpMiner.DeviceManager
         private bool waitingToReconnect = false;
         private IPool poolReconnectingTo = null;
 
-        private Timer _workUpdateTimer;
+        private System.Timers.Timer _workUpdateTimer;
 
         protected abstract void StartWork(IPoolWork work, IMiningDevice device, bool restartAll, bool requested);
         protected abstract void NoWork(IPoolWork oldWork, IMiningDevice device, bool requested);
@@ -154,7 +155,7 @@ namespace CSharpMiner.DeviceManager
             SetDefaultValues();
         }
 
-        private void WorkUpdateTimerExipred(Object state)
+        private void WorkUpdateTimerExipred(object sender, System.Timers.ElapsedEventArgs e)
         {
             if(currentWork != nextWork)
             {
@@ -166,20 +167,27 @@ namespace CSharpMiner.DeviceManager
 
         protected void RestartWorkUpdateTimer()
         {
-            if (this.WorkUpdateTimerInterval > 0)
+            if (this.WorkUpdateTimerInterval > 0 && _workUpdateTimer != null)
             {
-                _workUpdateTimer.Change(0, this.WorkUpdateTimerInterval * 1000);
+                _workUpdateTimer.Stop();
+                _workUpdateTimer.Start();
             }
         }
 
         protected void StopWorkUpdateTimer()
         {
-            _workUpdateTimer.Change(System.Threading.Timeout.Infinite, 0);
+            if (_workUpdateTimer != null)
+            {
+                _workUpdateTimer.Stop();
+            }
         }
 
         private void SetDefaultValues()
         {
-            _workUpdateTimer = new Timer(this.WorkUpdateTimerExipred, null, System.Threading.Timeout.Infinite, 0);
+            _workUpdateTimer = new System.Timers.Timer(defaultWorkUpdateInterval * 1000);
+            _workUpdateTimer.Stop();
+            _workUpdateTimer.Elapsed += this.WorkUpdateTimerExipred;
+
             WorkUpdateTimerInterval = defaultWorkUpdateInterval;
         }
 
@@ -254,17 +262,20 @@ namespace CSharpMiner.DeviceManager
 
         public void StartWorkOnDevice(IPoolWork work, IMiningDevice device, bool requested)
         {
-            if (nextWork.JobId != currentWork.JobId || nextWork.Diff != currentWork.Diff)
+            if (nextWork != null && currentWork != null)
             {
-                // Start working on the last thing the server sent us
-                currentWork = nextWork;
+                if (nextWork.JobId != currentWork.JobId || nextWork.Diff != currentWork.Diff)
+                {
+                    // Start working on the last thing the server sent us
+                    currentWork = nextWork;
 
-                StartWork(nextWork, device, false, requested);
-            }
-            else
-            {
-                working = false;
-                NoWork(work, device, requested);
+                    StartWork(nextWork, device, false, requested);
+                }
+                else
+                {
+                    working = false;
+                    NoWork(work, device, requested);
+                }
             }
         }
 
@@ -284,6 +295,10 @@ namespace CSharpMiner.DeviceManager
 
         public virtual void Start()
         {
+            _workUpdateTimer = new System.Timers.Timer(this.WorkUpdateTimerInterval * 1000);
+            _workUpdateTimer.Stop();
+            _workUpdateTimer.Elapsed += this.WorkUpdateTimerExipred;
+
             reconnectionAttempts = 0;
             waitAttempts = 0;
             longWait = false;
@@ -519,6 +534,13 @@ namespace CSharpMiner.DeviceManager
 
         public virtual void Stop()
         {
+            if (_workUpdateTimer != null)
+            {
+                _workUpdateTimer.Stop();
+                _workUpdateTimer.Elapsed -= this.WorkUpdateTimerExipred;
+                _workUpdateTimer = null;
+            }
+
             if(boundPools)
             {
                 foreach(IPool pool in this.Pools)

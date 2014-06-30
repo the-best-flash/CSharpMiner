@@ -93,6 +93,7 @@ namespace StratumManager
         {
             if(currentWork != null)
             {
+                LogHelper.DebugConsoleLog("Work Update Timer Expired.");
                 StartWorkOnDevice(currentWork as StratumWork, null, true, false);
             }
         }
@@ -113,6 +114,7 @@ namespace StratumManager
 
             if (stratumWork != null)
             {
+                LogHelper.DebugConsoleLog("Starting new work on devices.");
                 currentExtraNonce2 = Random.Next();
                 StartWorkOnDevice(stratumWork, device, (restartAll || (AlwaysForceRestart && (mostRecentWork == null || mostRecentWork.JobId != work.JobId))), requested);
 
@@ -126,6 +128,7 @@ namespace StratumManager
 
             if (stratumWork != null)
             {
+                LogHelper.DebugConsoleLog("No new work, making new work.");
                 StartWorkOnDevice(stratumWork, device, false, requested);
             }
         }

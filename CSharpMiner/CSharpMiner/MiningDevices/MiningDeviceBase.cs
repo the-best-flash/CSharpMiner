@@ -173,7 +173,7 @@ namespace CSharpMiner.MiningDevice
 
             DestoryWatchdogTimer();
 
-            watchdogTimer = new System.Timers.Timer(WatchdogTimeout * 1000);
+            watchdogTimer = new Timer(WatchdogTimeout * 1000);
             watchdogTimer.Elapsed += this.WatchdogExpired;
             watchdogTimer.AutoReset = true;
         }

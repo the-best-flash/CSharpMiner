@@ -46,7 +46,10 @@ namespace CSharpMiner.MiningDevice
 
         protected Thread listenerThread = null;
         protected SerialPort usbPort = null;
+
         protected IPoolWork pendingWork = null;
+        protected long pendingWorkStartNonce = 0;
+        protected long pendingWorkEndNonce = 0xFFFFFFFF;
 
         private bool continueRunning = true;
 
@@ -122,7 +125,7 @@ namespace CSharpMiner.MiningDevice
                 {
                     Task.Factory.StartNew(() =>
                         {
-                            this.StartWork(pendingWork);
+                            this.StartWork(pendingWork, pendingWorkStartNonce, pendingWorkEndNonce);
                             pendingWork = null;
                         });
                 }
@@ -168,6 +171,7 @@ namespace CSharpMiner.MiningDevice
             }
             catch (Exception e)
             {
+                LogHelper.ConsoleLogError(string.Format("Error connecting to device {0}.", this.Name));
                 LogHelper.LogErrorAsync(e);
 
                 if (this.continueRunning)
@@ -179,6 +183,48 @@ namespace CSharpMiner.MiningDevice
             this.IsConnected = true;
 
             this.OnConnected();
+        }
+
+        public override void StartWork(IPoolWork work)
+        {
+            this.StartWorkOnDevice(work, true);
+        }
+
+        public override void StartWork(IPoolWork work, long startingNonce, long endingNonce)
+        {
+            this.StartWorkOnDevice(work, false, startingNonce, endingNonce);
+        }
+
+        private void StartWorkOnDevice(IPoolWork work, bool defaultNonce, long startingNonce = 0, long endingNonce = 0xFFFFFFFF)
+        {
+            if (this.usbPort != null && this.usbPort.IsOpen)
+            {
+                this.RestartWatchdogTimer();
+
+                if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                {
+                    LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
+                }
+
+                this.RestartWorkRequestTimer();
+
+                if (defaultNonce)
+                {
+                    this.SendWorkToDevice(work);
+                }
+                else
+                {
+                    this.SendWorkToDevice(work, startingNonce, endingNonce);
+                }
+            }
+            else
+            {
+                LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
+
+                this.pendingWork = work;
+                this.pendingWorkStartNonce = startingNonce;
+                this.pendingWorkEndNonce = endingNonce;
+            }
         }
 
         public override void Unload()
@@ -211,12 +257,17 @@ namespace CSharpMiner.MiningDevice
 
         protected virtual void SendCommand(byte[] cmd)
         {
-            lock (UsbMinerBase.SerialWriteLock)
+            if (usbPort != null)
             {
-                this.usbPort.Write(cmd, 0, cmd.Length);
+                lock (UsbMinerBase.SerialWriteLock)
+                {
+                    this.usbPort.Write(cmd, 0, cmd.Length);
+                }
             }
         }
 
         protected abstract void DataReceived(object sender, SerialDataReceivedEventArgs e);
+        protected abstract void SendWorkToDevice(IPoolWork work);
+        protected abstract void SendWorkToDevice(IPoolWork work, long startingNonce, long endingNonce);
     }
 }

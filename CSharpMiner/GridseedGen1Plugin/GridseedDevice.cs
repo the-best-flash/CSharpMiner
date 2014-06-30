@@ -24,6 +24,7 @@ using System.IO.Ports;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Gridseed
@@ -73,6 +74,17 @@ namespace Gridseed
                                                     0x00, 0x00, 0x00, 0x00, 
                                                     0x00, 0x00, 0x00, 0x00, 
                                                     0x00, 0x00, 0x00, 0x00 }; // Disable the BTC cores
+
+        private static byte[] getFirmwareVersionCommand = { 0x55, 0xAA, 0xC0, 0x00, 
+                                                            0x90, 0x90, 0x90, 0x90, 
+                                                            0x00, 0x00, 0x00, 0x00, 
+                                                            0x01, 0x00, 0x00, 0x00 }; // Ask the gridseed for its firmware version
+
+        private static byte[] setUARTBpsCommand = { 0x55, 0xAA, 0xEF, 0x20, 
+                                                    0x00, 0xC2, 0x01, 0x00 }; // Set baud 115200
+
+        private static byte[] configUARTCommand = { 0x55, 0xAA, 0xEF, 0x21, 
+                                                    0x80, 0x00, 0x00, 0x18 }; // Set length of time to wait before clearing internal state (~53ms @ 115200 baud?)
 
         private int _chips;
         [DataMember(Name = "chips", IsRequired = true)]
@@ -143,6 +155,8 @@ namespace Gridseed
         private int _currentTaskId;
         private IPoolWork _currentWork;
 
+        private object _deviceSendLock;
+
         public GridseedDevice(string port, int freq = defaultFreq, int chips = defaultChips, int watchdogTimeout = defaultWatchdogTimeout, int pollFrequency = defaultPollTime)
             : base(port, watchdogTimeout, pollFrequency)
         {
@@ -159,8 +173,7 @@ namespace Gridseed
         {
             base.OnDeserializing();
 
-            Chips = defaultChips;
-            Frequency = defaultFreq;
+            SetDefaultValues();
         }
 
         protected override void OnConnected()
@@ -170,56 +183,81 @@ namespace Gridseed
             InitDevice();
         }
 
+        protected override void SendCommand(byte[] cmd)
+        {
+            base.SendCommand(cmd);
+
+            LogHelper.DebugConsoleLog(string.Format("Device {0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)), ConsoleColor.Cyan);
+
+            Thread.Sleep(60);
+        }
+
         private void InitDevice()
         {
-            this.SendCommand(resetDeviceCommand);
-
-            byte[] chipCommand = setChipsCommand.Clone() as byte[];
-
-            if (Chips == 0)
-                Chips = defaultChips;
-
-            int chips = Chips;
-            chipCommand[chipCommand.Length - 8] = (byte)(chips);
-            chipCommand[chipCommand.Length - 7] = (byte)(chips >> 8);
-            chipCommand[chipCommand.Length - 6] = (byte)(chips >> 16);
-            chipCommand[chipCommand.Length - 5] = (byte)(chips >> 24);
-
-            this.SendCommand(chipCommand);
-
-            // Send gridseed settings to device
-            this.SendCommand(disableBtcCommand);
-            this.SendCommand(ltcResetCommand);
-            this.SendCommand(ltcConfigCommand);
-            this.SendCommand(ltcConfigRegCommand);
-
-            if(Frequency < minFreq)
+            lock (this._deviceSendLock)
             {
-                Frequency = defaultFreq;
-            }
+                this.SendCommand(getFirmwareVersionCommand);
 
-            int freqSetting = (byte)(Math.Ceiling(Frequency / fRef) - 1);
-            byte[] freqCommand = coreFreqCommand.Clone() as byte[];
+                this.SendCommand(resetDeviceCommand);
 
-            freqCommand[freqCommand.Length - 1] &= freqMaskHigh;
-            freqCommand[freqCommand.Length - 1] |= (byte)(freqSetting >> 4);
+                byte[] chipCommand = setChipsCommand.Clone() as byte[];
 
-            freqCommand[freqCommand.Length - 2] &= freqMaskLow;
-            freqCommand[freqCommand.Length - 2] |= (byte)(freqSetting << 4);
+                if (Chips == 0)
+                    Chips = defaultChips;
 
-            if (Frequency > maxLowBandFreq)
-            {
-                freqCommand[freqCommand.Length - 1] &= pllBandMask;
-                freqCommand[freqCommand.Length - 1] |= 0x40; // Set the pll high band bit
-            }
-            else
-            {
-                freqCommand[freqCommand.Length - 1] &= pllBandMask; // Clear the pll high band bit
+                int chips = Chips;
+                chipCommand[chipCommand.Length - 8] = (byte)(chips);
+                chipCommand[chipCommand.Length - 7] = (byte)(chips >> 8);
+                chipCommand[chipCommand.Length - 6] = (byte)(chips >> 16);
+                chipCommand[chipCommand.Length - 5] = (byte)(chips >> 24);
+
+                this.SendCommand(chipCommand);
+
+                // Send gridseed settings to device
+                this.SendCommand(ltcResetCommand);
+                this.SendCommand(ltcConfigCommand);
+                this.SendCommand(ltcConfigRegCommand);
+
+                if (Frequency < minFreq)
+                {
+                    Frequency = defaultFreq;
+                }
+
+                int freqSetting = (byte)(Math.Ceiling(Frequency / fRef) - 1);
+                byte[] freqCommand = coreFreqCommand.Clone() as byte[];
+
+                freqCommand[freqCommand.Length - 1] &= freqMaskHigh;
+                freqCommand[freqCommand.Length - 1] |= (byte)(freqSetting >> 4);
+
+                freqCommand[freqCommand.Length - 2] &= freqMaskLow;
+                freqCommand[freqCommand.Length - 2] |= (byte)(freqSetting << 4);
+
+                if (Frequency > maxLowBandFreq)
+                {
+                    freqCommand[freqCommand.Length - 1] &= pllBandMask;
+                    freqCommand[freqCommand.Length - 1] |= 0x40; // Set the pll high band bit
+                }
+                else
+                {
+                    freqCommand[freqCommand.Length - 1] &= pllBandMask; // Clear the pll high band bit
+                }
+
+                this.SendCommand(freqCommand);
+
+                this.SendCommand(disableBtcCommand);
+
+                this.SendCommand(setUARTBpsCommand);
+
+                this.SendCommand(configUARTCommand);
             }
         }
 
         private void SetDefaultValues()
         {
+            _deviceSendLock = new object();
+            Chips = defaultChips;
+            Frequency = defaultFreq;
+
             _currentWork = null;
             _currentTaskId = 0;
             _ResponsePacket = new byte[24];
@@ -242,14 +280,31 @@ namespace Gridseed
 
             if (sp != null)
             {
-                while (sp.BytesToRead >= 24)
+                if (sp.BytesToRead >= 24)
                 {
-                    this.RestartWatchdogTimer();
-                    if (sp.Read(_ResponsePacket, 0, 24) == 24)
+                    while (sp.BytesToRead >= 24)
                     {
-                        if (!ProcessResponsePacket(_ResponsePacket))
+                        this.RestartWatchdogTimer();
+                        if (sp.Read(_ResponsePacket, 0, 24) == 24)
                         {
-                            error = true;
+                            if (!ProcessResponsePacket(_ResponsePacket))
+                            {
+                                error = true;
+                            }
+                        }
+                    }
+                }
+                else if(sp.BytesToRead >= 12)
+                {
+                    while (sp.BytesToRead >= 12)
+                    {
+                        this.RestartWatchdogTimer();
+                        if (sp.Read(_ResponsePacket, 0, 12) == 12)
+                        {
+                            if (!ProcessResponsePacket(_ResponsePacket))
+                            {
+                                error = true;
+                            }
                         }
                     }
                 }
@@ -302,6 +357,8 @@ namespace Gridseed
                 {
                     // Interaction Response
                     // TODO
+
+                    LogHelper.DebugConsoleLog(string.Format("Got response from {0}: {1}", this.Name, HexConversionHelper.ConvertToHexString(response).Substring(0, 24)));
                 }
 
                 return true;
@@ -316,12 +373,12 @@ namespace Gridseed
             this.RequestWork();
         }
 
-        public override void StartWork(IPoolWork work)
+        protected override void SendWorkToDevice(IPoolWork work)
         {
             CopyWorkToCommandBuffer(work);
         }
 
-        public override void StartWork(IPoolWork work, long startingNonce, long endingNonce)
+        protected override void SendWorkToDevice(IPoolWork work, long startingNonce, long endingNonce)
         {
             CopyWorkToCommandBuffer(work, startingNonce, endingNonce);
         }
@@ -375,7 +432,11 @@ namespace Gridseed
             _CommandBuf[154] = (byte)(taskId >> 16);
             _CommandBuf[155] = (byte)(taskId >> 24);
 
-            this.SendCommand(_CommandBuf);
+            lock (this._deviceSendLock)
+            {
+                this.SendCommand(_CommandBuf);
+                Thread.Sleep(60);
+            }
 
             _currentWork = work;
             _currentTaskId = taskId;

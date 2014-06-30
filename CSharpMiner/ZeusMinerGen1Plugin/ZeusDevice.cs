@@ -133,12 +133,12 @@ namespace ZeusMiner
             Cores = cores;
         }
 
-        public override void StartWork(IPoolWork work)
+        protected override void SendWorkToDevice(IPoolWork work)
         {
             SendWork(work);
         }
 
-        public override void StartWork(IPoolWork work, long startingNonce, long endingNonce)
+        protected override void SendWorkToDevice(IPoolWork work, long startingNonce, long endingNonce)
         {
             SendWork(work, startingNonce);
         }
@@ -150,51 +150,34 @@ namespace ZeusMiner
                 if (work != null)
                 {
                     timesNonZero = 0;
-                    this.RestartWatchdogTimer();
 
-                    if (this.usbPort != null && this.usbPort.IsOpen)
-                    {
-                        if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
-                        {
-                            LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
-                        }
+                    int diffCode = 0xFFFF / work.Diff;
+                    byte[] cmd = _commandPacket;
 
-                        this.RestartWorkRequestTimer();
+                    cmd[3] = (byte)diffCode;
+                    cmd[2] = (byte)(diffCode >> 8);
 
-                        int diffCode = 0xFFFF / work.Diff;
-                        byte[] cmd = _commandPacket;
+                    int offset = 4;
 
-                        cmd[3] = (byte)diffCode;
-                        cmd[2] = (byte)(diffCode >> 8);
+                    // Starting nonce
+                    cmd[offset] = (byte)startingNonce;
+                    cmd[offset + 1] = (byte)(startingNonce >> 8);
+                    cmd[offset + 2] = (byte)(startingNonce >> 16);
+                    cmd[offset + 3] = (byte)(startingNonce >> 24);
+                    offset += 4;
 
-                        int offset = 4;
+                    byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
+                    headerBytes.CopyTo(cmd, offset);
 
-                        // Starting nonce
-                        cmd[offset] = (byte)startingNonce;
-                        cmd[offset + 1] = (byte)(startingNonce >> 8);
-                        cmd[offset + 2] = (byte)(startingNonce >> 16);
-                        cmd[offset + 3] = (byte)(startingNonce >> 24);
-                        offset += 4;
+                    LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)));
 
-                        byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
-                        headerBytes.CopyTo(cmd, offset);
+                    LogHelper.DebugLogToFileAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)), deviceLogFile);
 
-                        LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)));
+                    // Send work to the miner
+                    this.currentWork = work;
+                    this.usbPort.DiscardInBuffer();
 
-                        LogHelper.DebugLogToFileAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)), deviceLogFile);
-
-                        // Send work to the miner
-                        this.currentWork = work;
-                        this.usbPort.DiscardInBuffer();
-
-                        this.SendCommand(cmd);
-                    }
-                    else
-                    {
-                        LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
-
-                        this.pendingWork = work;
-                    }
+                    this.SendCommand(cmd);
                 }
             }
             catch (Exception e)
