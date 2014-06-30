@@ -187,10 +187,7 @@ namespace ZeusMiner
                         this.currentWork = work;
                         this.usbPort.DiscardInBuffer();
 
-                        lock (UsbMinerBase.SerialWriteLock)
-                        {
-                            this.usbPort.Write(cmd, 0, cmd.Length);
-                        }
+                        this.SendCommand(cmd);
                     }
                     else
                     {
@@ -241,11 +238,12 @@ namespace ZeusMiner
         {
             if (currentWork != null)
             {
-                string nonce = HexConversionHelper.Swap(HexConversionHelper.ConvertToHexString(packet));
+                long nonce = ((long)packet[4] << 24) | ((long)packet[5] << 16) | ((long)packet[6] << 8) | (long)packet[7];
+                string nonceString = string.Format("{0,8:X8}", nonce);
 
-                if (this.ValidateNonce(nonce))
+                if (this.ValidateNonce(nonceString))
                 {
-                    this.SubmitWork(currentWork, nonce);
+                    this.SubmitWork(currentWork, nonceString);
                 }
                 else
                 {

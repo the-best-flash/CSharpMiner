@@ -42,6 +42,8 @@ namespace CSharpMiner.MiningDevice
         [IgnoreDataMember]
         public abstract int BaudRate { get; }
 
+        public bool IsConnected { get; private set; }
+
         protected Thread listenerThread = null;
         protected SerialPort usbPort = null;
         protected IPoolWork pendingWork = null;
@@ -59,6 +61,7 @@ namespace CSharpMiner.MiningDevice
             base.OnDeserialized();
 
             PollFrequency = defaultPollTime;
+            this.IsConnected = false;
         }
 
         protected override void OnDeserialized()
@@ -80,6 +83,8 @@ namespace CSharpMiner.MiningDevice
 
         private void Connect()
         {
+            this.IsConnected = false;
+
             StopWatchdogTimer();
 
             try
@@ -171,11 +176,15 @@ namespace CSharpMiner.MiningDevice
                 }
             }
 
+            this.IsConnected = true;
+
             this.OnConnected();
         }
 
         public override void Unload()
         {
+            this.IsConnected = false;
+
             base.Unload();
 
             if (continueRunning)
@@ -197,6 +206,14 @@ namespace CSharpMiner.MiningDevice
                 {
                     listenerThread = null;
                 }
+            }
+        }
+
+        protected virtual void SendCommand(byte[] cmd)
+        {
+            lock (UsbMinerBase.SerialWriteLock)
+            {
+                this.usbPort.Write(cmd, 0, cmd.Length);
             }
         }
 
