@@ -80,5 +80,10 @@ namespace Gridseed
         {
             throw new NotImplementedException();
         }
+
+        public override void Reset()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

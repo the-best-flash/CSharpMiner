@@ -39,7 +39,7 @@ namespace Gridseed
         internal const string chipsDescriptionString = "Number of Gridseed chips in the device. [Default = 5, GBlade = 80]";
         internal const string freqDescriptionString = "Core Clock in Mhz. [Default = 700, Recommended Max = 900]";
 
-        private const double fRef = 12.6760; // Estimated value for PLL reference frequency in Mhz
+        private const double fRef = 6.32; // Estimated value for PLL reference frequency in Mhz
         private const byte freqMaskHigh = 0xF0;
         private const byte freqMaskLow = 0x0F;
         private const byte pllBandMask = 0xBF;
@@ -47,7 +47,7 @@ namespace Gridseed
         private const int maxLowBandFreq = 550;
 
         private static byte[] resetDeviceCommand = { 0x55, 0xAA, 0xC0, 0x00, 
-                                                     0xE0, 0xE0, 0xE0, 0xE0, 
+                                                     0x80, 0x80, 0x80, 0x80, 
                                                      0x00, 0x00, 0x00, 0x00, 
                                                      0x01, 0x00, 0x00, 0x00 }; // Ask the CPM to reset the device
 
@@ -57,16 +57,16 @@ namespace Gridseed
                                                   0x01, 0x00, 0x00, 0x00 }; // Tell the CPM how many chips it has (default 5)
 
         private static byte[] ltcResetCommand = { 0x55, 0xAA, 0x1F, 0x28, 
-                                                  0x10, 0x00, 0x00, 0x00 }; // Set SW reset bits low for calculation engine and reporting engine
+                                                  0x16, 0x00, 0x00, 0x00 }; // Set SW reset bits low for calculation engine and reporting engine
 
-        private static byte[] ltcConfigCommand = { 0x55, 0xAA, 0x1F, 0x28, 
-                                                   0x13, 0x00, 0x00, 0x00 }; // Set SW bits high for calc engine and reporting engine, also look for <= target
+        private static byte[] ltcStartCommand = { 0x55, 0xAA, 0x1F, 0x28, 
+                                                  0x17, 0x00, 0x00, 0x00 }; // Set SW bits high for calc engine and reporting engine, also look for <= target
 
         private static byte[] ltcConfigRegCommand = { 0x55, 0xAA, 0xEF, 0x30,
                                                       0x20, 0x00, 0x00, 0x00 }; // Set rpt_p as ltc_rpt (From documentation, not sure what this is) also LTC_CLK = BTC_CLK (No clock division)
 
         private static byte[] coreFreqCommand = { 0x55, 0xAA, 0xEF, 0x00, 
-                                                  0x05, 0x00, 0x70, 0xC3 }; // Default to 700 Mhz, bypass PLL, High band PLL, PLL output clock gate, Apply settings
+                                                  0x05, 0x00, 0x60, 0x98 }; // Default to 850 Mhz, bypass PLL, Low band PLL, PLL output clock gate, Apply settings, Fvco / 2
 
         private static byte[] disableBtcCommand = { 0x55, 0xAA, 0xEF, 0x02, 
                                                     0x00, 0x00, 0x00, 0x00, 
@@ -79,12 +79,6 @@ namespace Gridseed
                                                             0x90, 0x90, 0x90, 0x90, 
                                                             0x00, 0x00, 0x00, 0x00, 
                                                             0x01, 0x00, 0x00, 0x00 }; // Ask the gridseed for its firmware version
-
-        private static byte[] setUARTBpsCommand = { 0x55, 0xAA, 0xEF, 0x20, 
-                                                    0x00, 0xC2, 0x01, 0x00 }; // Set baud 115200
-
-        private static byte[] configUARTCommand = { 0x55, 0xAA, 0xEF, 0x21, 
-                                                    0x80, 0x00, 0x00, 0x18 }; // Set length of time to wait before clearing internal state (~53ms @ 115200 baud?)
 
         private int _chips;
         [DataMember(Name = "chips", IsRequired = true)]
@@ -204,6 +198,14 @@ namespace Gridseed
             Thread.Sleep(60);
         }
 
+        public override void Reset()
+        {
+            this.InitDevice();
+
+            if(this._currentWork != null)
+                this.SendWorkToDevice(this._currentWork, this._lastStartingNonce, this._lastEndingNonce);
+        }
+
         private void InitDevice()
         {
             lock (this._deviceSendLock)
@@ -227,7 +229,8 @@ namespace Gridseed
 
                 // Send gridseed settings to device
                 this.SendCommand(ltcResetCommand);
-                this.SendCommand(ltcConfigCommand);
+                this.SendCommand(ltcStartCommand);
+                this.SendCommand(disableBtcCommand);
                 this.SendCommand(ltcConfigRegCommand);
 
                 if (Frequency < minFreq)
@@ -244,23 +247,7 @@ namespace Gridseed
                 freqCommand[freqCommand.Length - 2] &= freqMaskLow;
                 freqCommand[freqCommand.Length - 2] |= (byte)(freqSetting << 4);
 
-                if (Frequency > maxLowBandFreq)
-                {
-                    freqCommand[freqCommand.Length - 1] &= pllBandMask;
-                    freqCommand[freqCommand.Length - 1] |= 0x40; // Set the pll high band bit
-                }
-                else
-                {
-                    freqCommand[freqCommand.Length - 1] &= pllBandMask; // Clear the pll high band bit
-                }
-
                 this.SendCommand(freqCommand);
-
-                this.SendCommand(disableBtcCommand);
-
-                this.SendCommand(setUARTBpsCommand);
-
-                this.SendCommand(configUARTCommand);
             }
         }
 
@@ -338,9 +325,9 @@ namespace Gridseed
                 {
                     if (_currentWork != null)
                     {
-                        int taskId = (int)(((long)response[8] << 24) | ((long)response[9] << 16) | ((long)response[10] << 8) | (long)response[11]);
+                        int taskId = (int)(((long)response[11] << 24) | ((long)response[10] << 16) | ((long)response[9] << 8) | (long)response[8]);
 
-                        if (taskId == _currentTaskId)
+                        if (taskId >= _currentTaskId)
                         {
                             long nonce = ((long)response[7] << 24) | ((long)response[6] << 16) | ((long)response[5] << 8) | (long)response[4];
                             string nonceString = string.Format("{0:X8}", nonce);
@@ -361,7 +348,7 @@ namespace Gridseed
                         }
                         else
                         {
-                            LogHelper.DebugConsoleLogError(string.Format("Device {0} discarding share with old task ID. Got {0}. Expected {1}.", taskId, _currentTaskId));
+                            LogHelper.DebugConsoleLogError(string.Format("Device {0} discarding share with old task ID. Got {1}. Expected {2}.", this.Name, taskId, _currentTaskId));
                         }
                     }
                 }
@@ -395,8 +382,13 @@ namespace Gridseed
             CopyWorkToCommandBuffer(work, startingNonce, endingNonce);
         }
 
+        private long _lastStartingNonce, _lastEndingNonce;
+
         private void CopyWorkToCommandBuffer(IPoolWork work, long startingNonce = 0x00000000, long endingNonce = 0xFFFFFFFF)
         {
+            _lastEndingNonce = endingNonce;
+            _lastStartingNonce = startingNonce;
+
             int taskId = _currentTaskId + 1;
 
             byte[] headerBytes = HexConversionHelper.ConvertFromHexString(work.Header);
@@ -444,14 +436,15 @@ namespace Gridseed
             _CommandBuf[154] = (byte)(taskId >> 16);
             _CommandBuf[155] = (byte)(taskId >> 24);
 
-            lock (this._deviceSendLock)
-            {
-                this.SendCommand(_CommandBuf);
-                Thread.Sleep(60);
-            }
-
             _currentWork = work;
             _currentTaskId = taskId;
+
+            lock (this._deviceSendLock)
+            {
+                this.SendCommand(ltcResetCommand);
+                this.SendCommand(ltcStartCommand);
+                this.SendCommand(_CommandBuf);
+            }
         }
     }
 }

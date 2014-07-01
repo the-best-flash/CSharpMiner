@@ -262,5 +262,10 @@ namespace ZeusMiner
             LogHelper.DebugConsoleLog(string.Format("Device {0} requesting new work since it had rejected work.", this.Name));
             this.RequestWork();
         }
+
+        public override void Reset()
+        {
+            // DoNothing
+        }
     }
 }

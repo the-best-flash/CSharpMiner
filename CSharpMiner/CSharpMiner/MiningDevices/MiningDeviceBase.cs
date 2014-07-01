@@ -120,6 +120,7 @@ namespace CSharpMiner.MiningDevice
         public abstract void WorkRejected(IPoolWork work);
         public abstract void StartWork(IPoolWork work);
         public abstract void StartWork(IPoolWork work, long startingNonce, long endingNonce);
+        public abstract void Reset();
 
         protected MiningDeviceBase(int watchdogTimeout = defaultWatchdogTimeout)
         {
@@ -278,6 +279,7 @@ namespace CSharpMiner.MiningDevice
         private void WatchdogExpired(object sender, System.Timers.ElapsedEventArgs e)
         {
             LogHelper.ConsoleLogError(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.Name, (double)WatchdogTimeout));
+            this.Reset();
             RequestWork();
         }
 

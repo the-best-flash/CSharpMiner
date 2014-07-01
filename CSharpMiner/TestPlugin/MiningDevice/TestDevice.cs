@@ -85,5 +85,10 @@ namespace MiningDevice
                 },
                 LogVerbosity.Verbose);
         }
+
+        public override void Reset()
+        {
+            LogHelper.ConsoleLog(string.Format("{0} Restarting...", this.Name));
+        }
     }
 }
