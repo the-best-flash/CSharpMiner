@@ -295,7 +295,7 @@ namespace CSharpMiner.DeviceManager
 
         public void RequestWork(IMiningDevice device)
         {
-            LogHelper.DebugConsoleLogAsync(string.Format("Device {0} requested new work.", device.Name));
+            LogHelper.DebugConsoleLog(string.Format("Device {0} requested new work.", device.Name));
             StartWorkOnDevice(this.currentWork, device, true);
         }
 
@@ -474,7 +474,7 @@ namespace CSharpMiner.DeviceManager
                 // Fix for bug where some pools will change the difficluty in the middle of a job and expect shares at the new difficluty
                 if (pool.Diff > work.Diff)
                 {
-                    LogHelper.DebugLogErrorAsync(string.Format("Submitted share with low difficluty while pool diff was different than work diff. P: {0} W: {0}", pool.Diff, work.Diff));
+                    LogHelper.DebugLogError(string.Format("Submitted share with low difficluty while pool diff was different than work diff. P: {0} W: {0}", pool.Diff, work.Diff));
 
                     LogHelper.DebugConsoleLog("Restarting work on all to attempt to synchronize difficluty.", ConsoleColor.Red, LogVerbosity.Quiet);
 
@@ -519,7 +519,7 @@ namespace CSharpMiner.DeviceManager
 
         private void DisplayDeviceStats(IMiningDevice d)
         {
-            LogHelper.ConsoleLogAsync(new Object[] {
+            LogHelper.ConsoleLog(new Object[] {
                     new Object[] {string.Format("Device {0} ", d.Name), false},
                     new Object[] {" ( ", false},
                     new Object[] {d.Accepted, ConsoleColor.Green, false},
@@ -643,8 +643,8 @@ namespace CSharpMiner.DeviceManager
 
             if (pool != null)
             {
-                LogHelper.ConsoleLogErrorAsync(string.Format("Disconnected from pool {0}", pool.Url));
-                LogHelper.LogErrorAsync(string.Format("Disconnected from pool {0}", pool.Url));
+                LogHelper.ConsoleLogError(string.Format("Disconnected from pool {0}", pool.Url));
+                LogHelper.LogError(string.Format("Disconnected from pool {0}", pool.Url));
             }
 
             if (poolReconnectingTo == null || pool == poolReconnectingTo)
@@ -685,7 +685,7 @@ namespace CSharpMiner.DeviceManager
                                         if (waitAttempts > longWaitThreshold)
                                             longWait = true;
 
-                                        LogHelper.ConsoleLogErrorAsync(string.Format("Could not connect to any pools. Waiting {0} {1} before trying again.", (longWait ? longWaitDisplayTime : shortWaitDisplayTime), (longWait ? "minutes" : "sec")));
+                                        LogHelper.ConsoleLogError(string.Format("Could not connect to any pools. Waiting {0} {1} before trying again.", (longWait ? longWaitDisplayTime : shortWaitDisplayTime), (longWait ? "minutes" : "sec")));
 
                                         waitAttempts++;
 
@@ -707,7 +707,7 @@ namespace CSharpMiner.DeviceManager
                                     }
 
                                     this.ActivePool = poolReconnectingTo;
-                                    LogHelper.ConsoleLogAsync(string.Format("Attempting to connect to pool {0}", this.ActivePool.Url));
+                                    LogHelper.ConsoleLog(string.Format("Attempting to connect to pool {0}", this.ActivePool.Url));
                                     this.ActivePool.Start();
 
                                     waitingToReconnect = false;

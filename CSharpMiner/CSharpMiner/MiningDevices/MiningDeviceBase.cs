@@ -277,7 +277,7 @@ namespace CSharpMiner.MiningDevice
 
         private void WatchdogExpired(object sender, System.Timers.ElapsedEventArgs e)
         {
-            LogHelper.ConsoleLogErrorAsync(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.Name, (double)WatchdogTimeout));
+            LogHelper.ConsoleLogError(string.Format("Device {0} hasn't responded for {1} sec. Restarting.", this.Name, (double)WatchdogTimeout));
             RequestWork();
         }
 

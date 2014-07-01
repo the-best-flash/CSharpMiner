@@ -181,9 +181,9 @@ namespace ZeusMiner
                     byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
                     headerBytes.CopyTo(cmd, offset);
 
-                    LogHelper.DebugConsoleLogAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)));
+                    LogHelper.DebugConsoleLog(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)));
 
-                    LogHelper.DebugLogToFileAsync(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)), deviceLogFile);
+                    LogHelper.DebugLogToFile(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)), deviceLogFile);
 
                     // Send work to the miner
                     this.currentWork = work;

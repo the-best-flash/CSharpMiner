@@ -112,13 +112,13 @@ namespace CSharpMiner.MiningDevice
                 }
                 catch (Exception e)
                 {
-                    LogHelper.ConsoleLogErrorAsync(string.Format("Error connecting to {0}.", Port));
+                    LogHelper.ConsoleLogError(string.Format("Error connecting to {0}.", Port));
                     throw new SerialConnectionException(string.Format("Error connecting to {0}: {1}", Port, e), e);
                 }
 
                 if (LogHelper.ShouldDisplay(LogVerbosity.Normal))
                 {
-                    LogHelper.ConsoleLogAsync(string.Format("Successfully connected to {0}.", Port), LogVerbosity.Normal);
+                    LogHelper.ConsoleLog(string.Format("Successfully connected to {0}.", Port), LogVerbosity.Normal);
                 }
 
                 if (this.pendingWork != null)
@@ -153,7 +153,7 @@ namespace CSharpMiner.MiningDevice
                             }
                             catch (Exception e)
                             {
-                                LogHelper.LogErrorAsync(e);
+                                LogHelper.LogError(e);
 
                                 if (this.continueRunning)
                                 {
@@ -172,7 +172,7 @@ namespace CSharpMiner.MiningDevice
             catch (Exception e)
             {
                 LogHelper.ConsoleLogError(string.Format("Error connecting to device {0}.", this.Name));
-                LogHelper.LogErrorAsync(e);
+                LogHelper.LogError(e);
 
                 if (this.continueRunning)
                 {
@@ -203,7 +203,7 @@ namespace CSharpMiner.MiningDevice
 
                 if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
                 {
-                    LogHelper.ConsoleLogAsync(string.Format("Device {0} starting work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
+                    LogHelper.ConsoleLog(string.Format("Device {0} starting work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
                 }
 
                 this.RestartWorkRequestTimer();
@@ -219,7 +219,7 @@ namespace CSharpMiner.MiningDevice
             }
             else
             {
-                LogHelper.DebugConsoleLogAsync(string.Format("Device {0} pending work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
+                LogHelper.DebugConsoleLog(string.Format("Device {0} pending work {1}.", this.Name, work.JobId), LogVerbosity.Verbose);
 
                 this.pendingWork = work;
                 this.pendingWorkStartNonce = startingNonce;

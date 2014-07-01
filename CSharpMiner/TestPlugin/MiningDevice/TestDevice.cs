@@ -44,19 +44,19 @@ namespace MiningDevice
         {
             base.Load();
 
-            LogHelper.ConsoleLogAsync(string.Format("Loading Miner {0}", Path), LogVerbosity.Verbose);
+            LogHelper.ConsoleLog(string.Format("Loading Miner {0}", Path), LogVerbosity.Verbose);
         }
 
         public override void Unload()
         {
             base.Load();
 
-            LogHelper.ConsoleLogAsync(string.Format("Unloading Miner {0}", Path), LogVerbosity.Verbose);
+            LogHelper.ConsoleLog(string.Format("Unloading Miner {0}", Path), LogVerbosity.Verbose);
         }
 
         public override void StartWork(IPoolWork work)
         {
-            LogHelper.ConsoleLogAsync(new object[]{
+            LogHelper.ConsoleLog(new object[]{
                     string.Format("Miner {0} starting work {1} with:", Path, work.JobId),
                     string.Format("\tDiff: {0}", work.Diff),
                     string.Format("\tHeader: {0}", work.Header)
@@ -76,7 +76,7 @@ namespace MiningDevice
 
         public override void StartWork(IPoolWork work, long startingNonce, long endingNonce)
         {
-            LogHelper.ConsoleLogAsync(new object[]{
+            LogHelper.ConsoleLog(new object[]{
                     string.Format("Miner {0} starting work {1} with:", Path, work.JobId),
                     string.Format("\tDiff: {0}", work.Diff),
                     string.Format("\tHeader: {0}", work.Header),

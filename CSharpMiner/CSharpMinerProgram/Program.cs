@@ -32,7 +32,7 @@ namespace CSharpMinerProgram
             WriteUsage();
         }
 
-        static void Main(string[] args)
+        static void RunProgram(string[] args)
         {
             if (args.Length > 3)
             {
@@ -41,19 +41,12 @@ namespace CSharpMinerProgram
             }
 
             string configFilePath = "config.conf";
-            LogHelper.ErrorLogFilePath = "err.log";
 
-            #if DEBUG
-                LogHelper.Verbosity = LogVerbosity.Verbose;
-            #else
-                LogHelper.Verbosity = LogVerbosity.Normal;
-            #endif
-
-            foreach(string arg in args)
+            foreach (string arg in args)
             {
-                if(arg.StartsWith("-c", StringComparison.InvariantCultureIgnoreCase))
+                if (arg.StartsWith("-c", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if(!arg.Contains(':'))
+                    if (!arg.Contains(':'))
                     {
                         LogCompositeParamError("-c");
                         return; // We cannot recover
@@ -62,7 +55,7 @@ namespace CSharpMinerProgram
                     string[] split = arg.Split(':');
                     configFilePath = split[1];
                 }
-                else if(arg.StartsWith("-log", StringComparison.InvariantCultureIgnoreCase))
+                else if (arg.StartsWith("-log", StringComparison.InvariantCultureIgnoreCase))
                 {
                     if (!arg.Contains(':'))
                     {
@@ -73,7 +66,7 @@ namespace CSharpMinerProgram
                     string[] split = arg.Split(':');
                     LogHelper.ErrorLogFilePath = split[1];
                 }
-                else if(arg.StartsWith("-m", StringComparison.InvariantCultureIgnoreCase))
+                else if (arg.StartsWith("-m", StringComparison.InvariantCultureIgnoreCase))
                 {
                     if (!arg.Contains(':'))
                     {
@@ -84,9 +77,9 @@ namespace CSharpMinerProgram
                     string[] split = arg.Split(':');
                     ModuleLoader.ModuleFolder = split[1];
                 }
-                else if(arg.StartsWith("-ls", StringComparison.InvariantCultureIgnoreCase))
+                else if (arg.StartsWith("-ls", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if(!arg.Contains(':'))
+                    if (!arg.Contains(':'))
                     {
                         ModuleLoader.DisplayKnownTypes();
                     }
@@ -107,16 +100,16 @@ namespace CSharpMinerProgram
                     }
 
                     string[] split = arg.Split(':');
-                    
-                    if(split[1].StartsWith("n", StringComparison.InvariantCultureIgnoreCase))
+
+                    if (split[1].StartsWith("n", StringComparison.InvariantCultureIgnoreCase))
                     {
                         LogHelper.Verbosity = LogVerbosity.Normal;
                     }
-                    else if(split[1].StartsWith("q", StringComparison.InvariantCultureIgnoreCase))
+                    else if (split[1].StartsWith("q", StringComparison.InvariantCultureIgnoreCase))
                     {
                         LogHelper.Verbosity = LogVerbosity.Quiet;
                     }
-                    else if(split[1].StartsWith("verb", StringComparison.InvariantCultureIgnoreCase))
+                    else if (split[1].StartsWith("verb", StringComparison.InvariantCultureIgnoreCase))
                     {
                         LogHelper.Verbosity = LogVerbosity.Verbose;
                     }
@@ -193,14 +186,14 @@ namespace CSharpMinerProgram
                 {
                     LogHelper.LogError(e);
 
-                    if(miner != null)
+                    if (miner != null)
                     {
                         miner.Stop();
                     }
                 }
             } while (loop && loaded);
 
-            if(miner != null)
+            if (miner != null)
             {
                 miner.Stop();
             }
@@ -209,6 +202,25 @@ namespace CSharpMinerProgram
             {
                 log.WriteLine("Exiting normally at {0}", DateTime.Now);
             }
+        }
+
+        static void Main(string[] args)
+        {
+            LogHelper.ErrorLogFilePath = "err.log";
+
+            #if DEBUG
+            LogHelper.Verbosity = LogVerbosity.Verbose;
+            #else
+            LogHelper.Verbosity = LogVerbosity.Normal;
+            #endif
+
+            LogHelper.StartConsoleLogThread();
+            LogHelper.StartFileLogThread();
+
+            RunProgram(args);
+
+            LogHelper.StopFileLogThread();
+            LogHelper.StopConsoleLogThread();
         }
 
         static void WriteVerbosity(LogVerbosity verbosity)

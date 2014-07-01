@@ -331,7 +331,7 @@ namespace Stratum
                 if (splitAddress.Length != 3)
                 {
                     Exception e = new StratumConnectionFailureException(string.Format("Incorrect pool address: {0}", Url));
-                    LogHelper.LogErrorSecondaryAsync(e);
+                    LogHelper.LogErrorSecondary(e);
                     throw e;
                 }
 
@@ -341,7 +341,7 @@ namespace Stratum
                 if (!int.TryParse(splitAddress[2], out port))
                 {
                     Exception e = new StratumConnectionFailureException(string.Format("Incorrect port format: {0}", splitAddress[1]));
-                    LogHelper.LogErrorSecondaryAsync(e);
+                    LogHelper.LogErrorSecondary(e);
                     throw e;
                 }
 
@@ -359,7 +359,7 @@ namespace Stratum
                 if (!connection.Connected)
                 {
                     Exception e = new StratumConnectionFailureException("Unknown connection failure.");
-                    LogHelper.LogErrorSecondaryAsync(e);
+                    LogHelper.LogErrorSecondary(e);
                     throw e;
                 }
 
@@ -392,7 +392,7 @@ namespace Stratum
                     LogHelper.ConsoleLog(string.Format("Successfully connected to pool {0}", this.Url));
                 }
 
-                LogHelper.DebugConsoleLogAsync(new Object[] {
+                LogHelper.DebugConsoleLog(new Object[] {
                         string.Format("Extranonce1: {0}", data[1]),
                         string.Format("Extranonce2_size: {0}", data[2])
                     },
@@ -439,7 +439,7 @@ namespace Stratum
             {
                 this.IsConnecting = false;
 
-                LogHelper.LogErrorSecondaryAsync(e);
+                LogHelper.LogErrorSecondary(e);
 
                 this.Stop();
                 this.OnDisconnect();
@@ -463,7 +463,7 @@ namespace Stratum
             }
             catch (Exception e)
             {
-                LogHelper.LogErrorSecondaryAsync(e);
+                LogHelper.LogErrorSecondary(e);
 
                 Task.Factory.StartNew(() =>
                 {
@@ -483,7 +483,7 @@ namespace Stratum
 
                 if (this.connection == null || !this.connection.Connected)
                 {
-                    LogHelper.ConsoleLogErrorAsync("Attempting to submit share to disconnected pool.");
+                    LogHelper.ConsoleLogError("Attempting to submit share to disconnected pool.");
                     return;
                 }
 
@@ -491,7 +491,7 @@ namespace Stratum
                 {
                     if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
                     {
-                        LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", work.JobId), ConsoleColor.Magenta, LogVerbosity.Verbose);
+                        LogHelper.ConsoleLog(string.Format("Discarding share for old job {0}.", work.JobId), ConsoleColor.Magenta, LogVerbosity.Verbose);
                     }
                     return;
                 }
@@ -517,7 +517,7 @@ namespace Stratum
                     }
                     catch (Exception e)
                     {
-                        LogHelper.LogErrorSecondaryAsync(e);
+                        LogHelper.LogErrorSecondary(e);
 
                         if ((this.connection == null || !this.connection.Connected) && this.Running)
                         {
@@ -641,7 +641,7 @@ namespace Stratum
                 {
                     if (!s.Trim().EndsWith("}"))
                     {
-                        LogHelper.LogErrorSecondaryAsync(
+                        LogHelper.LogErrorSecondary(
                             new Object[] { 
                             string.Format("Partial command recieved from {0}", this.Url),
                             s
@@ -691,7 +691,7 @@ namespace Stratum
                             catch (Exception e)
                             {
                                 Exception exception = new InvalidDataException(string.Format("Error parsing response {0}", str), e);
-                                LogHelper.LogErrorSecondaryAsync(exception);
+                                LogHelper.LogErrorSecondary(exception);
                                 throw exception;
                             }
 
@@ -764,7 +764,7 @@ namespace Stratum
                             catch (Exception e)
                             {
                                 Exception exception = new InvalidDataException(string.Format("Error parsing command {0}", str), e);
-                                LogHelper.LogErrorSecondaryAsync(exception);
+                                LogHelper.LogErrorSecondary(exception);
                                 throw exception;
                             }
 
@@ -859,7 +859,7 @@ namespace Stratum
         {
             if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
             {
-                LogHelper.DebugConsoleLogAsync(string.Format("Command: {0}", command.Method), LogVerbosity.Verbose);
+                LogHelper.DebugConsoleLog(string.Format("Command: {0}", command.Method), LogVerbosity.Verbose);
             }
 
             object[] _params = command.Params;
@@ -869,13 +869,13 @@ namespace Stratum
                 case StratumCommand.NotifyCommandString:
                     if (_params == null || _params.Length < 9)
                     {
-                        LogHelper.LogErrorSecondaryAsync(string.Format("Recieved invalid notification command from {0}", this.Url));
+                        LogHelper.LogErrorSecondary(string.Format("Recieved invalid notification command from {0}", this.Url));
                         throw new InvalidDataException(string.Format("Recieved invalid notification command from {0}", this.Url));
                     }
 
                     if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
                     {
-                        LogHelper.ConsoleLogAsync(string.Format("Got Work from {0}!", this.Url), LogVerbosity.Verbose);
+                        LogHelper.ConsoleLog(string.Format("Got Work from {0}!", this.Url), LogVerbosity.Verbose);
                     }
 
                     if (_params != null && _params.Length >= 9 && _params[8] != null && _params[8].Equals(true))
@@ -884,7 +884,7 @@ namespace Stratum
 
                         if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
                         {
-                            LogHelper.ConsoleLogAsync(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow, LogVerbosity.Verbose);
+                            LogHelper.ConsoleLog(string.Format("New block! ({0})", this.NewBlocks), ConsoleColor.DarkYellow, LogVerbosity.Verbose);
                         }
                     }
 
@@ -929,13 +929,13 @@ namespace Stratum
                 case StratumCommand.SetDifficlutyCommandString:
                     if (_params == null || _params.Length < 1)
                     {
-                        LogHelper.LogErrorSecondaryAsync(string.Format("Recieved invalid difficulty command from {0}", this.Url));
+                        LogHelper.LogErrorSecondary(string.Format("Recieved invalid difficulty command from {0}", this.Url));
                         throw new InvalidDataException(string.Format("Recieved invalid difficulty command from {0}", this.Url));
                     }
 
                     if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
                     {
-                        LogHelper.ConsoleLogAsync(string.Format("Got Diff: {0} from {1}", _params[0], this.Url), LogVerbosity.Verbose);
+                        LogHelper.ConsoleLog(string.Format("Got Diff: {0} from {1}", _params[0], this.Url), LogVerbosity.Verbose);
                     }
 
                     LogHelper.DebugConsoleLog(string.Format("Diff Change {0} => {1}", this.Diff, _params[0]), ConsoleColor.Magenta);
@@ -944,7 +944,7 @@ namespace Stratum
                     break;
 
                 default:
-                    LogHelper.ConsoleLogErrorAsync(string.Format("Unrecognized command: {0}", command.Method));
+                    LogHelper.ConsoleLogError(string.Format("Unrecognized command: {0}", command.Method));
                     break;
             }
         }
@@ -963,12 +963,12 @@ namespace Stratum
                 }
                 catch (OperationCanceledException e)
                 {
-                    LogHelper.LogErrorSecondaryAsync(e);
+                    LogHelper.LogErrorSecondary(e);
                     return string.Empty;
                 }
                 catch (AggregateException e)
                 {
-                    LogHelper.LogErrorSecondaryAsync(e);
+                    LogHelper.LogErrorSecondary(e);
                     return string.Empty;
                 }
 

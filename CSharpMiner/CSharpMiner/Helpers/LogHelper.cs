@@ -15,11 +15,13 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CSharpMiner.Helpers
@@ -34,6 +36,54 @@ namespace CSharpMiner.Helpers
 
     public static class LogHelper
     {
+        private static BlockingCollection<Tuple<Object, Nullable<ConsoleColor>, LogVerbosity, bool>> _consoleLogQueue;
+        private static BlockingCollection<Tuple<Object, Nullable<ConsoleColor>, LogVerbosity, bool>> ConsoleLogQueue
+        {
+            get
+            {
+                if (_consoleLogQueue == null)
+                    _consoleLogQueue = new BlockingCollection<Tuple<object, Nullable<ConsoleColor>, LogVerbosity, bool>>();
+
+                return _consoleLogQueue;
+            }
+        }
+
+        private static BlockingCollection<Tuple<Object, string, bool>> _fileLogQueue;
+        private static BlockingCollection<Tuple<Object, string, bool>> FileLogQueue
+        {
+            get
+            {
+                if (_fileLogQueue == null)
+                    _fileLogQueue = new BlockingCollection<Tuple<Object, string, bool>>();
+
+                return _fileLogQueue;
+            }
+        }
+
+        private static Thread _consoleLoggingThread;
+        private static Thread ConsoleLoggingThread
+        {
+            get
+            {
+                if (_consoleLoggingThread == null)
+                    _consoleLoggingThread = new Thread(new ThreadStart(ProcessConsoleLogItem));
+
+                return _consoleLoggingThread;
+            }
+        }
+
+        private static Thread _fileLoggingThread;
+        private static Thread FileLoggingThread
+        {
+            get
+            {
+                if (_fileLoggingThread == null)
+                    _fileLoggingThread = new Thread(new ThreadStart(ProcessFileLogItem));
+
+                return _fileLoggingThread;
+            }
+        }
+
         private static string _secondaryErrorLogPath = "log_secondary.err";
         private static string _errorLogPath = "log.err";
         public static string ErrorLogFilePath
@@ -72,28 +122,9 @@ namespace CSharpMiner.Helpers
             }
         }
 
-        private static Object consoleLock = new Object();
-
         public static bool ShouldDisplay(LogVerbosity verbosity)
         {
             return ((int)verbosity <= (int)Verbosity);
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugConsoleLogErrorAsync(Object thing)
-        {
-            ConsoleLogErrorAsync(thing);
-        }
-
-        public static void ConsoleLogErrorAsync(Object thing)
-        {
-            if (ShouldDisplay(LogVerbosity.Quiet))
-            {
-                Task.Factory.StartNew(() =>
-                {
-                    ConsoleLogError(thing);
-                });
-            }
         }
 
         [Conditional("DEBUG")]
@@ -108,23 +139,6 @@ namespace CSharpMiner.Helpers
         }
 
         [Conditional("DEBUG")]
-        public static void DebugConsoleLogAsync(Object[] things, LogVerbosity verbosity = LogVerbosity.Normal)
-        {
-            ConsoleLogAsync(things, verbosity);
-        }
-
-        public static void ConsoleLogAsync(Object[] things, LogVerbosity verbosity = LogVerbosity.Normal)
-        {
-            if (ShouldDisplay(verbosity))
-            {
-                Task.Factory.StartNew(() =>
-                {
-                    ConsoleLog(things, verbosity);
-                });
-            }
-        }
-
-        [Conditional("DEBUG")]
         public static void DebugConsoleLog(Object[] things, LogVerbosity verbosity = LogVerbosity.Normal)
         {
             ConsoleLog(things, verbosity);
@@ -132,64 +146,7 @@ namespace CSharpMiner.Helpers
 
         public static void ConsoleLog(Object[] things, LogVerbosity verbosity = LogVerbosity.Normal)
         {
-            if (ShouldDisplay(verbosity))
-            {
-                lock (consoleLock)
-                {
-                    WriteToConsoleLog(things, verbosity);
-                }
-            }
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugConsoleLogAsync(Object thing, ConsoleColor color, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
-        {
-            ConsoleLogAsync(thing, color, verbosity, writeLine);
-        }
-
-        public static void ConsoleLogAsync(Object thing, ConsoleColor color, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
-        {
-            if (ShouldDisplay(verbosity))
-            {
-                Task.Factory.StartNew(() =>
-                {
-                    ConsoleLog(thing, color, verbosity, writeLine);
-                });
-            }
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugConsoleLogAsync(Object thing, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
-        {
-            ConsoleLogAsync(thing, verbosity, writeLine);
-        }
-
-        public static void ConsoleLogAsync(Object thing, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
-        {
-            if (ShouldDisplay(verbosity))
-            {
-                Task.Factory.StartNew(() =>
-                {
-                    ConsoleLog(thing, verbosity, writeLine);
-                });
-            }
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugConsoleLogAsync(LogVerbosity verbosity = LogVerbosity.Normal)
-        {
-            ConsoleLogAsync(verbosity);
-        }
-
-        public static void ConsoleLogAsync(LogVerbosity verbosity = LogVerbosity.Normal)
-        {
-            if (ShouldDisplay(verbosity))
-            {
-                Task.Factory.StartNew(() =>
-                    {
-                        ConsoleLog(verbosity);
-                    });
-            }
+            AddToConsoleLogQueue(things, null, verbosity);
         }
 
         [Conditional("DEBUG")]
@@ -200,10 +157,7 @@ namespace CSharpMiner.Helpers
 
         public static void ConsoleLog(Object thing, ConsoleColor color, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
         {
-            lock (consoleLock)
-            {
-                WriteToConsoleLog(thing, color, verbosity, writeLine);
-            }
+            AddToConsoleLogQueue(thing, color, verbosity, writeLine);
         }
 
         [Conditional("DEBUG")]
@@ -214,10 +168,7 @@ namespace CSharpMiner.Helpers
 
         public static void ConsoleLog(Object thing, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
         {
-            lock (consoleLock)
-            {
-                WriteToConsoleLog(thing, verbosity, writeLine);
-            }
+            AddToConsoleLogQueue(thing, null, verbosity, writeLine);
         }
 
         [Conditional("DEBUG")]
@@ -228,12 +179,14 @@ namespace CSharpMiner.Helpers
 
         public static void ConsoleLog(LogVerbosity verbosity = LogVerbosity.Normal)
         {
-            lock(consoleLock)
+            AddToConsoleLogQueue(string.Empty);
+        }
+
+        private static void AddToConsoleLogQueue(Object thing, Nullable<ConsoleColor> color = null, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
+        {
+            if (ShouldDisplay(verbosity))
             {
-                if (ShouldDisplay(verbosity))
-                {
-                    Console.WriteLine();
-                }
+                ConsoleLogQueue.Add(new Tuple<object, Nullable<ConsoleColor>, LogVerbosity, bool>(thing, color, verbosity, writeLine));
             }
         }
 
@@ -311,7 +264,44 @@ namespace CSharpMiner.Helpers
             }
         }
 
-        private static Object errorLogLock = new Object();
+        private static void ProcessConsoleLogItem()
+        {
+            foreach (var item in ConsoleLogQueue.GetConsumingEnumerable())
+            {
+                Object thing = item.Item1;
+                Nullable<ConsoleColor> color = item.Item2;
+                LogVerbosity verbosity = item.Item3;
+                bool writeLine = item.Item4;
+
+                if(color != null && color.HasValue)
+                {
+                    WriteToConsoleLog(thing, color.Value, verbosity, writeLine);
+                }
+                else
+                {
+                    if(thing is Object[])
+                    {
+                        WriteToConsoleLog(thing as object[], verbosity);
+                    }
+                    else
+                    {
+                        WriteToConsoleLog(thing, verbosity, writeLine);
+                    }
+                }
+            }
+        }
+
+        public static void StartConsoleLogThread()
+        {
+            ConsoleLoggingThread.Start();
+        }
+
+        public static void StopConsoleLogThread()
+        {
+            ConsoleLogQueue.CompleteAdding();
+            ConsoleLoggingThread.Join(500);
+            ConsoleLoggingThread.Abort();
+        }
 
         [Conditional("DEBUG")]
         public static void DebugLogError(Object error)
@@ -321,7 +311,18 @@ namespace CSharpMiner.Helpers
 
         public static void LogError(Object error)
         {
-            LogErrorToFile(error, _errorLogPath, true);
+            FileLogQueue.Add(new Tuple<object, string, bool>(error, _errorLogPath, true));
+        }
+
+        [Conditional("DEBUG")]
+        public static void DebugLogErrors(Object[] errors)
+        {
+            LogErrors(errors);
+        }
+
+        public static void LogErrors(Object[] errors)
+        {
+            FileLogQueue.Add(new Tuple<object, string, bool>(errors, _errorLogPath, true));
         }
 
         private static void LogErrorToFile(Object error, string filePath, bool displayToScreen)
@@ -335,7 +336,7 @@ namespace CSharpMiner.Helpers
                 });
             }
 
-            lock (errorLogLock)
+            try
             {
                 using (StreamWriter errLog = new StreamWriter(File.Open(filePath, FileMode.Append)))
                 {
@@ -343,14 +344,21 @@ namespace CSharpMiner.Helpers
                     errLog.WriteLine(error);
                     errLog.WriteLine();
                 }
-            }           
+            }
+            catch (Exception e)
+            {
+                LogErrors(new Object[] {
+                                string.Format("Could not write to file {0}:", filePath),
+                                e
+                            });
+            }
         }
 
         private static void LogErrorsToFile(Object[] errors, string filePath, bool displayToScreen)
         {
             if (errors.Length > 0)
             {
-                lock (errorLogLock)
+                try
                 {
                     using (StreamWriter errLog = new StreamWriter(File.Open(filePath, FileMode.Append)))
                     {
@@ -363,6 +371,13 @@ namespace CSharpMiner.Helpers
 
                         errLog.WriteLine();
                     }
+                }
+                catch (Exception e)
+                {
+                    LogErrors(new Object[] {
+                                    string.Format("Could not write to file {0}:", filePath),
+                                    e
+                                });
                 }
 
                 if (displayToScreen)
@@ -383,6 +398,25 @@ namespace CSharpMiner.Helpers
             }
         }
 
+        private static void ProcessFileLogItem()
+        {
+            foreach (var item in FileLogQueue.GetConsumingEnumerable())
+            {
+                Object thing = item.Item1;
+                string filename = item.Item2;
+                bool displayOnScreen = item.Item3;
+
+                if(thing is object[])
+                {
+                    LogErrorsToFile(thing as object[], filename, displayOnScreen);
+                }
+                else
+                {
+                    LogErrorToFile(thing, filename, displayOnScreen);
+                }
+            }
+        }
+
         [Conditional("DEBUG")]
         public static void DebugLogErrorSecondary(Object error)
         {
@@ -397,146 +431,36 @@ namespace CSharpMiner.Helpers
 
         public static void LogErrorSecondary(Object error, bool displayToScreen = false)
         {
-            LogErrorToFile(error, _secondaryErrorLogPath, false);
+            FileLogQueue.Add(new Tuple<object, string, bool>(error, _secondaryErrorLogPath, displayToScreen));
         }
 
         public static void LogErrorSecondary(Object[] errors, bool displayToScreen = false)
         {
-            LogErrorsToFile(errors, _secondaryErrorLogPath, false);
+            FileLogQueue.Add(new Tuple<object, string, bool>(errors, _secondaryErrorLogPath, displayToScreen));
         }
 
         [Conditional("DEBUG")]
-        public static void DebugLogErrorAsync(Object error)
+        public static void DebugLogToFile(Object obj, string filename, bool displayToScreen = false)
         {
-            LogErrorAsync(error);
+            FileLogQueue.Add(new Tuple<object, string, bool>(obj, filename, displayToScreen));
         }
 
         [Conditional("DEBUG")]
-        public static void DebugLogErrorAsync(Object[] errors)
+        public static void DebugLogToFileAsync(Object[] objects, string filename, bool displayToScreen = false)
         {
-            LogErrorAsync(errors);
+            FileLogQueue.Add(new Tuple<object, string, bool>(objects, filename, displayToScreen));
         }
 
-        public static void LogErrorAsync(Object error)
+        public static void StartFileLogThread()
         {
-            Task.Factory.StartNew(() =>
-            {
-                LogError(error);
-            });
+            FileLoggingThread.Start();
         }
 
-        public static void LogErrorAsync(Object[] errors)
+        public static void StopFileLogThread()
         {
-            Task.Factory.StartNew(() =>
-            {
-                LogError(errors);
-            });
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugLogErrorSecondaryAsync(Object error)
-        {
-            LogErrorSecondaryAsync(error);
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugLogErrorSecondaryAsync(Object[] errors)
-        {
-            LogErrorSecondaryAsync(errors);
-        }
-
-        public static void LogErrorSecondaryAsync(Object error)
-        {
-            Task.Factory.StartNew(() =>
-                {
-                    LogErrorSecondary(error);
-                });
-        }
-
-        public static void LogErrorSecondaryAsync(Object[] errors)
-        {
-            Task.Factory.StartNew(() =>
-            {
-                LogErrorSecondary(errors);
-            });
-        }
-
-        private static Dictionary<string, Object> fileLocks = new Dictionary<string, object>();
-
-        private static Object GetFileLockObject(string filename)
-        {
-            Object lockObj = null;
-
-            if (!fileLocks.TryGetValue(filename, out lockObj))
-            {
-                lockObj = new Object();
-                fileLocks.Add(filename, lockObj);
-            }
-
-            return lockObj;
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugLogToFileAsync(Object obj, string filename)
-        {
-            Task.Factory.StartNew(() =>
-                {
-                    lock (GetFileLockObject(filename))
-                    {
-                        try
-                        {
-                            using (StreamWriter writer = new StreamWriter(File.Open(filename, FileMode.Append)))
-                            {
-                                writer.WriteLine(string.Format("{0}: {1}", DateTime.Now, obj));
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            LogError(new Object[] {
-                                string.Format("Could not write to file {0}:", filename),
-                                e
-                            });
-                        }
-                    }
-                });
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugLogToFileAsync(Object[] objects, string filename)
-        {
-            Task.Factory.StartNew(() =>
-                {
-                    lock (GetFileLockObject(filename))
-                    {
-                        try
-                        {
-                            bool first = true;
-
-                            using (StreamWriter writer = new StreamWriter(File.Open(filename, FileMode.Append)))
-                            {
-                                foreach (Object obj in objects)
-                                {
-                                    if (first)
-                                    {
-                                        writer.WriteLine(string.Format("{0}: {1}", DateTime.Now, obj));
-                                        first = false;
-                                    }
-                                    else
-                                    {
-                                        writer.WriteLine(obj);
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            LogError(new Object[] {
-                                string.Format("Could not write to file {0}:", filename),
-                                e
-                            });
-                        }
-                    }
-                });
+            FileLogQueue.CompleteAdding();
+            FileLoggingThread.Join(500);
+            FileLoggingThread.Abort();
         }
     }
 }

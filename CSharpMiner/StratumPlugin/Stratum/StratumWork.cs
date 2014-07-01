@@ -150,7 +150,7 @@ namespace Stratum
             if (serverCommandArray.Length < 8)
             {
                 Exception e = new ArgumentException("Unrecognized work format from server. Work array length < 8.");
-                LogHelper.LogErrorSecondaryAsync(e);
+                LogHelper.LogErrorSecondary(e);
                 throw e;
             }
 
@@ -208,7 +208,7 @@ namespace Stratum
             else
             {
                 Exception e = new ArgumentException("Unrecognized work format from server. Merkle_Branch is not an array.");
-                LogHelper.LogErrorSecondaryAsync(e);
+                LogHelper.LogErrorSecondary(e);
                 throw e;
             }
 

@@ -85,7 +85,7 @@ namespace DeviceManager
         {
             if (started && Pools.Length > 0)
             {
-                LogHelper.ConsoleLogAsync(string.Format("Pool {0} disconnected...", Pools[0].Url), LogVerbosity.Quiet);
+                LogHelper.ConsoleLog(string.Format("Pool {0} disconnected...", Pools[0].Url), LogVerbosity.Quiet);
             }
 
             base.OnPoolDisconnected(pool);
