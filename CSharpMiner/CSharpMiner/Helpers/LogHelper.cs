@@ -293,6 +293,7 @@ namespace CSharpMiner.Helpers
 
         public static void StartConsoleLogThread()
         {
+            ConsoleLoggingThread.Priority = ThreadPriority.Lowest;
             ConsoleLoggingThread.Start();
         }
 
@@ -453,6 +454,7 @@ namespace CSharpMiner.Helpers
 
         public static void StartFileLogThread()
         {
+            FileLoggingThread.Priority = ThreadPriority.Lowest;
             FileLoggingThread.Start();
         }
 

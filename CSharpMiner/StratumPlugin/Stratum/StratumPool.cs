@@ -433,6 +433,7 @@ namespace Stratum
                 this.ListenerThread.Start();
 
                 this.SubmissionQueueThread = new Thread(new ThreadStart(this.ProcessSubmitQueue));
+                this.SubmissionQueueThread.Priority = ThreadPriority.Highest;
                 this.SubmissionQueueThread.Start();
             }
             catch (Exception e)
