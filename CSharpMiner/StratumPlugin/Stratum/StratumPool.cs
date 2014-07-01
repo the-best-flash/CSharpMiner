@@ -19,6 +19,7 @@ using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -87,7 +88,10 @@ namespace Stratum
         public bool Running { get; set; }
 
         [IgnoreDataMember]
-        public Thread Thread { get; private set; }
+        public Thread ListenerThread { get; private set; }
+
+        [IgnoreDataMember]
+        public Thread SubmissionQueueThread { get; private set; }
 
         [IgnoreDataMember]
         public bool IsConnected
@@ -126,8 +130,6 @@ namespace Stratum
 
         private StratumWork latestWork = null;
 
-        private Object submissionLock = null;
-
         private bool _allowOldWork = true;
 
         private string partialData = null;
@@ -140,6 +142,8 @@ namespace Stratum
         private Object submissionDisplayLock;
 
         byte[] arr = null;
+
+        private BlockingCollection<Tuple<StratumWork, IMiningDevice, string>> submissionQueue;
 
         [OnDeserialized]
         private void OnDeserialized(StreamingContext context)
@@ -167,6 +171,7 @@ namespace Stratum
             Accepted = 0;
             Rejected = 0;
             submissionDisplayLock = new Object();
+            submissionQueue = new BlockingCollection<Tuple<StratumWork, IMiningDevice, string>>();
 
             arr = new byte[10000];
 
@@ -221,12 +226,12 @@ namespace Stratum
                 RejectedWorkUnits = 0;
                 DiscardedWorkUnits = 0;
 
-                submissionLock = new Object();
-                _writeLock = new Object();
-
                 this.IsConnecting = true;
 
-                if (this.Thread == null)
+                if (this.submissionQueue == null)
+                    this.submissionQueue = new BlockingCollection<Tuple<StratumWork, IMiningDevice, string>>();
+
+                if (this.ListenerThread == null)
                 {
                     threadStopping = new CancellationTokenSource();
 
@@ -251,15 +256,32 @@ namespace Stratum
 
             try
             {
-                if (this.Thread != null)
+                if (this.ListenerThread != null)
                 {
-                    this.Thread.Join(200);
-                    this.Thread.Abort();
+                    this.ListenerThread.Join(200);
+                    this.ListenerThread.Abort();
                 }
             }
             finally
             {
-                this.Thread = null;
+                this.ListenerThread = null;
+            }
+
+            try
+            {
+                if(this.SubmissionQueueThread != null)
+                {
+                    if (this.submissionQueue != null)
+                        this.submissionQueue.CompleteAdding();
+
+                    this.SubmissionQueueThread.Join(200);
+                    this.SubmissionQueueThread.Abort();
+                }
+            }
+            finally
+            {
+                this.submissionQueue = null;
+                this.SubmissionQueueThread = null;
             }
 
             if (connection != null)
@@ -407,28 +429,11 @@ namespace Stratum
                     throw new StratumConnectionFailureException(string.Format("Pool Username or Password rejected with: {0}", successResponse.Error));
                 }
 
-                this.Thread = new Thread(new ThreadStart(() =>
-                {
-                    try
-                    {
-                        // Enter loop to monitor pool stratum
-                        while (this.Running)
-                        {
-                            this.processCommands(this.listenForData());
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        LogHelper.LogErrorSecondaryAsync(e);
+                this.ListenerThread = new Thread(new ThreadStart(this.ProcessIncomingData));
+                this.ListenerThread.Start();
 
-                        Task.Factory.StartNew(() =>
-                            {
-                                this.Stop();
-                                this.OnDisconnect();
-                            });
-                    }
-                }));
-                this.Thread.Start();
+                this.SubmissionQueueThread = new Thread(new ThreadStart(this.ProcessSubmitQueue));
+                this.SubmissionQueueThread.Start();
             }
             catch (Exception e)
             {
@@ -443,6 +448,88 @@ namespace Stratum
             if (this.Connected != null)
             {
                 this.Connected(this);
+            }
+        }
+
+        private void ProcessIncomingData()
+        {
+            try
+            {
+                // Enter loop to monitor pool stratum
+                while (this.Running)
+                {
+                    this.processCommands(this.listenForData());
+                }
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogErrorSecondaryAsync(e);
+
+                Task.Factory.StartNew(() =>
+                {
+                    this.Stop();
+                    this.OnDisconnect();
+                });
+            }
+        }
+
+        private void ProcessSubmitQueue()
+        {
+            foreach(var item in this.submissionQueue.GetConsumingEnumerable())
+            {
+                StratumWork work = item.Item1;
+                IMiningDevice device = item.Item2;
+                string nonce = item.Item3;
+
+                if (this.connection == null || !this.connection.Connected)
+                {
+                    LogHelper.ConsoleLogErrorAsync("Attempting to submit share to disconnected pool.");
+                    return;
+                }
+
+                if (!this._allowOldWork && (this.latestWork == null || work.JobId != this.latestWork.JobId))
+                {
+                    if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
+                    {
+                        LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", work.JobId), ConsoleColor.Magenta, LogVerbosity.Verbose);
+                    }
+                    return;
+                }
+
+                if (WorkSubmitQueue != null)
+                {
+                    try
+                    {
+                        long requestId = this.RequestId;
+                        this.RequestId++;
+
+                        string[] param = { this.Username, work.JobId, work.Extranonce2, work.Timestamp, nonce };
+                        StratumSendCommand command = new StratumSendCommand(requestId, StratumSendCommand.SubmitCommandString, param);
+
+                        WorkSubmitQueue.Enqueue(new Tuple<StratumSendCommand, StratumWork, IMiningDevice>(command, work, device));
+
+                        if (this.connection != null && this.connection.Connected)
+                        {
+                            MemoryStream memStream = new MemoryStream();
+                            command.Serialize(memStream);
+                            this.SendData(memStream);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        LogHelper.LogErrorSecondaryAsync(e);
+
+                        if ((this.connection == null || !this.connection.Connected) && this.Running)
+                        {
+                            Task.Factory.StartNew(() =>
+                            {
+                                this.Stop();
+
+                                this.OnDisconnect();
+                            });
+                        }
+                    }
+                }
             }
         }
 
@@ -504,10 +591,9 @@ namespace Stratum
             }
         }
 
-        private object _writeLock = null;
         private void SendData(MemoryStream stream)
         {
-            if (_writeLock != null && connection != null && connection.Connected)
+            if (connection != null && connection.Connected)
             {
                 #if DEBUG
                 stream.Position = 0;
@@ -520,68 +606,17 @@ namespace Stratum
                     }, NetworkTrafficLogFile);
                 #endif
 
-                lock (_writeLock)
-                {
-                    stream.WriteTo(connection.GetStream());
-                }
+                stream.WriteTo(connection.GetStream());
             }
         }
 
-        public void SubmitWork(StratumWork work, IMiningDevice device, string nonce)
+        public void SubmitWork(IPoolWork work, IMiningDevice device, string nonce)
         {
-            if (this.connection == null || !this.connection.Connected)
+            StratumWork stratumWork = work as StratumWork;
+
+            if (stratumWork != null && device != null && nonce != null && this.submissionQueue != null)
             {
-                LogHelper.ConsoleLogErrorAsync("Attempting to submit share to disconnected pool.");
-                return;
-            }
-
-            if (!this._allowOldWork && (this.latestWork == null || work.JobId != this.latestWork.JobId))
-            {
-                if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
-                {
-                    LogHelper.ConsoleLogAsync(string.Format("Discarding share for old job {0}.", work.JobId), ConsoleColor.Magenta, LogVerbosity.Verbose);
-                }
-                return;
-            }
-
-            if (WorkSubmitQueue != null && submissionLock != null)
-            {
-                try
-                {
-                    long requestId = 0;
-
-                    lock (submissionLock)
-                    {
-                        requestId = this.RequestId;
-                        this.RequestId++;
-                    }
-
-                    string[] param = { this.Username, work.JobId, work.Extranonce2, work.Timestamp, nonce };
-                    StratumSendCommand command = new StratumSendCommand(requestId, StratumSendCommand.SubmitCommandString, param);
-
-                    WorkSubmitQueue.Enqueue(new Tuple<StratumSendCommand, StratumWork, IMiningDevice>(command, work, device));
-
-                    if (this.connection != null && this.connection.Connected)
-                    {
-                        MemoryStream memStream = new MemoryStream();
-                        command.Serialize(memStream);
-                        this.SendData(memStream);
-                    }
-                }
-                catch (Exception e)
-                {
-                    LogHelper.LogErrorSecondaryAsync(e);
-
-                    if ((this.connection == null || !this.connection.Connected) && this.Running)
-                    {
-                        Task.Factory.StartNew(() =>
-                            {
-                                this.Stop();
-
-                                this.OnDisconnect();
-                            });
-                    }
-                }
+                this.submissionQueue.Add(new Tuple<StratumWork, IMiningDevice, string>(stratumWork, device, nonce));
             }
         }
 
@@ -993,23 +1028,6 @@ namespace Stratum
             if (this.Running)
             {
                 this.Stop();
-            }
-        }
-
-        public void SubmitWork(IPoolWork work, object workData)
-        {
-            StratumWork stratumWork = work as StratumWork;
-            Object[] data = workData as Object[];
-
-            if (stratumWork != null && data != null && data.Length >= 2)
-            {
-                IMiningDevice device = data[0] as IMiningDevice;
-                string nonce = data[1] as string;
-
-                if (device != null && nonce != null)
-                {
-                    this.SubmitWork(stratumWork, device, nonce);
-                }
             }
         }
     }

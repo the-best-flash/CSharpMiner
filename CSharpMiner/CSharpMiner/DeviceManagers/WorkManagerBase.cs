@@ -263,10 +263,7 @@ namespace CSharpMiner.DeviceManager
         {
             if (started && this.ActivePool != null && currentWork != null && this.ActivePool.IsConnected)
             {
-                Task.Factory.StartNew(() =>
-                    {
-                        this.ActivePool.SubmitWork(work, new Object[] {device, nonce});
-                    });
+                this.ActivePool.SubmitWork(work, device, nonce);
 
                 StartWorkOnDevice(work, device, false);
             }

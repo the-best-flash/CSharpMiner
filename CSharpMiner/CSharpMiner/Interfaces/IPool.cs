@@ -48,6 +48,6 @@ namespace CSharpMiner.Interfaces
 
         void Start();
         void Stop();
-        void SubmitWork(IPoolWork work, Object workData);
+        void SubmitWork(IPoolWork work, IMiningDevice device, string nonce);
     }
 }
