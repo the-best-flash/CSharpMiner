@@ -324,9 +324,6 @@ namespace Gridseed
             _CommandBuf[1] = 0xaa;
             _CommandBuf[2] = 0x1f;
             _CommandBuf[3] = 0x00;
-
-            Random rand = new Random();
-            int taskId = rand.Next();
         }
 
         protected override void DataReceived(object sender, SerialDataReceivedEventArgs e)
