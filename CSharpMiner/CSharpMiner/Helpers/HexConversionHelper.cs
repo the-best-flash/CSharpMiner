@@ -48,12 +48,19 @@ namespace CSharpMiner.Helpers
 
             foreach (byte b in binary)
             {
-                string hex = Convert.ToString(b, 16);
+                sb.Append(b.ToString("x2"));
+            }
 
-                if (hex.Length < 2)
-                    sb.Append("0");
+            return sb.ToString();
+        }
 
-                sb.Append(hex);
+        public static string ConvertToHexString(uint[] binary)
+        {
+            StringBuilder sb = new StringBuilder(binary.Length * 8);
+
+            foreach (uint b in binary)
+            {
+                sb.Append(b.ToString("x8"));
             }
 
             return sb.ToString();

@@ -329,7 +329,7 @@ namespace Gridseed
 
                         if (taskId >= _currentTaskId)
                         {
-                            long nonce = ((long)response[7] << 24) | ((long)response[6] << 16) | ((long)response[5] << 8) | (long)response[4];
+                            long nonce = ((long)response[4] << 24) | ((long)response[5] << 16) | ((long)response[6] << 8) | (long)response[7];
                             string nonceString = string.Format("{0:X8}", nonce);
 
                             if (this.ValidateNonce(nonceString))
@@ -393,6 +393,8 @@ namespace Gridseed
 
             byte[] headerBytes = HexConversionHelper.ConvertFromHexString(work.Header);
 
+            byte[] midstate = HashHelper.ComputeMidstate(headerBytes.Take(64).ToArray());
+
             byte[] target = MathHelper.ConvertDifficultyToTarget(work.Diff);
 
             // Encode the target (32 bytes)
@@ -405,7 +407,7 @@ namespace Gridseed
             //35
             // Midstate (32 bytes)
             //36
-            // TODO
+            midstate.CopyTo(_CommandBuf, 36);
 
             //67
             // Block Header (76 bytes)
