@@ -31,7 +31,7 @@ Compilation
 
 I will be adding precompiled binaries when things are a bit more stable, but if you want to compile it yourself you can use the steps below.
 
-To compile for .NET, use <a href="http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx">Visual Studio Express 2013 for Desktop</a> on Windows:
+To compile for .NET (4.5 or higher), use <a href="http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx">Visual Studio Express 2013 for Desktop</a> on Windows:
     
     1. Load the solution file. *.sln
     2. Change the dropdown that says "Debug" to say "Release"
@@ -43,7 +43,7 @@ To compile for .NET, use <a href="http://www.visualstudio.com/en-us/products/vis
     7. Right click on the .exe and make a shortcut. Copy the shortcut to your desktop.
 
 
-To compile for Mono on linux use:
+To compile for Mono (3.2.x or higher) on linux use:
 
     1. sudo apt-get update
     2. sudo apt-get install mono-devel
