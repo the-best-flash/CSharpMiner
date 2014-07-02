@@ -19,6 +19,7 @@ using CSharpMiner.Interfaces;
 using CSharpMiner.MiningDevice;
 using CSharpMiner.ModuleLoading;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Linq;
@@ -57,7 +58,7 @@ namespace Gridseed
                                                   0x01, 0x00, 0x00, 0x00 }; // Tell the CPM how many chips it has (default 5)
 
         private static byte[] ltcResetCommand = { 0x55, 0xAA, 0x1F, 0x28, 
-                                                  0x16, 0x00, 0x00, 0x00 }; // Set SW reset bits low for calculation engine and reporting engine
+                                                  0x16, 0x00, 0x00, 0x00 }; // Set SW reset bits low for calculation engine and not the reporting engine
 
         private static byte[] ltcStartCommand = { 0x55, 0xAA, 0x1F, 0x28, 
                                                   0x17, 0x00, 0x00, 0x00 }; // Set SW bits high for calc engine and reporting engine, also look for <= target
@@ -144,12 +145,28 @@ namespace Gridseed
             }
         }
 
+        private bool _workPending;
+        private bool _deviceInitialized;
         private byte[] _CommandBuf;
         private byte[] _ResponsePacket;
         private int _currentTaskId;
         private IPoolWork _currentWork;
 
-        private object _deviceSendLock;
+        private Thread _commandThread;
+
+        private BlockingCollection<byte[]> _commandBuffer;
+        private BlockingCollection<byte[]> CommandBuffer
+        {
+            get
+            {
+                if(_commandBuffer == null)
+                {
+                    _commandBuffer = new BlockingCollection<byte[]>();
+                }
+
+                return _commandBuffer;
+            }
+        }
 
         [OnDeserializing]
         private void OnDeserializing(StreamingContext context)
@@ -186,7 +203,36 @@ namespace Gridseed
         {
             base.OnConnected();
 
+            if(_commandThread == null)
+            {
+                _commandThread = new Thread(new ThreadStart(this.ProcessCommands));
+                _commandThread.Start();
+            }
+
             InitDevice();
+        }
+
+        public override void Unload()
+        {
+            if(_commandThread != null)
+            {
+                CommandBuffer.CompleteAdding();
+                _commandThread.Join(200);
+                _commandThread.Abort();
+                _commandThread = null;
+            }
+
+            _deviceInitialized = false;
+
+            base.Unload();
+        }
+
+        private void ProcessCommands()
+        {
+            foreach(byte[] cmd in this.CommandBuffer.GetConsumingEnumerable())
+            {
+                SendCommand(cmd);
+            }
         }
 
         protected override void SendCommand(byte[] cmd)
@@ -196,6 +242,11 @@ namespace Gridseed
             LogHelper.DebugConsoleLog(string.Format("Device {0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)), ConsoleColor.Cyan);
 
             Thread.Sleep(60);
+        }
+
+        private void AddCommandToQueue(byte[] cmd)
+        {
+            this.CommandBuffer.Add(cmd);
         }
 
         public override void Reset()
@@ -208,52 +259,58 @@ namespace Gridseed
 
         private void InitDevice()
         {
-            lock (this._deviceSendLock)
+            this._deviceInitialized = false;
+
+            this.AddCommandToQueue(getFirmwareVersionCommand);
+
+            this.AddCommandToQueue(resetDeviceCommand);
+
+            byte[] chipCommand = setChipsCommand.Clone() as byte[];
+
+            if (Chips == 0)
+                Chips = defaultChips;
+
+            int chips = Chips;
+            chipCommand[chipCommand.Length - 8] = (byte)(chips);
+            chipCommand[chipCommand.Length - 7] = (byte)(chips >> 8);
+            chipCommand[chipCommand.Length - 6] = (byte)(chips >> 16);
+            chipCommand[chipCommand.Length - 5] = (byte)(chips >> 24);
+
+            this.AddCommandToQueue(chipCommand);
+
+            // Send gridseed settings to device
+            this.AddCommandToQueue(ltcResetCommand);
+            this.AddCommandToQueue(ltcStartCommand);
+            this.AddCommandToQueue(disableBtcCommand);
+            this.AddCommandToQueue(ltcConfigRegCommand);
+
+            if (Frequency < minFreq)
             {
-                this.SendCommand(getFirmwareVersionCommand);
+                Frequency = defaultFreq;
+            }
 
-                this.SendCommand(resetDeviceCommand);
+            int freqSetting = (byte)(Math.Ceiling(Frequency / fRef) - 1);
+            byte[] freqCommand = coreFreqCommand.Clone() as byte[];
 
-                byte[] chipCommand = setChipsCommand.Clone() as byte[];
+            freqCommand[freqCommand.Length - 1] &= freqMaskHigh;
+            freqCommand[freqCommand.Length - 1] |= (byte)(freqSetting >> 4);
 
-                if (Chips == 0)
-                    Chips = defaultChips;
+            freqCommand[freqCommand.Length - 2] &= freqMaskLow;
+            freqCommand[freqCommand.Length - 2] |= (byte)(freqSetting << 4);
 
-                int chips = Chips;
-                chipCommand[chipCommand.Length - 8] = (byte)(chips);
-                chipCommand[chipCommand.Length - 7] = (byte)(chips >> 8);
-                chipCommand[chipCommand.Length - 6] = (byte)(chips >> 16);
-                chipCommand[chipCommand.Length - 5] = (byte)(chips >> 24);
+            this.AddCommandToQueue(freqCommand);
 
-                this.SendCommand(chipCommand);
+            this._deviceInitialized = true;
 
-                // Send gridseed settings to device
-                this.SendCommand(ltcResetCommand);
-                this.SendCommand(ltcStartCommand);
-                this.SendCommand(disableBtcCommand);
-                this.SendCommand(ltcConfigRegCommand);
-
-                if (Frequency < minFreq)
-                {
-                    Frequency = defaultFreq;
-                }
-
-                int freqSetting = (byte)(Math.Ceiling(Frequency / fRef) - 1);
-                byte[] freqCommand = coreFreqCommand.Clone() as byte[];
-
-                freqCommand[freqCommand.Length - 1] &= freqMaskHigh;
-                freqCommand[freqCommand.Length - 1] |= (byte)(freqSetting >> 4);
-
-                freqCommand[freqCommand.Length - 2] &= freqMaskLow;
-                freqCommand[freqCommand.Length - 2] |= (byte)(freqSetting << 4);
-
-                this.SendCommand(freqCommand);
+            if (this._workPending)
+            {
+                this.AddCommandToQueue(_CommandBuf);
+                this._workPending = false;
             }
         }
 
         private void SetDefaultValues()
         {
-            _deviceSendLock = new object();
             Chips = defaultChips;
             Frequency = defaultFreq;
 
@@ -441,11 +498,16 @@ namespace Gridseed
             _currentWork = work;
             _currentTaskId = taskId;
 
-            lock (this._deviceSendLock)
+            if (this._deviceInitialized)
             {
-                this.SendCommand(ltcResetCommand);
-                this.SendCommand(ltcStartCommand);
-                this.SendCommand(_CommandBuf);
+                this._workPending = false;
+                this.AddCommandToQueue(ltcResetCommand);
+                this.AddCommandToQueue(ltcStartCommand);
+                this.AddCommandToQueue(_CommandBuf);
+            }
+            else
+            {
+                this._workPending = true;
             }
         }
     }
