@@ -43,9 +43,8 @@ namespace Gridseed
         private const double fRef = 6.32; // Estimated value for PLL reference frequency in Mhz
         private const byte freqMaskHigh = 0xF0;
         private const byte freqMaskLow = 0x0F;
-        private const byte pllBandMask = 0xBF;
         private const int minFreq = 300;
-        private const int maxLowBandFreq = 550;
+        private const int commandWaitTime = 60;
 
         private static byte[] resetDeviceCommand = { 0x55, 0xAA, 0xC0, 0x00, 
                                                      0x80, 0x80, 0x80, 0x80, 
@@ -241,7 +240,7 @@ namespace Gridseed
 
             LogHelper.DebugConsoleLog(string.Format("Device {0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)), ConsoleColor.Cyan);
 
-            Thread.Sleep(60);
+            Thread.Sleep(commandWaitTime);
         }
 
         private void AddCommandToQueue(byte[] cmd)
