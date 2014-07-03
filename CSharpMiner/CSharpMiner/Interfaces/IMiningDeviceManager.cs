@@ -32,7 +32,10 @@ namespace CSharpMiner.Interfaces
         event Action<IMiningDeviceManager> Started;
         event Action<IMiningDeviceManager> Stopped;
 
-        IPool[] Pools { get; }
+        IEnumerable<IPool> Pools { get; }
+        IEnumerable<IMiningDevice> Devices { get; }
+
+        IEnumerable<IPool> ActivePools { get; }
 
         void AddNewPool(IPool pool);
         void AddNewDevice(IMiningDevice device);

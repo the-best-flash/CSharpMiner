@@ -122,6 +122,9 @@ namespace CSharpMiner.Helpers
             }
         }
 
+        private static bool _fileLogEnabled;
+        private static bool _consoleLogEnabled;
+
         public static bool ShouldDisplay(LogVerbosity verbosity)
         {
             return ((int)verbosity <= (int)Verbosity);
@@ -184,7 +187,7 @@ namespace CSharpMiner.Helpers
 
         private static void AddToConsoleLogQueue(Object thing, Nullable<ConsoleColor> color = null, LogVerbosity verbosity = LogVerbosity.Normal, bool writeLine = true)
         {
-            if (ShouldDisplay(verbosity))
+            if (_consoleLogEnabled && ShouldDisplay(verbosity))
             {
                 ConsoleLogQueue.Add(new Tuple<object, Nullable<ConsoleColor>, LogVerbosity, bool>(thing, color, verbosity, writeLine));
             }
@@ -295,6 +298,7 @@ namespace CSharpMiner.Helpers
         {
             ConsoleLoggingThread.Priority = ThreadPriority.Lowest;
             ConsoleLoggingThread.Start();
+            _consoleLogEnabled = true;
         }
 
         public static void StopConsoleLogThread()
@@ -302,6 +306,7 @@ namespace CSharpMiner.Helpers
             ConsoleLogQueue.CompleteAdding();
             ConsoleLoggingThread.Join(500);
             ConsoleLoggingThread.Abort();
+            _consoleLogEnabled = false;
         }
 
         [Conditional("DEBUG")]
@@ -310,20 +315,72 @@ namespace CSharpMiner.Helpers
             LogError(error);
         }
 
-        public static void LogError(Object error)
-        {
-            FileLogQueue.Add(new Tuple<object, string, bool>(error, _errorLogPath, true));
-        }
-
         [Conditional("DEBUG")]
         public static void DebugLogErrors(Object[] errors)
         {
             LogErrors(errors);
         }
 
+        [Conditional("DEBUG")]
+        public static void DebugLogErrorSecondary(Object error)
+        {
+            LogErrorSecondary(error, true);
+        }
+
+        [Conditional("DEBUG")]
+        public static void DebugLogErrorSecondary(Object[] errors)
+        {
+            LogErrorSecondary(errors, true);
+        }
+
+        [Conditional("DEBUG")]
+        public static void DebugLogToFile(Object obj, string filename, bool displayToScreen = false)
+        {
+            if (_fileLogEnabled)
+            {
+                FileLogQueue.Add(new Tuple<object, string, bool>(obj, filename, displayToScreen));
+            }
+        }
+
+        [Conditional("DEBUG")]
+        public static void DebugLogToFileAsync(Object[] objects, string filename, bool displayToScreen = false)
+        {
+            if (_fileLogEnabled)
+            {
+                FileLogQueue.Add(new Tuple<object, string, bool>(objects, filename, displayToScreen));
+            }
+        }
+
+        public static void LogError(Object error)
+        {
+            if (_fileLogEnabled)
+            {
+                FileLogQueue.Add(new Tuple<object, string, bool>(error, _errorLogPath, true));
+            }
+        }
+
         public static void LogErrors(Object[] errors)
         {
-            FileLogQueue.Add(new Tuple<object, string, bool>(errors, _errorLogPath, true));
+            if (_fileLogEnabled)
+            {
+                FileLogQueue.Add(new Tuple<object, string, bool>(errors, _errorLogPath, true));
+            }
+        }
+
+        public static void LogErrorSecondary(Object error, bool displayToScreen = false)
+        {
+            if (_fileLogEnabled)
+            {
+                FileLogQueue.Add(new Tuple<object, string, bool>(error, _secondaryErrorLogPath, displayToScreen));
+            }
+        }
+
+        public static void LogErrorSecondary(Object[] errors, bool displayToScreen = false)
+        {
+            if (_fileLogEnabled)
+            {
+                FileLogQueue.Add(new Tuple<object, string, bool>(errors, _secondaryErrorLogPath, displayToScreen));
+            }
         }
 
         private static void LogErrorToFile(Object error, string filePath, bool displayToScreen)
@@ -418,44 +475,11 @@ namespace CSharpMiner.Helpers
             }
         }
 
-        [Conditional("DEBUG")]
-        public static void DebugLogErrorSecondary(Object error)
-        {
-            LogErrorSecondary(error, true);
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugLogErrorSecondary(Object[] errors)
-        {
-            LogErrorSecondary(errors, true);
-        }
-
-        public static void LogErrorSecondary(Object error, bool displayToScreen = false)
-        {
-            FileLogQueue.Add(new Tuple<object, string, bool>(error, _secondaryErrorLogPath, displayToScreen));
-        }
-
-        public static void LogErrorSecondary(Object[] errors, bool displayToScreen = false)
-        {
-            FileLogQueue.Add(new Tuple<object, string, bool>(errors, _secondaryErrorLogPath, displayToScreen));
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugLogToFile(Object obj, string filename, bool displayToScreen = false)
-        {
-            FileLogQueue.Add(new Tuple<object, string, bool>(obj, filename, displayToScreen));
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugLogToFileAsync(Object[] objects, string filename, bool displayToScreen = false)
-        {
-            FileLogQueue.Add(new Tuple<object, string, bool>(objects, filename, displayToScreen));
-        }
-
         public static void StartFileLogThread()
         {
             FileLoggingThread.Priority = ThreadPriority.Lowest;
             FileLoggingThread.Start();
+            _fileLogEnabled = true;
         }
 
         public static void StopFileLogThread()
@@ -463,6 +487,7 @@ namespace CSharpMiner.Helpers
             FileLogQueue.CompleteAdding();
             FileLoggingThread.Join(500);
             FileLoggingThread.Abort();
+            _fileLogEnabled = false;
         }
     }
 }

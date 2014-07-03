@@ -20,6 +20,7 @@ using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
 using Stratum;
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Threading;
 
@@ -46,11 +47,33 @@ namespace StratumManager
         }
 
         [IgnoreDataMember]
-        public override IPool[] Pools
+        public override IPool[] CurrentPools
         {
             get
             {
                 return StratumPools;
+            }
+        }
+
+        private StratumPool[] activePoolArr;
+        [IgnoreDataMember]
+        public override IEnumerable<IPool> ActivePools
+        {
+            get 
+            {
+                if (activePoolArr == null)
+                    activePoolArr = new StratumPool[1];
+
+                if(this.ActivePoolId < this.StratumPools.Length)
+                {
+                    activePoolArr[0] = StratumPools[this.ActivePoolId];
+                }
+                else
+                {
+                    activePoolArr[0] = null;
+                }
+
+                return activePoolArr;
             }
         }
 

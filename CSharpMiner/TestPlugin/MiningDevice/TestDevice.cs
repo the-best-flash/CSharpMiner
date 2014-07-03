@@ -45,6 +45,8 @@ namespace MiningDevice
             base.Load();
 
             LogHelper.ConsoleLog(string.Format("Loading Miner {0}", Path), LogVerbosity.Verbose);
+
+            this.OnConnected();
         }
 
         public override void Unload()
@@ -52,6 +54,8 @@ namespace MiningDevice
             base.Load();
 
             LogHelper.ConsoleLog(string.Format("Unloading Miner {0}", Path), LogVerbosity.Verbose);
+
+            this.OnDisconnected();
         }
 
         public override void StartWork(IPoolWork work)

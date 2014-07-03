@@ -104,14 +104,14 @@ namespace CSharpMiner
 
                     foreach (IMiningDeviceManager m in config.Managers)
                     {
-                        m.WorkAccepted += this.WorkAccepted;
-                        m.WorkRejected += this.WorkRejected;
-                        m.WorkDiscarded += this.WorkDiscarded;
-                        m.NewWorkRecieved += this.NewWorkRecieved;
-                        m.DeviceConnected += this.DeviceConnected;
-                        m.DeviceDisconnected += this.DeviceDisconnected;
-                        m.PoolConnected += this.PoolConnected;
-                        m.PoolDisconnected += this.PoolDisconnected;
+                        m.WorkAccepted += OnWorkAccepted;
+                        m.WorkRejected += OnWorkRejected;
+                        m.WorkDiscarded += OnWorkDiscarded;
+                        m.NewWorkRecieved += OnNewWorkRecieved;
+                        m.DeviceConnected += OnDeviceConnected;
+                        m.DeviceDisconnected += OnDeviceDisconnected;
+                        m.PoolConnected += OnPoolConnected;
+                        m.PoolDisconnected += PoolDisconnected;
 
                         m.Start();
                     }
@@ -137,6 +137,54 @@ namespace CSharpMiner
             }
         }
 
+        void OnPoolDisconnected(IPool obj)
+        {
+            if(this.PoolDisconnected != null)
+                this.PoolDisconnected(obj);
+        }
+
+        void OnPoolConnected(IPool obj)
+        {
+            if (this.PoolConnected != null)
+                this.PoolConnected(obj);
+        }
+
+        void OnDeviceDisconnected(IMiningDeviceManager arg1, IMiningDevice arg2)
+        {
+            if (this.DeviceDisconnected != null)
+                this.DeviceDisconnected(arg1, arg2);
+        }
+
+        void OnDeviceConnected(IMiningDeviceManager arg1, IMiningDevice arg2)
+        {
+            if (this.DeviceConnected != null)
+                this.DeviceConnected(arg1, arg2);
+        }
+
+        void OnNewWorkRecieved(IPool arg1, IPoolWork arg2, bool arg3)
+        {
+            if (this.NewWorkRecieved != null)
+                this.NewWorkRecieved(arg1, arg2, arg3);
+        }
+
+        void OnWorkDiscarded(IPool arg1, IPoolWork arg2, IMiningDevice arg3)
+        {
+            if (this.WorkDiscarded != null)
+                this.WorkDiscarded(arg1, arg2, arg3);
+        }
+
+        void OnWorkRejected(IPool arg1, IPoolWork arg2, IMiningDevice arg3, IShareResponse arg4)
+        {
+            if (this.WorkRejected != null)
+                this.WorkRejected(arg1, arg2, arg3, arg4);
+        }
+
+        void OnWorkAccepted(IPool arg1, IPoolWork arg2, IMiningDevice arg3)
+        {
+            if (this.WorkAccepted != null)
+                this.WorkAccepted(arg1, arg2, arg3);
+        }
+
         public void Stop()
         {
             lock (syncLock) // We don't want to stop while we are starting
@@ -145,14 +193,14 @@ namespace CSharpMiner
                 {
                     foreach (IMiningDeviceManager m in config.Managers)
                     {
-                        m.WorkAccepted -= this.WorkAccepted;
-                        m.WorkRejected -= this.WorkRejected;
-                        m.WorkDiscarded -= this.WorkDiscarded;
-                        m.NewWorkRecieved -= this.NewWorkRecieved;
-                        m.DeviceConnected -= this.DeviceConnected;
-                        m.DeviceDisconnected -= this.DeviceDisconnected;
-                        m.PoolConnected -= this.PoolConnected;
-                        m.PoolDisconnected -= this.PoolDisconnected;
+                        m.WorkAccepted -= OnWorkAccepted;
+                        m.WorkRejected -= OnWorkRejected;
+                        m.WorkDiscarded -= OnWorkDiscarded;
+                        m.NewWorkRecieved -= OnNewWorkRecieved;
+                        m.DeviceConnected -= OnDeviceConnected;
+                        m.DeviceDisconnected -= OnDeviceDisconnected;
+                        m.PoolConnected -= OnPoolConnected;
+                        m.PoolDisconnected -= PoolDisconnected;
 
                         m.Stop();
                     }

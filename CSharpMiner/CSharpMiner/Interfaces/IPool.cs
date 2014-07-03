@@ -28,6 +28,10 @@ namespace CSharpMiner.Interfaces
         long Rejected { get; set; }
         long HardwareErrors { get; set; }
 
+        double AcceptedHashRate { get; }
+        double RejectedHashRate { get; }
+        double DiscardedHashRate { get; }
+
         long AcceptedWorkUnits { get; }
         long RejectedWorkUnits { get; set; }
         long DiscardedWorkUnits { get; set; }

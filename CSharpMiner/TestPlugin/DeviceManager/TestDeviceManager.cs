@@ -34,7 +34,7 @@ namespace DeviceManager
         public IPool[] PoolCollection { get; set; }
 
         [IgnoreDataMember]
-        public override IPool[] Pools
+        public override IPool[] CurrentPools
         {
             get
             {
@@ -83,9 +83,9 @@ namespace DeviceManager
 
         public override void OnPoolDisconnected(IPool pool)
         {
-            if (started && Pools.Length > 0)
+            if (started && CurrentPools.Length > 0)
             {
-                LogHelper.ConsoleLog(string.Format("Pool {0} disconnected...", Pools[0].Url), LogVerbosity.Quiet);
+                LogHelper.ConsoleLog(string.Format("Pool {0} disconnected...", CurrentPools[0].Url), LogVerbosity.Quiet);
             }
 
             base.OnPoolDisconnected(pool);
@@ -114,6 +114,11 @@ namespace DeviceManager
         protected override void OnWorkUpdateTimerExpired()
         {
             // do nothing
+        }
+
+        public override IEnumerable<IPool> ActivePools
+        {
+            get { return this.PoolCollection; }
         }
     }
 }

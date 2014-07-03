@@ -28,7 +28,7 @@ namespace StratumManager
     public class DistributedWorkManager : WorkManagerBase
     {
         [IgnoreDataMember]
-        public override IPool[] Pools
+        public override IPool[] CurrentPools
         {
             get
             {
@@ -58,6 +58,11 @@ namespace StratumManager
         protected override void OnWorkUpdateTimerExpired()
         {
             throw new NotImplementedException();
+        }
+
+        public override System.Collections.Generic.IEnumerable<IPool> ActivePools
+        {
+            get { throw new NotImplementedException(); }
         }
     }
 }

@@ -94,6 +94,33 @@ namespace Stratum
         public Thread SubmissionQueueThread { get; private set; }
 
         [IgnoreDataMember]
+        public double AcceptedHashRate
+        {
+            get
+            {
+                return this.ComputeHashRate(this.AcceptedWorkUnits);
+            }
+        }
+
+        [IgnoreDataMember]
+        public double RejectedHashRate
+        {
+            get
+            {
+                return this.ComputeHashRate(this.RejectedWorkUnits);
+            }
+        }
+
+        [IgnoreDataMember]
+        public double DiscardedHashRate
+        {
+            get
+            {
+                return this.ComputeHashRate(this.DiscardedWorkUnits);
+            }
+        }
+
+        [IgnoreDataMember]
         public bool IsConnected
         {
             get
@@ -838,9 +865,9 @@ namespace Stratum
                     format[5][0] = this.Rejected;
                     format[7][0] = this.HardwareErrors;
 
-                    format[10][0] = MegaHashDisplayString(ComputeHashRate(this.AcceptedWorkUnits));
-                    format[12][0] = MegaHashDisplayString(ComputeHashRate(this.RejectedWorkUnits));
-                    format[14][0] = MegaHashDisplayString(ComputeHashRate(this.DiscardedWorkUnits));
+                    format[10][0] = MegaHashDisplayString(this.AcceptedHashRate);
+                    format[12][0] = MegaHashDisplayString(this.RejectedHashRate);
+                    format[14][0] = MegaHashDisplayString(this.DiscardedHashRate);
 
                     if (accepted)
                     {

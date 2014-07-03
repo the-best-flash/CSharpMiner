@@ -153,5 +153,19 @@ namespace CSharpMiner.Helpers
 
             return midstate;
         }
+
+        public static string MegaHashDisplayString(double hashesPerSec)
+        {
+            if (!double.IsNaN(hashesPerSec))
+            {
+                double mHash = hashesPerSec / 1000000;
+
+                return string.Format("{0:N2}Mh", mHash);
+            }
+            else
+            {
+                return "0.00Mh";
+            }
+        }
     }
 }

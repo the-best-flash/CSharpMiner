@@ -36,7 +36,15 @@ namespace CSharpMiner.DeviceManager
         private const int longWaitThreshold = 10;
         private const int defaultWorkUpdateInterval = 60;
 
-        public abstract IPool[] Pools { get; }
+        public abstract IPool[] CurrentPools { get; }
+
+        public IEnumerable<IPool> Pools
+        {
+            get
+            {
+                return CurrentPools;
+            }
+        }
 
         [DataMember(Name = "devices")]
         [MiningSetting(Description="A collection of MiningDevice or DeviceLoader JSON objects.", Optional=false, 
@@ -100,10 +108,13 @@ namespace CSharpMiner.DeviceManager
         public int ActivePoolId { get; private set; }
 
         [IgnoreDataMember]
-        public IEnumerable<IMiningDevice> LoadedDevices
+        public IEnumerable<IMiningDevice> Devices
         {
             get { return loadedDevices; }
         }
+
+        [IgnoreDataMember]
+        public abstract IEnumerable<IPool> ActivePools { get; }
 
         private bool working = false;
         private bool started = false;
@@ -336,7 +347,7 @@ namespace CSharpMiner.DeviceManager
 
             if(!boundPools)
             {
-                foreach(IPool pool in this.Pools)
+                foreach(IPool pool in this.CurrentPools)
                 {
                     pool.Connected += OnPoolConnected;
                     pool.Disconnected += this.OnPoolDisconnected;
@@ -356,9 +367,9 @@ namespace CSharpMiner.DeviceManager
                 LoadDevice(d);
             }
 
-            if(Pools.Length > 0)
+            if(CurrentPools.Length > 0)
             {
-                this.ActivePool = Pools[0];
+                this.ActivePool = CurrentPools[0];
                 this.ActivePoolId = 0;
                 this.ActivePool.Start();
             }
@@ -529,21 +540,14 @@ namespace CSharpMiner.DeviceManager
                     new Object[] {d.HardwareErrors, ConsoleColor.Magenta, false},
                     new Object[] {" ) ", false},
                     new Object[] {" ( ", false},
-                    new Object[] {MegaHashDisplayString(d.AcceptedHashRate), ConsoleColor.Green, false},
+                    new Object[] {HashHelper.MegaHashDisplayString(d.AcceptedHashRate), ConsoleColor.Green, false},
                     new Object[] {" : ", false},
-                    new Object[] {MegaHashDisplayString(d.RejectedHashRate), ConsoleColor.Red, false},
+                    new Object[] {HashHelper.MegaHashDisplayString(d.RejectedHashRate), ConsoleColor.Red, false},
                     new Object[] {" : ", false},
-                    new Object[] {MegaHashDisplayString(d.DiscardedHashRate), ConsoleColor.Magenta, false},
+                    new Object[] {HashHelper.MegaHashDisplayString(d.DiscardedHashRate), ConsoleColor.Magenta, false},
                     new Object[] {" )", true}
                 },
                 LogVerbosity.Verbose);
-        }
-
-        private string MegaHashDisplayString(double hashesPerSec)
-        {
-            double mHash = hashesPerSec / 1000000;
-
-            return string.Format("{0:N2}Mh", mHash);
         }
 
         public virtual void Stop()
@@ -557,7 +561,7 @@ namespace CSharpMiner.DeviceManager
 
             if(boundPools)
             {
-                foreach(IPool pool in this.Pools)
+                foreach(IPool pool in this.CurrentPools)
                 {
                     pool.Connected -= this.OnPoolConnected;
                     pool.Disconnected -= this.OnPoolDisconnected;
@@ -669,7 +673,7 @@ namespace CSharpMiner.DeviceManager
                                 // TODO: Handle when all pools are unable to be reached
                                 if (this.started)
                                 {
-                                    if (this.ActivePoolId + 1 < this.Pools.Length)
+                                    if (this.ActivePoolId + 1 < this.CurrentPools.Length)
                                     {
                                         this.ActivePoolId++;
                                     }
@@ -678,9 +682,9 @@ namespace CSharpMiner.DeviceManager
                                         this.ActivePoolId = 0;
                                     }
 
-                                    poolReconnectingTo = this.Pools[this.ActivePoolId];
+                                    poolReconnectingTo = this.CurrentPools[this.ActivePoolId];
 
-                                    if (reconnectionAttempts == this.Pools.Length)
+                                    if (reconnectionAttempts == this.CurrentPools.Length)
                                     {
                                         if (waitAttempts > longWaitThreshold)
                                             longWait = true;
