@@ -21,7 +21,7 @@ C# (Mono/.NET) crypto-currency mining stratum client for use with various kinds 
 
 A full description of why I made this and what benefits I hope it will have are at the end of this file. In short: it is portable and easy to compile/install, it supports mining with different kind of ASICs at the same time and can support mining with ASICs for SHA256 (BTC) or Scrypt (LTC) at the same time, and support for more ASICs can be added by copying a 'plugin' to a folder.
 
-This is in an Alpha, working state. I have tried it breifly on a few of the most popular LTC mining sites and it worked. I am using it to mine with some Blizzards on a Raspberry Pi right now to test it during a longer session. If everything checks out I might be ready for the first beta release before too long.
+This is in an Alpha, working state. I have tried it breifly on a few of the most popular LTC mining sites and it worked. I for the last week I have been using it to mine with some Blizzards on a Raspberry Pi. I am just starting to test Gridseeds. If everything checks out I might be ready for the first beta release before too long.
 
 
 This should work on Windows, Linux, and OSX. You can run this on .NET or <a href="http://www.mono-project.com/Main_Page">Mono</a>. Mono can run binaries compiled for .NET, but it is recommended that you use a binary compiled for Mono. I have verified that I can run this on Windows and the Debian Linux on my raspberry PI.
@@ -31,7 +31,7 @@ Compilation
 
 I will be adding precompiled binaries when things are a bit more stable, but if you want to compile it yourself you can use the steps below.
 
-To compile for .NET, use <a href="http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx">Visual Studio Express 2013 for Desktop</a> on Windows:
+To compile for .NET (4.5 or higher), use <a href="http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx">Visual Studio Express 2013 for Desktop</a> on Windows:
     
     1. Load the solution file. *.sln
     2. Change the dropdown that says "Debug" to say "Release"
@@ -43,7 +43,7 @@ To compile for .NET, use <a href="http://www.visualstudio.com/en-us/products/vis
     7. Right click on the .exe and make a shortcut. Copy the shortcut to your desktop.
 
 
-To compile for Mono on linux use:
+To compile for Mono (3.2.x or higher) on linux use:
 
     1. sudo apt-get update
     2. sudo apt-get install mono-devel
@@ -196,6 +196,7 @@ Current Support:
 
     ZeusMiner ASICs (Should be able to run different kinds of miners at the same time if the configuration file is set up correctly. Fore example you could run Furys and Thunders at the same time)
     GAWMiner Gen1 ASICs (Fury, Black Widdow, etc.) <- These are the exact same as the ZeusMiner ASICs
+    Gridseed support
     Stratum Pool Mining
     Pool Auto-failover
     Pool Auto-reconnect
@@ -207,12 +208,13 @@ Untested Features:
 
     ZeusMiner ASICs other than Furys.
     Multiple kinds of ZeusMiner ASICs.
+    Multiple kinds of Scrypt ASICs at once.
     Disconnecting a miner while the system is running. 
+    Gridseed support
 
 Planned Features:
 
     Support for hotplugging ASICs
-    Gridseed support
     Avalon BTC support
     Local work verification (right now it submits shares even if they are incorrect)
     An ASP.NET wrapper that will expose an HTTP interface for queying mining stats using HTTP requests
