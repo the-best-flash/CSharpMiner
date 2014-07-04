@@ -184,6 +184,7 @@ namespace Gridseed
         {
             this.Frequency = freq;
             this.Chips = chips;
+            SetDefaultValues();
         }
 
         private long GetExpectedHashrate()
@@ -444,11 +445,11 @@ namespace Gridseed
 
             int taskId = _currentTaskId + 1;
 
-            byte[] headerBytes = HexConversionHelper.ConvertFromHexString(work.Header);
+            byte[] headerBytes = work.Header;
 
-            byte[] midstate = HashHelper.ComputeMidstate(headerBytes.Take(64).ToArray());
+            byte[] midstate = work.Midstate;
 
-            byte[] target = MathHelper.ConvertDifficultyToTarget(work.Diff);
+            byte[] target = work.Target;
 
             // Encode the target (32 bytes)
             //4

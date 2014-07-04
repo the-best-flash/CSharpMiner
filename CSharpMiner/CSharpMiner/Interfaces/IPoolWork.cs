@@ -22,7 +22,8 @@ namespace CSharpMiner.Interfaces
     {
         string JobId { get; }
         int Diff { get; set; }
-        string Header { get; }
-        string Midstate { get; }
+        byte[] Header { get; }
+        byte[] Midstate { get; }
+        byte[] Target { get;  }
     }
 }

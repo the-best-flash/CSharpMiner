@@ -17,14 +17,13 @@
 using CSharpMiner.Helpers;
 using CSharpMiner.Interfaces;
 using System;
+using System.Linq;
 
 namespace Stratum
 {
     public class StratumWork : IPoolWork
     {
         private const string WorkLogFile = "work.log";
-
-        Object _lock = new Object();
 
         public Object[] CommandArray { get; private set; }
 
@@ -35,7 +34,21 @@ namespace Stratum
         public string[] MerkleBranch { get; private set; }
         public string Version { get; private set; }
         public string NetworkDiff { get; private set; } // nbits
-        public int Diff { get; set; }
+
+        private int _diff;
+        public int Diff
+        {
+            get
+            {
+                return _diff;
+            }
+
+            set
+            {
+                _diff = value;
+                _target = null;
+            }
+        }
 
         private string _timestamp;
         public string Timestamp 
@@ -92,47 +105,47 @@ namespace Stratum
             {
                 if (_merkleRoot == null)
                 {
-                    lock (_lock)
-                    {
-                        if (_merkleRoot == null) // Just in case a thread was waiting on the lock. No sense in recomputing the merkleRoot
-                        {
-                            _merkleRoot = ComputeMerkleRoot();
-                        }
-                    }
+                    _merkleRoot = ComputeMerkleRoot();
                 }
 
                 return _merkleRoot;
             }
         }
 
-        private string _midState = null;
-        public string Midstate
+        private byte[] _midState = null;
+        public byte[] Midstate
         {
             get
             {
                 if(_midState == null)
                 {
-                    lock (_lock)
-                    {
-                        if (_midState == null) // Just in case a thread was waiting on the lock. No sense in recomputing the midstate
-                        {
-                            _midState = ComputeMidstate();
-                        }
-                    }
+                    _midState = ComputeMidstate();
                 }
 
                 return _midState;
             }
         }
 
-        private string _header = null;
-        public string Header
+        private byte[] _target = null;
+        public byte[] Target
+        {
+            get
+            {
+                if(_target == null)
+                    _target = MathHelper.ConvertDifficultyToTarget(this.Diff);
+
+                return _target;
+            }
+        }
+
+        private byte[] _header = null;
+        public byte[] Header
         {
             get
             {
                 if (_header == null)
                 {
-                    _header = MakeHeader();
+                    _header = HexConversionHelper.ConvertFromHexString(MakeHeader());
                 }
 
                 return _header;
@@ -228,10 +241,10 @@ namespace Stratum
             }, WorkLogFile);
         }
 
-        private string ComputeMidstate()
+        private byte[] ComputeMidstate()
         {
-            // TODO
-            return string.Empty;
+            byte[] headerBytes = this.Header;
+            return HashHelper.ComputeMidstate(headerBytes.Take(64).ToArray());
         }
 
         private string ComputeMerkleRoot()

@@ -20,6 +20,7 @@ using CSharpMiner.MiningDevice;
 using CSharpMiner.ModuleLoading;
 using System;
 using System.IO.Ports;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using ZeusMinerGen1Plugin;
@@ -178,7 +179,7 @@ namespace ZeusMiner
                     cmd[offset + 3] = (byte)(startingNonce >> 24);
                     offset += 4;
 
-                    byte[] headerBytes = HexConversionHelper.ConvertFromHexString(HexConversionHelper.Reverse(work.Header));
+                    byte[] headerBytes = work.Header.Reverse().ToArray();
                     headerBytes.CopyTo(cmd, offset);
 
                     LogHelper.DebugConsoleLog(string.Format("{0} getting: {1}", this.Name, HexConversionHelper.ConvertToHexString(cmd)));

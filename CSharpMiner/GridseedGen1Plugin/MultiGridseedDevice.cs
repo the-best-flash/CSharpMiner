@@ -89,19 +89,18 @@ namespace Gridseed
 
             _totalChips = 0;
 
-            Parallel.ForEach(Ports, port =>
-                {
-                    GridseedDevice device = new GridseedDevice(port, Frequency, Chips, WatchdogTimeout, PollFrequency);
+            foreach(string port in Ports)
+            {
+                GridseedDevice device = new GridseedDevice(port, Frequency, Chips, WatchdogTimeout, PollFrequency);
 
-                    device.InvalidNonce += OnDeviceInvalidNonce;
-                    device.Disconnected += OnDeviceDisconnected;
-                    device.ValidNonce += OnDeviceValidNonce;
-                    device.WorkRequested += OnDeviceWorkRequested;
+                device.Disconnected += OnDeviceDisconnected;
+                device.ValidNonce += OnDeviceValidNonce;
+                device.WorkRequested += OnDeviceWorkRequested;
 
-                    device.Load(false);
+                device.Load(false);
 
-                    LoadedDevices.Add(device);
-                });
+                LoadedDevices.Add(device);
+            }
 
             foreach(GridseedDevice d in LoadedDevices)
             {
@@ -117,6 +116,11 @@ namespace Gridseed
                 _dataPollThread.Start();
             }
 
+            if (LogHelper.ShouldDisplay(LogVerbosity.Normal))
+            {
+                LogHelper.ConsoleLog(string.Format("Successfully connected to {0} device(s).", LoadedDevices.Count), LogVerbosity.Normal);
+            }
+
             this.OnConnected();
         }
 
@@ -126,7 +130,8 @@ namespace Gridseed
             {
                 Parallel.ForEach(LoadedDevices, device =>
                 {
-                    device.CheckForData();
+                    if(device != null && device.IsConnected)
+                        device.CheckForData();
                 });
 
                 Thread.Sleep(this.PollFrequency);
@@ -146,11 +151,6 @@ namespace Gridseed
         void OnDeviceDisconnected(IMiningDevice obj)
         {
             LogHelper.LogError(string.Format("Device {0} disconnected!", obj.Name));
-        }
-
-        void OnDeviceInvalidNonce(IMiningDevice arg1, IPoolWork arg2)
-        {
-            this.OnInvalidNonce(arg2);
         }
 
         public override void WorkRejected(IPoolWork work)

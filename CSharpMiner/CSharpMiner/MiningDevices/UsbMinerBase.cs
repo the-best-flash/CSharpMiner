@@ -194,7 +194,7 @@ namespace CSharpMiner.MiningDevice
 
         public void CheckForData()
         {
-            if (usbPort.BytesToRead > 0)
+            if (usbPort != null && usbPort.IsOpen && usbPort.BytesToRead > 0)
             {
                 DataReceived(usbPort, null);
             }
@@ -272,7 +272,7 @@ namespace CSharpMiner.MiningDevice
 
         protected virtual void SendCommand(byte[] cmd)
         {
-            if (usbPort != null)
+            if (usbPort != null && usbPort.IsOpen)
             {
                 lock (UsbMinerBase.SerialWriteLock)
                 {
