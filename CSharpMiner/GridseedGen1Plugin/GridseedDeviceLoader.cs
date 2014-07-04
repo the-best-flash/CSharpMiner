@@ -15,6 +15,7 @@
     along with CSharpMiner.  If not, see <http://www.gnu.org/licenses/>.*/
 
 using CSharpMiner.DeviceLoader;
+using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
 using System;
 using System.Collections.Generic;
@@ -36,9 +37,16 @@ namespace Gridseed
         [MiningSetting(ExampleValue = "850", Optional = false, Description = GridseedDevice.freqDescriptionString)]
         public int Frequency { get; set; }
 
-        public override IEnumerable<CSharpMiner.Interfaces.IMiningDevice> LoadDevices()
+        public override IEnumerable<IMiningDevice> LoadDevices()
         {
-            throw new NotImplementedException();
+            List<IMiningDevice> devices = new List<IMiningDevice>();
+
+            foreach (string p in Ports)
+            {
+                devices.Add(new GridseedDevice(p, Frequency, Chips, WatchdogTimeout, PollFrequency));
+            }
+
+            return devices;
         }
     }
 }

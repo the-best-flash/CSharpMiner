@@ -51,6 +51,8 @@ namespace CSharpMiner.MiningDevice
         protected long pendingWorkStartNonce = 0;
         protected long pendingWorkEndNonce = 0xFFFFFFFF;
 
+        protected bool _skipPollingForResponse;
+
         private bool continueRunning = true;
 
         public UsbMinerBase(string port, int watchdogTimeout = defaultWatchdogTimeout, int pollFrequency = defaultPollTime) : base(watchdogTimeout)
@@ -79,9 +81,18 @@ namespace CSharpMiner.MiningDevice
 
         public override void Load()
         {
+            _skipPollingForResponse = false;
+
             base.Load();
 
             Task.Factory.StartNew(this.Connect);
+        }
+
+        public void Load(bool pollIncomingData)
+        {
+            this._skipPollingForResponse = !pollIncomingData;
+
+            this.Load();
         }
 
         private void Connect()
@@ -135,7 +146,7 @@ namespace CSharpMiner.MiningDevice
                     PollFrequency = defaultPollTime;
                 }
 
-                if (this.listenerThread == null)
+                if (this.listenerThread == null && !_skipPollingForResponse)
                 {
                     this.listenerThread = new Thread(new ThreadStart(() =>
                         {
@@ -143,11 +154,7 @@ namespace CSharpMiner.MiningDevice
                             {
                                 while (this.continueRunning)
                                 {
-                                    if (usbPort.BytesToRead > 0)
-                                    {
-                                        DataReceived(usbPort, null);
-                                    }
-
+                                    CheckForData();
                                     Thread.Sleep(PollFrequency);
                                 }
                             }
@@ -183,6 +190,14 @@ namespace CSharpMiner.MiningDevice
             this.IsConnected = true;
 
             this.OnConnected();
+        }
+
+        public void CheckForData()
+        {
+            if (usbPort.BytesToRead > 0)
+            {
+                DataReceived(usbPort, null);
+            }
         }
 
         public override void StartWork(IPoolWork work)
