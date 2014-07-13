@@ -173,7 +173,7 @@ namespace StratumManager
         {
             base.OnWorkRejected(pool, work, device, response);
 
-            if(response.JobNotFound || response.RejectReason.Contains("job not found"))
+            if(response.JobNotFound || response.RejectReason.Contains("job not found") || response.RejectReason.Contains("stale"))
             {
                 if (LogHelper.ShouldDisplay(LogVerbosity.Verbose))
                 {

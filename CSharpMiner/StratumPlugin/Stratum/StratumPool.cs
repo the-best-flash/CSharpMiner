@@ -968,7 +968,64 @@ namespace Stratum
 
                     LogHelper.DebugConsoleLog(string.Format("Diff Change {0} => {1}", this.Diff, _params[0]), ConsoleColor.Magenta);
 
-                    this.Diff = (int)_params[0];
+                    if (_params[0] is int)
+                    {
+                        this.Diff = (int)_params[0];
+                    }
+                    else if (_params[0] is double || _params[0] is float || _params[0] is decimal)
+                    {
+                        double d = (_params[0] is decimal ? decimal.ToDouble((decimal)_params[0]) : (double)_params[0]);
+                        this.Diff = (int)Math.Ceiling(d);
+                    }
+                    else
+                    {
+                        if(_params[0] is string)
+                        {
+                            int i;
+                            int.TryParse((string)_params[0], out i);
+                            this.Diff = i;
+                        }
+                        else if(_params.Length > 1 && _params.Count(obj => obj is int) > 0)
+                        {
+                            foreach(int i in _params)
+                            {
+                                this.Diff = i;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if (_params.Length == 1)
+                            {
+                                LogHelper.LogError(string.Format("Unknown diff command object: {0} of type {1}", _params[0], _params[0].GetType().ToString()));
+                            }
+                            else
+                            {
+                                StringBuilder sb = new StringBuilder();
+
+                                sb.Append("[ ");
+
+                                bool first = true;
+                                foreach(object obj in _params)
+                                {
+                                    if(!first)
+                                    {
+                                        sb.Append(", ");
+                                    }
+                                    else
+                                    {
+                                        first = false;
+                                    }
+
+                                    sb.Append(obj.ToString());
+                                }
+
+                                sb.Append(" ]");
+
+                                LogHelper.LogError(string.Format("Unknown diff command params: {0}", sb.ToString()));
+                            }
+                        }
+                    }
                     break;
 
                 default:
@@ -982,12 +1039,22 @@ namespace Stratum
             if (this.threadStopping != null && this.connection != null && this.connection.Connected && this.Running)
             {
                 // TODO: Handle null connection
-                Task<int> asyncTask = null;
+                string result = string.Empty;
+                Task task = null;
 
                 try
                 {
-                    asyncTask = connection.GetStream().ReadAsync(arr, 0, 10000, this.threadStopping.Token);
-                    asyncTask.Wait(this.threadStopping.Token);
+                    task = Task.Factory.StartNew(() =>
+                            {
+                                while (this.threadStopping != null && this.connection != null && this.connection.Connected && this.Running && !result.Contains("\n"))
+                                {
+                                    int bytesRead = connection.GetStream().Read(arr, 0, 10000);
+                                    result += Encoding.ASCII.GetString(arr, 0, bytesRead);
+                                }
+                            },
+                            this.threadStopping.Token);
+
+                    task.Wait();
                 }
                 catch (OperationCanceledException e)
                 {
@@ -1000,18 +1067,14 @@ namespace Stratum
                     return string.Empty;
                 }
 
-                if (asyncTask != null && !asyncTask.IsCanceled)
+                if (task != null && !task.IsCanceled)
                 {
-                    int bytesRead = asyncTask.Result;
-
                     if (string.IsNullOrEmpty(partialData))
                     {
-                        return Encoding.ASCII.GetString(arr, 0, bytesRead);
+                        return result;
                     }
                     else
                     {
-                        string result = Encoding.ASCII.GetString(arr, 0, bytesRead).Trim();
-
                         // Guard against messing up good commands because a bad partial command was recieved
                         if (!result.StartsWith("{"))
                         {

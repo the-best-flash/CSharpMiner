@@ -175,9 +175,10 @@ namespace Stratum
             // Make sure extranonce 2 is the right length
             if (extranonce2.Length != extranonce2Size * 2)
             {
-                if (extranonce2Size * 2 > extranonce2.Length)
+                int expectedSize = extranonce2Size * 2;
+                if (expectedSize > extranonce2.Length)
                 {
-                    int neededZeros = extranonce2Size * 2 - extranonce2.Length;
+                    int neededZeros = expectedSize - extranonce2.Length;
                     string fix = extranonce2;
 
                     for(int i = 0; i < neededZeros; i++)
@@ -189,7 +190,7 @@ namespace Stratum
                 }
                 else
                 {
-                    Extranonce2 = extranonce2.Substring(0, extranonce2Size * 2);
+                    Extranonce2 = extranonce2.Substring(extranonce2.Length - expectedSize, expectedSize);
                 }
             }
             else
