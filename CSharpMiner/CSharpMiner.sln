@@ -15,8 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StratumPlugin", "StratumPlu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GridseedGen1Plugin", "GridseedGen1Plugin\GridseedGen1Plugin.csproj", "{DDDBDE99-D000-4AC3-B0E0-DED1EFE6EBE8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfMiner", "WpfMiner\WpfMiner.csproj", "{14AFA6DA-1755-49E4-A25B-1BAD7DB347C0}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
