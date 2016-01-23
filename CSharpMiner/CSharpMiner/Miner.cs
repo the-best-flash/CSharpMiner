@@ -20,7 +20,6 @@ using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;

@@ -16,7 +16,6 @@
 
 using CSharpMiner.Interfaces;
 using CSharpMiner.ModuleLoading;
-using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
